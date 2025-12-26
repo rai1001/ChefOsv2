@@ -1,0 +1,43 @@
+rules_version = '2';
+
+service firebase.storage {
+  match /b/{bucket}/o {
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function getUserData() {
+      return firestore.get(/databases/(default)/documents/users/$(request.auth.uid)).data;
+    }
+
+    function hasOutletAccess(outletId) {
+      return isAuthenticated() &&
+             getUserData().outletIds != null &&
+             outletId in getUserData().outletIds;
+    }
+
+    // Outlet-specific files
+    match /outlets/{outletId}/{allPaths=**} {
+      allow read: if hasOutletAccess(outletId);
+      allow write: if hasOutletAccess(outletId) &&
+                      request.resource.size < 10 * 1024 * 1024; // Max 10MB
+    }
+
+    // Invoice scans
+    match /invoices/{outletId}/{fileName} {
+      allow read: if hasOutletAccess(outletId);
+      allow write: if hasOutletAccess(outletId) &&
+                      request.resource.size < 5 * 1024 * 1024 && // Max 5MB
+                      request.resource.contentType.matches('image/.*');
+    }
+
+    // BEO/Menu scans
+    match /beo/{outletId}/{fileName} {
+      allow read: if hasOutletAccess(outletId);
+      allow write: if hasOutletAccess(outletId) &&
+                      request.resource.size < 5 * 1024 * 1024 &&
+                      request.resource.contentType.matches('image/.*|application/pdf');
+    }
+  }
+}

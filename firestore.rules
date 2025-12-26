@@ -1,0 +1,88 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function getUserData() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    }
+
+    function hasOutletAccess(outletId) {
+      return isAuthenticated() &&
+             getUserData().outletIds != null &&
+             outletId in getUserData().outletIds;
+    }
+
+    function isOutletAdmin(outletId) {
+      return isAuthenticated() &&
+             getUserData().adminOutletIds != null &&
+             outletId in getUserData().adminOutletIds;
+    }
+
+    // Users collection
+    match /users/{userId} {
+      allow read: if isAuthenticated() && request.auth.uid == userId;
+      allow write: if isAuthenticated() && request.auth.uid == userId;
+    }
+
+    // Outlets collection
+    match /outlets/{outletId} {
+      allow read: if hasOutletAccess(outletId);
+      allow write: if isOutletAdmin(outletId);
+
+      // Ingredients subcollection
+      match /ingredients/{ingredientId} {
+        allow read: if hasOutletAccess(outletId);
+        allow write: if hasOutletAccess(outletId);
+
+        // Batches subcollection (FIFO)
+        match /batches/{batchId} {
+          allow read: if hasOutletAccess(outletId);
+          allow write: if hasOutletAccess(outletId);
+        }
+      }
+
+      // Recipes/Fichas Técnicas subcollection
+      match /fichasTecnicas/{fichaId} {
+        allow read: if hasOutletAccess(outletId);
+        allow write: if hasOutletAccess(outletId);
+
+        // Versions subcollection
+        match /versions/{versionId} {
+          allow read: if hasOutletAccess(outletId);
+          allow create: if hasOutletAccess(outletId);
+          allow update, delete: if false; // Versions are immutable
+        }
+      }
+
+      // Purchase Orders subcollection
+      match /purchaseOrders/{orderId} {
+        allow read: if hasOutletAccess(outletId);
+        allow write: if hasOutletAccess(outletId);
+      }
+
+      // Events/BEO subcollection
+      match /events/{eventId} {
+        allow read: if hasOutletAccess(outletId);
+        allow write: if hasOutletAccess(outletId);
+      }
+
+      // HACCP Records subcollection
+      match /haccpRecords/{recordId} {
+        allow read: if hasOutletAccess(outletId);
+        allow create: if hasOutletAccess(outletId);
+        allow update, delete: if false; // HACCP records are immutable
+      }
+    }
+
+    // AI Usage Metrics (admin only)
+    match /aiUsageMetrics/{metricId} {
+      allow read: if isAuthenticated();
+      allow write: if false; // Only Cloud Functions can write
+    }
+  }
+}

@@ -1,0 +1,14 @@
+src/presentation/components/imports/UniversalImporter.tsx(2,18): error TS6133: 'FileText' is declared but its value is never read.
+src/presentation/components/imports/UniversalImporter.tsx(2,35): error TS6133: 'AlertCircle' is declared but its value is never read.
+src/presentation/components/imports/UniversalImporter.tsx(3,27): error TS2307: Cannot find module '../../../../application/di/Container' or its corresponding type declarations.
+src/presentation/components/imports/UniversalImporter.tsx(4,23): error TS2307: Cannot find module '../../../../application/di/types' or its corresponding type declarations.
+src/presentation/components/imports/UniversalImporter.tsx(5,37): error TS2307: Cannot find module '../../../../application/use-cases/ingredients/ScanDocumentUseCase' or its corresponding type declarations.
+src/presentation/components/imports/UniversalImporter.tsx(6,42): error TS2307: Cannot find module '../../../../application/use-cases/ingredients/ImportIngredientsUseCase' or its corresponding type declarations.
+src/presentation/components/ingredients/IngredientForm.tsx(3,29): error TS6133: 'AlertCircle' is declared but its value is never read.
+src/presentation/components/ingredients/IngredientForm.tsx(4,28): error TS2307: Cannot find module '../../../../domain/entities/Ingredient' or its corresponding type declarations.
+src/presentation/components/ingredients/IngredientForm.tsx(5,1): error TS6133: 'Unit' is declared but its value is never read.
+src/presentation/components/ingredients/IngredientForm.tsx(5,22): error TS2307: Cannot find module '../../../../domain/types' or its corresponding type declarations.
+src/presentation/components/ingredients/IngredientForm.tsx(6,27): error TS2307: Cannot find module '../../../../application/di/Container' or its corresponding type declarations.
+src/presentation/components/ingredients/IngredientForm.tsx(7,23): error TS2307: Cannot find module '../../../../application/di/types' or its corresponding type declarations.
+src/presentation/components/ingredients/IngredientForm.tsx(8,41): error TS2307: Cannot find module '../../../../application/use-cases/ingredients/EnrichIngredientUseCase' or its corresponding type declarations.
+src/presentation/pages/InventoryPage.tsx(4,32): error TS2307: Cannot find module '../components/organisms/IngredientList' or its corresponding type declarations.

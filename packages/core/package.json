@@ -1,0 +1,23 @@
+{
+  "name": "@culinaryos/core",
+  "version": "2.0.0",
+  "type": "module",
+  "description": "Domain entities, use cases and interfaces",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "lint": "eslint src --ext .ts"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "typescript": "^5.7.2",
+    "vitest": "^2.1.8"
+  },
+  "dependencies": {
+    "date-fns": "^4.1.0",
+    "zod": "^4.2.1"
+  }
+}

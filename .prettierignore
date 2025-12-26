@@ -1,0 +1,12 @@
+node_modules/
+dist/
+build/
+coverage/
+.next/
+out/
+*.log
+.firebase/
+storybook-static/
+test-results/
+playwright-report/
+pnpm-lock.yaml
