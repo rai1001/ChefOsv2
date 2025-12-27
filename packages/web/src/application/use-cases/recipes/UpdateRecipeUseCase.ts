@@ -2,9 +2,9 @@ import { injectable, inject } from 'inversify';
 import { TYPES } from '../../di/types';
 import { Recipe } from '@/domain/entities/Recipe';
 import { CalculateRecipeCostUseCase } from './CalculateRecipeCostUseCase';
-import { UpdateFichaTecnicaUseCase as CoreUseCase } from '@culinaryos/core/use-cases/fichas/UpdateFichaTecnicaUseCase';
-import { Quantity } from '@culinaryos/core/domain/value-objects/Quantity';
-import { Unit } from '@culinaryos/core/domain/value-objects/Unit';
+import { UpdateFichaTecnicaUseCase as CoreUseCase } from '@culinaryos/core';
+import { Quantity } from '@culinaryos/core';
+import { Unit } from '@culinaryos/core';
 
 @injectable()
 export class UpdateRecipeUseCase {
@@ -24,6 +24,7 @@ export class UpdateRecipeUseCase {
       dto.ingredients = updates.ingredients.map((i) => ({
         ingredientId: i.id,
         quantity: new Quantity(i.quantity, new Unit(i.unit as any)),
+        type: i.type,
       }));
     }
 

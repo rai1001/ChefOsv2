@@ -2,7 +2,7 @@ import { injectable, inject } from 'inversify';
 import { TYPES } from '../../di/types';
 import { Recipe } from '@/domain/entities/Recipe';
 import { CalculateRecipeCostUseCase } from './CalculateRecipeCostUseCase';
-import { CreateFichaTecnicaUseCase as CoreUseCase } from '@culinaryos/core/use-cases/fichas/CreateFichaTecnicaUseCase';
+import { CreateFichaTecnicaUseCase as CoreUseCase } from '@culinaryos/core';
 import { RecipeAdapter } from '@/adapters/RecipeAdapter';
 
 @injectable()
@@ -23,6 +23,7 @@ export class CreateRecipeUseCase {
       ingredients: coreFicha.ingredients.map((i) => ({
         ingredientId: i.ingredientId,
         quantity: i.quantity,
+        type: i.type,
       })),
       instructions: coreFicha.instructions,
       prepTime: coreFicha.prepTime,

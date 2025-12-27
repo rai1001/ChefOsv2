@@ -63,15 +63,15 @@ export class CoreRecipeRepositoryAdapter implements IFichaTecnicaRepository {
     await this.legacyRepo.deleteRecipe(id);
   }
 
-  async createVersion(fichaId: string, reason?: string): Promise<FichaTecnicaVersion> {
+  async createVersion(_fichaId: string, _reason?: string): Promise<FichaTecnicaVersion> {
     throw new Error('Versioning not supported in legacy adapter');
   }
 
-  async getVersions(fichaId: string): Promise<FichaTecnicaVersion[]> {
+  async getVersions(_fichaId: string): Promise<FichaTecnicaVersion[]> {
     return [];
   }
 
-  async getVersion(fichaId: string, versionNumber: number): Promise<FichaTecnicaVersion | null> {
+  async getVersion(_fichaId: string, _versionNumber: number): Promise<FichaTecnicaVersion | null> {
     return null;
   }
 }

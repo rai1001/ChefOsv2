@@ -23,6 +23,10 @@ export class Money {
     return this.cents / 100;
   }
 
+  get centsValue(): number {
+    return this.cents;
+  }
+
   add(other: Money): Money {
     this.assertSameCurrency(other);
     return Money.fromCents(this.cents + other.cents, this.currency);

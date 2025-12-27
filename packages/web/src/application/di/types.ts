@@ -26,6 +26,7 @@ export const TYPES = {
 
   // Recipe Use Cases
   CalculateRecipeCostUseCase: Symbol.for('CalculateRecipeCostUseCase'),
+  CoreCalculateRecipeCostUseCase: Symbol.for('CoreCalculateRecipeCostUseCase'),
   GetRecipesUseCase: Symbol.for('GetRecipesUseCase'),
   CoreGetRecipesUseCase: Symbol.for('CoreGetRecipesUseCase'),
   CreateRecipeUseCase: Symbol.for('CreateRecipeUseCase'),
@@ -37,9 +38,17 @@ export const TYPES = {
 
   // Inventory Module
   InventoryRepository: Symbol.for('InventoryRepository'),
+  BatchRepository: Symbol.for('BatchRepository'),
+  TransactionManager: Symbol.for('TransactionManager'),
   RegisterStockMovementUseCase: Symbol.for('RegisterStockMovementUseCase'),
+  CoreProcessStockMovementUseCase: Symbol.for('CoreProcessStockMovementUseCase'),
   GetInventoryStatusUseCase: Symbol.for('GetInventoryStatusUseCase'),
   PerformAuditUseCase: Symbol.for('PerformAuditUseCase'),
+  CorePerformAuditUseCase: Symbol.for('CorePerformAuditUseCase'),
+  AddBatchUseCase: Symbol.for('AddBatchUseCase'),
+  ConsumeFIFOUseCase: Symbol.for('ConsumeFIFOUseCase'),
+  CheckExpiryUseCase: Symbol.for('CheckExpiryUseCase'),
+  AdjustStockUseCase: Symbol.for('AdjustStockUseCase'),
 
   // Analytics Module
   CalculateBCGMatrixUseCase: Symbol.for('CalculateBCGMatrixUseCase'),

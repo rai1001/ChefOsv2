@@ -50,6 +50,9 @@ const toDomain = (id: string, data: any): Batch => {
   };
 };
 
+import { injectable } from 'inversify';
+
+@injectable()
 export class FirestoreBatchRepository implements IBatchRepository {
   private getCollection(outletId: string, ingredientId: string) {
     return collection(db, 'outlets', outletId, 'ingredients', ingredientId, 'batches');
