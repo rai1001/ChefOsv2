@@ -26,23 +26,32 @@ export const DataView: React.FC = () => {
   const renderContent = () => {
     switch (activeTab) {
       case 'recipes':
-        const filteredRecipes = recipes.filter(r => r.name.toLowerCase().includes(searchTerm.toLowerCase()));
-        return <RecipeList
-          recipes={filteredRecipes}
-          onEdit={(recipe) => console.log('Edit recipe', recipe)}
-          onDelete={(id) => console.log('Delete recipe', id)}
-          onConvertToFicha={(id) => console.log('Convert recipe to ficha', id)}
-          sortConfig={{ key: 'name', direction: 'asc' }}
-          onSort={() => { }}
-        />;
+        const filteredRecipes = recipes.filter((r) =>
+          r.name.toLowerCase().includes(searchTerm.toLowerCase())
+        );
+        return (
+          <RecipeList
+            recipes={filteredRecipes}
+            onEdit={(recipe) => console.log('Edit recipe', recipe)}
+            onDelete={(id) => console.log('Delete recipe', id)}
+            onConvertToFicha={(id) => console.log('Convert recipe to ficha', id)}
+            sortConfig={{ key: 'name', direction: 'asc' }}
+            onSort={() => {}}
+          />
+        );
 
       case 'ingredients': {
-        const filteredIngredients = ingredients.filter(i => i.name.toLowerCase().includes(searchTerm.toLowerCase()));
+        const filteredIngredients = ingredients.filter((i) =>
+          i.name.toLowerCase().includes(searchTerm.toLowerCase())
+        );
         return (
           <div className="space-y-4">
             <div className="flex justify-end">
               <button
-                onClick={() => { setSelectedIngredient(null); setShowIngredientForm(true); }}
+                onClick={() => {
+                  setSelectedIngredient(null);
+                  setShowIngredientForm(true);
+                }}
                 className="bg-primary hover:bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2 transition-colors"
               >
                 <Plus className="w-4 h-4" /> Añadir Ingrediente
@@ -78,21 +87,34 @@ export const DataView: React.FC = () => {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-white/5">
-                  {filteredIngredients.map(ing => (
+                  {filteredIngredients.map((ing) => (
                     <tr
                       key={ing.id}
                       className="hover:bg-white/[0.02] cursor-pointer"
-                      onClick={() => { setSelectedIngredient(ing); setShowIngredientForm(true); }}
+                      onClick={() => {
+                        setSelectedIngredient(ing);
+                        setShowIngredientForm(true);
+                      }}
                     >
                       <td className="p-4 font-medium text-white">{ing.name}</td>
-                      <td className="p-4"><span className="bg-white/10 px-2 py-1 rounded text-xs">{ing.unit}</span></td>
-                      <td className="p-4 text-right font-mono text-emerald-400">${ing.costPerUnit}</td>
-                      <td className="p-4 text-right">{ing.yield * 100}%</td>
+                      <td className="p-4">
+                        <span className="bg-white/10 px-2 py-1 rounded text-xs">{ing.unit}</span>
+                      </td>
+                      <td className="p-4 text-right font-mono text-emerald-400">
+                        ${ing.costPerUnit}
+                      </td>
+                      <td className="p-4 text-right">
+                        {(ing.yield || ing.yieldFactor || 1) * 100}%
+                      </td>
                       <td className="p-4 text-right font-bold">{ing.stock || 0}</td>
                     </tr>
                   ))}
                   {filteredIngredients.length === 0 && (
-                    <tr><td colSpan={5} className="p-8 text-center opacity-50">No hay ingredientes. Añade uno o importa un Excel.</td></tr>
+                    <tr>
+                      <td colSpan={5} className="p-8 text-center opacity-50">
+                        No hay ingredientes. Añade uno o importa un Excel.
+                      </td>
+                    </tr>
                   )}
                 </tbody>
               </table>
@@ -102,12 +124,13 @@ export const DataView: React.FC = () => {
       }
 
       case 'menus':
-        const filteredMenus = menus.filter(m => m.name.toLowerCase().includes(searchTerm.toLowerCase()));
+        const filteredMenus = menus.filter((m) =>
+          m.name.toLowerCase().includes(searchTerm.toLowerCase())
+        );
         return <MenuList menus={filteredMenus} />;
 
       case 'staff':
         return <StaffList />;
-
     }
   };
 
@@ -116,10 +139,17 @@ export const DataView: React.FC = () => {
 
     let Content = null;
     switch (activeTab) {
-      case 'recipes': Content = RecipeForm; break;
-      case 'menus': Content = MenuForm; break;
-      case 'ingredients': Content = IngredientForm; break;
-      default: return null;
+      case 'recipes':
+        Content = RecipeForm;
+        break;
+      case 'menus':
+        Content = MenuForm;
+        break;
+      case 'ingredients':
+        Content = IngredientForm;
+        break;
+      default:
+        return null;
     }
 
     return (
@@ -131,7 +161,7 @@ export const DataView: React.FC = () => {
           >
             <X className="w-5 h-5" />
           </button>
-          <div onClick={e => e.stopPropagation()}>
+          <div onClick={(e) => e.stopPropagation()}>
             <Content onClose={() => setShowAddModal(false)} />
           </div>
         </div>
@@ -153,7 +183,7 @@ export const DataView: React.FC = () => {
               className="bg-surface border border-white/10 rounded-lg pl-9 pr-4 py-2 text-sm focus:border-primary focus:outline-none w-64 transition-all"
               placeholder="Buscar..."
               value={searchTerm}
-              onChange={e => setSearchTerm(e.target.value)}
+              onChange={(e) => setSearchTerm(e.target.value)}
             />
           </div>
           {activeTab !== 'staff' && (
@@ -169,40 +199,26 @@ export const DataView: React.FC = () => {
 
       {/* Tabs */}
       <div className="flex gap-4 border-b border-white/10 pb-1 overflow-x-auto">
-        <TabButton
-          active={activeTab === 'ingredients'}
-          onClick={() => setActiveTab('ingredients')}
-        >
+        <TabButton active={activeTab === 'ingredients'} onClick={() => setActiveTab('ingredients')}>
           <Package className="w-4 h-4" />
           Ingredientes
         </TabButton>
-        <TabButton
-          active={activeTab === 'recipes'}
-          onClick={() => setActiveTab('recipes')}
-        >
+        <TabButton active={activeTab === 'recipes'} onClick={() => setActiveTab('recipes')}>
           <ChefHat className="w-4 h-4" />
           Recetas
         </TabButton>
-        <TabButton
-          active={activeTab === 'menus'}
-          onClick={() => setActiveTab('menus')}
-        >
+        <TabButton active={activeTab === 'menus'} onClick={() => setActiveTab('menus')}>
           <BookOpen className="w-4 h-4" />
           Menús
         </TabButton>
-        <TabButton
-          active={activeTab === 'staff'}
-          onClick={() => setActiveTab('staff')}
-        >
+        <TabButton active={activeTab === 'staff'} onClick={() => setActiveTab('staff')}>
           <Users className="w-4 h-4" />
           Personal
         </TabButton>
       </div>
 
       {/* Content */}
-      <div className="min-h-[400px]">
-        {renderContent()}
-      </div>
+      <div className="min-h-[400px]">{renderContent()}</div>
 
       {renderModal()}
     </div>
@@ -218,8 +234,9 @@ interface TabButtonProps {
 const TabButton: React.FC<TabButtonProps> = ({ active, onClick, children }) => (
   <button
     onClick={onClick}
-    className={`flex items-center gap-2 px-4 py-2 text-sm font-medium transition-colors relative ${active ? 'text-primary' : 'text-slate-400 hover:text-slate-200'
-      }`}
+    className={`flex items-center gap-2 px-4 py-2 text-sm font-medium transition-colors relative ${
+      active ? 'text-primary' : 'text-slate-400 hover:text-slate-200'
+    }`}
   >
     {children}
     {active && (

@@ -108,10 +108,12 @@ export class LegacyIngredient {
   }
 }
 
+import type { Ingredient as CoreIngredient } from '@culinaryos/core';
+
 /**
  * @deprecated Use LegacyIngredient or CoreIngredient instead.
  */
-export type Ingredient = LegacyIngredient;
-export const Ingredient = LegacyIngredient;
+export type Ingredient = CoreIngredient;
+export const Ingredient = LegacyIngredient; // Keep value as Class for instantiation if needed (but types mismatch now?)
 
-export { Ingredient as CoreIngredient } from '@culinaryos/core/domain/entities/Ingredient';
+export { CoreIngredient };

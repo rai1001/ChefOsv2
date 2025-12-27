@@ -47,7 +47,7 @@ describe('GetInventoryStatusUseCase (Web Adapter)', () => {
           id: 't-1',
           ingredientId: 'ing-1',
           ingredientName: 'Tomato',
-          quantity: new Quantity(-2, new CoreUnit('kg' as any)),
+          quantity: new Quantity(2, new CoreUnit('kg' as any)),
           unitCost: Money.fromCents(200, 'EUR'),
           type: 'SALE',
           date: new Date(),

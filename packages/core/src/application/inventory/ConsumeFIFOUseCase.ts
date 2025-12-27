@@ -106,7 +106,7 @@ export class ConsumeFIFOUseCase {
         {
           ingredientId: ingredient.id,
           ingredientName: ingredient.name,
-          quantity: dto.quantity.multiply(-1), // Negative for consumption
+          quantity: dto.quantity, // Quantity is absolute, type allows inferring direction
           unitCost:
             ingredient.averageCost ||
             ingredient.lastCost ||

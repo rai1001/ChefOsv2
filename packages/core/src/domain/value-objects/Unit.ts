@@ -77,15 +77,34 @@ const UNIT_CATEGORIES: Record<UnitType, UnitCategory> = {
 };
 
 /**
+ * Contexto necesario para conversiones entre diferentes categorías
+ */
+export interface ConversionContext {
+  density?: number; // g/ml
+  pieceWeight?: number; // g por pieza
+}
+
+/**
  * Sistema de conversión de unidades
  */
 export class Unit {
   constructor(public readonly type: UnitType) {}
 
   /**
+   * Crea una unidad desde un string
+   */
+  static from(value: string): Unit {
+    const unitType = Object.values(UnitType).find((u) => u === value);
+    if (!unitType) {
+      throw new Error(`Invalid unit type: ${value}`);
+    }
+    return new Unit(unitType as UnitType);
+  }
+
+  /**
    * Convierte una cantidad de esta unidad a otra unidad
    */
-  convert(amount: number, toUnit: Unit): number {
+  convert(amount: number, toUnit: Unit, context?: ConversionContext): number {
     if (this.type === toUnit.type) {
       return amount;
     }
@@ -93,19 +112,71 @@ export class Unit {
     const fromCategory = UNIT_CATEGORIES[this.type];
     const toCategory = UNIT_CATEGORIES[toUnit.type];
 
-    if (fromCategory !== toCategory) {
-      throw new Error(
-        `Cannot convert between different unit categories: ${fromCategory} to ${toCategory}`
-      );
+    // Caso 1: Misma categoría (Masa -> Masa o Volumen -> Volumen)
+    if (fromCategory === toCategory && fromCategory !== UnitCategory.UNIT) {
+      const baseAmount = amount * CONVERSION_TO_BASE[this.type];
+      return baseAmount / CONVERSION_TO_BASE[toUnit.type];
     }
 
-    if (fromCategory === UnitCategory.UNIT) {
-      throw new Error('Cannot convert between units (ud)');
+    // Caso 2: Masa <-> Volumen (Requiere densidad)
+    if (
+      (fromCategory === UnitCategory.MASS && toCategory === UnitCategory.VOLUME) ||
+      (fromCategory === UnitCategory.VOLUME && toCategory === UnitCategory.MASS)
+    ) {
+      if (!context?.density) {
+        throw new Error(`Density is required to convert between ${fromCategory} and ${toCategory}`);
+      }
+
+      // 1. Convertir a unidad base técnica (g para masa, ml para volumen)
+      // La base de Unit es kg y L, así que multiplicamos por 1000 para llegar a g y ml
+      const amountInBaseTech = amount * CONVERSION_TO_BASE[this.type] * 1000;
+
+      let resultInBaseTech: number;
+      if (fromCategory === UnitCategory.MASS) {
+        // g -> ml (g / (g/ml))
+        resultInBaseTech = amountInBaseTech / context.density;
+      } else {
+        // ml -> g (ml * (g/ml))
+        resultInBaseTech = amountInBaseTech * context.density;
+      }
+
+      // 2. Convertir de base técnica a la unidad objetivo
+      // (resultInBaseTech / 1000) nos da el valor en la base original (kg o L)
+      return resultInBaseTech / 1000 / CONVERSION_TO_BASE[toUnit.type];
     }
 
-    // Convertir a unidad base y luego a unidad destino
-    const baseAmount = amount * CONVERSION_TO_BASE[this.type];
-    return baseAmount / CONVERSION_TO_BASE[toUnit.type];
+    // Caso 3: Unit (ud) <-> Masa/Volumen (Requiere pieceWeight)
+    if (fromCategory === UnitCategory.UNIT || toCategory === UnitCategory.UNIT) {
+      if (!context?.pieceWeight) {
+        throw new Error(
+          `Piece weight is required to convert between ${fromCategory} and ${toCategory}`
+        );
+      }
+
+      if (fromCategory === UnitCategory.UNIT) {
+        // ud -> Masa/Volumen
+        // 1. ud -> g (ud * g/ud)
+        const grams = amount * context.pieceWeight;
+        // 2. g -> Destino
+        const gUnit = new Unit(UnitType.G);
+        return gUnit.convert(grams, toUnit, context);
+      } else {
+        // Masa/Volumen -> ud
+        // 1. Origen -> g
+        const gUnit = new Unit(UnitType.G);
+        const grams = this.convert(amount, gUnit, context);
+        // 2. g -> ud (g / (g/ud))
+        return grams / context.pieceWeight;
+      }
+    }
+
+    throw new Error(
+      `Cannot convert between different unit categories: ${fromCategory} to ${toCategory}`
+    );
+  }
+
+  toBase(): number {
+    return CONVERSION_TO_BASE[this.type];
   }
 
   equals(other: Unit): boolean {

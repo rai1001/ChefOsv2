@@ -146,6 +146,38 @@ export class CoreIngredientRepositoryAdapter implements IIngredientRepository {
     );
   }
 
+  async updateStock(id: string, quantityChange: Quantity): Promise<void> {
+    const { doc, runTransaction } = await import('firebase/firestore');
+    const { db } = await import('@/config/firebase');
+
+    const docRef = doc(db, this.COLLECTION_NAME, id);
+
+    await runTransaction(db, async (transaction) => {
+      const sfDoc = await transaction.get(docRef);
+      if (!sfDoc.exists()) {
+        throw new Error('Ingredient does not exist!');
+      }
+
+      const data = sfDoc.data();
+      // Assume value is stored as number in 'currentStock' field based on create/update methods in this file
+      // create: currentStock: 0
+      // update: currentStock: dto.currentStock.value
+      // So data.currentStock is a number.
+
+      const currentVal = data.currentStock || 0;
+      const newVal = currentVal + quantityChange.value;
+
+      if (newVal < 0) {
+        throw new Error('Insufficient stock for atomic update');
+      }
+
+      transaction.update(docRef, {
+        currentStock: newVal,
+        updatedAt: new Date(),
+      });
+    });
+  }
+
   private mapToCore(doc: QueryDocumentSnapshot | any): Ingredient {
     const data = doc.data() as DocumentData;
     const unit = new Unit(data.unit || 'unit');

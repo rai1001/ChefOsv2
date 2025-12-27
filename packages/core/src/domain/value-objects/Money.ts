@@ -7,6 +7,9 @@ export class Money {
   public readonly currency: string;
 
   constructor(amount: number, currency: string = 'USD') {
+    if (amount < 0) {
+      throw new Error('Money amount cannot be negative');
+    }
     // Convertir a centavos para evitar problemas de precisión
     this.cents = Math.round(amount * 100);
     this.currency = currency;

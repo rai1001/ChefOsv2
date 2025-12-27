@@ -92,14 +92,16 @@ export class GeneratePurchaseOrderFromEvent {
       }
 
       const currentStock = ingredient.currentStock;
-      const toOrder = totalRequired.subtract(currentStock);
+      const toOrder = totalRequired.isGreaterThan(currentStock)
+        ? totalRequired.subtract(currentStock)
+        : new Quantity(0, totalRequired.unit);
 
       requirements.push({
         ingredientId: ingredient.id,
         ingredientName: ingredient.name,
         totalRequired,
         currentStock,
-        toOrder: toOrder.value > 0 ? toOrder : new Quantity(0, toOrder.unit),
+        toOrder,
       });
 
       // Solo agregar a la orden si necesitamos ordenar más

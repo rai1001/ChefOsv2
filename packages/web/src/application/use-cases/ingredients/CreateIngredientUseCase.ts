@@ -2,7 +2,7 @@ import { injectable, inject } from 'inversify';
 import { TYPES } from '../../di/types';
 import { CreateIngredientUseCase as CoreUseCase } from '@culinaryos/core';
 import { CreateIngredientDTO } from '@culinaryos/core/domain/entities/Ingredient';
-import { LegacyIngredient } from '@/domain/entities/Ingredient';
+import { CreateIngredientRequest } from '@/types/inventory';
 import { Money } from '@culinaryos/core/domain/value-objects/Money';
 import { Unit } from '@culinaryos/core/domain/value-objects/Unit';
 import { Quantity } from '@culinaryos/core/domain/value-objects/Quantity';
@@ -11,20 +11,21 @@ import { Quantity } from '@culinaryos/core/domain/value-objects/Quantity';
 export class CreateIngredientUseCase {
   constructor(@inject(TYPES.CoreCreateIngredientUseCase) private coreUseCase: CoreUseCase) {}
 
-  async execute(ingredient: LegacyIngredient): Promise<void> {
+  async execute(request: CreateIngredientRequest): Promise<void> {
     const dto: CreateIngredientDTO = {
-      outletId: ingredient.outletId || '',
-      name: ingredient.name,
-      category: ingredient.category || 'other',
-      unit: ingredient.unit.toString(),
-      minimumStock: new Quantity(ingredient.minStock, new Unit(ingredient.unit.toString() as any)),
-      suppliers: ingredient.supplierId
+      outletId: request.outletId,
+      name: request.name,
+      category: request.category,
+      unit: request.unit,
+      minimumStock: new Quantity(request.minStock, new Unit(request.unit as any)),
+      yieldFactor: request.yieldFactor || 1,
+      suppliers: request.supplierId
         ? [
             {
-              supplierId: ingredient.supplierId,
+              supplierId: request.supplierId,
               supplierName: 'Unknown',
-              price: Money.fromCents(0),
-              unit: ingredient.unit.toString(),
+              price: Money.fromCents(Math.round((request.costPerUnit || 0) * 100)),
+              unit: request.unit,
               leadTimeDays: 0,
               qualityRating: 0,
               isPrimary: true,
@@ -32,8 +33,9 @@ export class CreateIngredientUseCase {
             },
           ]
         : [],
-      sku: ingredient.defaultBarcode,
-      allergens: ingredient.allergens,
+      sku: request.sku,
+      allergens: request.allergens || [],
+      pieceWeight: request.pieceWeight,
     };
 
     await this.coreUseCase.execute(dto);

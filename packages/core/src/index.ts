@@ -2,6 +2,7 @@
 export { Money } from './domain/value-objects/Money';
 export { Unit, UnitType } from './domain/value-objects/Unit';
 export { Quantity } from './domain/value-objects/Quantity';
+export { NutritionalInfo, NutritionalValues } from './domain/value-objects/NutritionalInfo';
 
 // Entities
 export * from './domain/entities/Ingredient';

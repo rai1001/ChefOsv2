@@ -21,6 +21,7 @@ import {
   Transaction,
   collectionGroup,
   documentId,
+  runTransaction,
 } from 'firebase/firestore';
 import { db } from '@/config/firebase';
 
@@ -62,6 +63,7 @@ const toDomain = (id: string, data: any): Ingredient => {
     updatedAt: (data.updatedAt as Timestamp).toDate(),
     yieldFactor: data.yieldFactor || 1,
     isActive: data.isActive ?? true,
+    isTrackedInInventory: data.isTrackedInInventory ?? true,
   };
 };
 
@@ -205,5 +207,41 @@ export class FirestoreIngredientRepository implements IIngredientRepository {
     );
     const snapshot = await getDocs(q);
     return snapshot.docs.map((d) => toDomain(d.id, d.data()));
+  }
+
+  async updateStock(id: string, quantityChange: Quantity): Promise<void> {
+    // 1. Find the document reference (we need outletId, which is tricky if we only have ID)
+    // Ideally we should have outletId. But unlike 'update', we might not have the entity loaded.
+    // We must find it first.
+    const ingredient = await this.findById(id);
+    if (!ingredient) throw new Error(`Ingredient ${id} not found`);
+
+    const docRef = doc(db, 'outlets', ingredient.outletId, 'ingredients', id);
+
+    await runTransaction(db, async (transaction) => {
+      const sfDoc = await transaction.get(docRef);
+      if (!sfDoc.exists()) {
+        throw new Error('Ingredient does not exist!');
+      }
+
+      const data = sfDoc.data();
+      const currentStockVal = data.currentStock?.value || 0;
+      const newStockVal = currentStockVal + quantityChange.value;
+
+      if (newStockVal < 0) {
+        throw new Error('Insufficient stock for atomic update');
+      }
+
+      // We maintain the same unit
+      const unit = data.unit || data.currentStock?.unit;
+
+      transaction.update(docRef, {
+        currentStock: {
+          value: newStockVal,
+          unit: unit,
+        },
+        updatedAt: new Date(),
+      });
+    });
   }
 }

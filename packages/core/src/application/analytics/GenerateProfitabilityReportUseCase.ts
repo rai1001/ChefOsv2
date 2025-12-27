@@ -25,40 +25,38 @@ export class GenerateProfitabilityReportUseCase {
   async execute(outletId?: string): Promise<ProfitabilityReport> {
     const recipes = outletId ? await this.recipeRepository.findByOutletId(outletId) : [];
 
-    let totalRevenueAmt = 0;
-    let totalCostAmt = 0;
+    let totalRevenueCents = 0;
+    let totalCostCents = 0;
 
     const items: ProfitabilityItem[] = recipes.map((recipe: FichaTecnica) => {
-      const priceAmt = recipe.sellingPrice?.amount ?? 0;
-      const costAmt = recipe.totalCost?.amount ?? 0;
-      const profitAmt = priceAmt - costAmt;
+      const priceCents = recipe.sellingPrice?.centsValue ?? 0;
+      const costCents = recipe.totalCost?.centsValue ?? 0;
+      const profitCents = priceCents - costCents;
 
-      const marginPercent = priceAmt > 0 ? (profitAmt / priceAmt) * 100 : 0;
+      const marginPercent = priceCents > 0 ? (profitCents / priceCents) * 100 : 0;
 
-      // Assume 1 sale for static analysis, or integrate sales data if available
-      // For a "Potential Profitability" report, we just look at unit economics.
-
-      totalRevenueAmt += priceAmt;
-      totalCostAmt += costAmt;
+      totalRevenueCents += priceCents;
+      totalCostCents += costCents;
 
       return {
         id: recipe.id,
         name: recipe.name,
-        cost: Money.fromCents(costAmt),
-        price: Money.fromCents(priceAmt),
-        profit: Money.fromCents(profitAmt),
+        cost: Money.fromCents(costCents),
+        price: Money.fromCents(priceCents),
+        profit: Money.fromCents(profitCents),
         marginPercent,
       };
     });
 
-    const totalProfitAmt = totalRevenueAmt - totalCostAmt;
-    const averageMarginPercent = totalRevenueAmt > 0 ? (totalProfitAmt / totalRevenueAmt) * 100 : 0;
+    const totalProfitCents = totalRevenueCents - totalCostCents;
+    const averageMarginPercent =
+      totalRevenueCents > 0 ? (totalProfitCents / totalRevenueCents) * 100 : 0;
 
     return {
       items,
-      totalRevenue: Money.fromCents(totalRevenueAmt),
-      totalCost: Money.fromCents(totalCostAmt),
-      totalProfit: Money.fromCents(totalProfitAmt),
+      totalRevenue: Money.fromCents(totalRevenueCents),
+      totalCost: Money.fromCents(totalCostCents),
+      totalProfit: Money.fromCents(totalProfitCents),
       averageMarginPercent,
     };
   }

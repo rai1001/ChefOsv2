@@ -45,6 +45,7 @@ export interface Ingredient {
   density?: number; // g/ml
   pieceWeight?: number; // g per piece
 
+  isTrackedInInventory?: boolean;
   isActive: boolean;
   createdAt: Date;
   updatedAt: Date;

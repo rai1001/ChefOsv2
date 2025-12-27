@@ -64,4 +64,47 @@ describe('RegisterStockMovementUseCase (Web Adapter)', () => {
       })
     );
   });
+  it('should delegate ADJUSTMENT movement to core with correct mapping', async () => {
+    const dto = {
+      ingredientId: 'ing-1',
+      ingredientName: 'Tomato',
+      quantity: 5,
+      unit: 'kg' as any,
+      type: 'ADJUSTMENT' as any,
+      performedBy: 'user-1',
+      reason: 'Inventory correction',
+    };
+
+    await useCase.execute(dto);
+
+    expect(mockCoreUseCase.execute).toHaveBeenCalledWith(
+      expect.objectContaining({
+        type: 'ADJUSTMENT',
+        quantity: expect.objectContaining({ value: 5 }),
+        reason: 'Inventory correction',
+      })
+    );
+  });
+
+  it('should delegate WASTE movement to core with correct mapping', async () => {
+    const dto = {
+      ingredientId: 'ing-1',
+      ingredientName: 'Tomato',
+      quantity: 2,
+      unit: 'kg' as any,
+      type: 'WASTE' as any,
+      performedBy: 'user-1',
+      reason: 'Spoiled',
+    };
+
+    await useCase.execute(dto);
+
+    expect(mockCoreUseCase.execute).toHaveBeenCalledWith(
+      expect.objectContaining({
+        type: 'WASTE',
+        quantity: expect.objectContaining({ value: 2 }),
+        reason: 'Spoiled',
+      })
+    );
+  });
 });

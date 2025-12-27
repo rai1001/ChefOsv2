@@ -14,6 +14,37 @@ vi.mock('@/adapters/IngredientAdapter', () => ({
 vi.mock('firebase/firestore', () => ({
   doc: vi.fn(() => ({ id: 'generated-id' })),
   collection: vi.fn(),
+  addDoc: vi.fn(() => Promise.resolve({ id: 'generated-id' })),
+  getDoc: vi.fn(() =>
+    Promise.resolve({
+      exists: () => true,
+      id: 'generated-id',
+      data: () => ({
+        name: 'Tomato',
+        outletId: 'outlet-1',
+        category: 'produce',
+        unit: 'kg',
+        currentStock: 10,
+        minimumStock: 5,
+        createdAt: { toDate: () => new Date() },
+        updatedAt: { toDate: () => new Date() },
+      }),
+    })
+  ),
+  updateDoc: vi.fn(),
+  deleteDoc: vi.fn(),
+  query: vi.fn(),
+  where: vi.fn(),
+  getDocs: vi.fn(() =>
+    Promise.resolve({
+      docs: [
+        {
+          id: '1',
+          data: () => ({ name: 'Ing 1', outletId: 'outlet-1', unit: 'kg' }),
+        },
+      ],
+    })
+  ),
 }));
 
 vi.mock('@/config/firebase', () => ({
@@ -25,6 +56,8 @@ describe('CoreIngredientRepositoryAdapter', () => {
   let mockLegacyRepo: ILegacyIngredientRepository;
 
   beforeEach(() => {
+    vi.clearAllMocks();
+
     mockLegacyRepo = {
       getIngredients: vi.fn(),
       getIngredientById: vi.fn(),
@@ -38,51 +71,67 @@ describe('CoreIngredientRepositoryAdapter', () => {
     adapter = new CoreIngredientRepositoryAdapter(mockLegacyRepo);
   });
 
-  it('findByOutletId calls getIngredients and maps results', async () => {
-    const legacyIngredients = [
-      { id: '1', name: 'Ing 1' } as LegacyIngredient,
-      { id: '2', name: 'Ing 2' } as LegacyIngredient,
-    ];
-    (mockLegacyRepo.getIngredients as any).mockResolvedValue(legacyIngredients);
+  it('findByOutletId calls firestore getDocs and maps results', async () => {
+    const { getDocs } = await import('firebase/firestore');
 
     const result = await adapter.findByOutletId('outlet-1');
 
-    expect(mockLegacyRepo.getIngredients).toHaveBeenCalledWith('outlet-1');
-    expect(result).toHaveLength(2);
-    expect(result[0]).toEqual({ id: '1', name: 'Ing 1', mapped: true });
+    expect(getDocs).toHaveBeenCalled();
+    expect(result).toHaveLength(1);
+    expect(result[0].id).toBe('1');
+    expect(result[0].name).toBe('Ing 1');
   });
 
-  it('findById calls getIngredientById and maps result', async () => {
-    const legacyIngredient = { id: '1', name: 'Ing 1' } as LegacyIngredient;
-    (mockLegacyRepo.getIngredientById as any).mockResolvedValue(legacyIngredient);
-
+  it('findById calls firestore getDoc and maps result', async () => {
     const result = await adapter.findById('1');
 
-    expect(mockLegacyRepo.getIngredientById).toHaveBeenCalledWith('1');
-    expect(result).toEqual({ id: '1', name: 'Ing 1', mapped: true });
+    const { getDoc } = await import('firebase/firestore');
+    expect(getDoc).toHaveBeenCalled();
+    expect(result?.id).toBe('generated-id');
+    expect(result?.name).toBe('Tomato');
   });
 
-  it('findById returns null if legacy repo returns null', async () => {
-    (mockLegacyRepo.getIngredientById as any).mockResolvedValue(null);
+  it('findById returns null if firestore doc does not exist', async () => {
+    const { getDoc } = await import('firebase/firestore');
+    vi.mocked(getDoc).mockResolvedValueOnce({
+      exists: () => false,
+    } as any);
+
     const result = await adapter.findById('1');
     expect(result).toBeNull();
   });
 
-  it('create generates ID and delegates to legacyRepo', async () => {
+  it('create generates ID and delegates to firestore', async () => {
     const dto = {
       name: 'Tomato',
       outletId: 'outlet-1',
       category: 'produce',
       unit: 'kg',
       minimumStock: new Quantity(5, new Unit('kg')),
+      quantity: new Quantity(2, new Unit('kg' as any)),
     };
+
+    const { getDoc, addDoc } = await import('firebase/firestore');
+
+    vi.mocked(getDoc).mockResolvedValueOnce({
+      exists: () => true,
+      id: 'generated-id',
+      data: () => ({
+        name: 'Tomato',
+        outletId: 'outlet-1',
+        category: 'produce',
+        unit: 'kg',
+        currentStock: 0,
+        minimumStock: 5,
+        createdAt: { toDate: () => new Date() },
+        updatedAt: { toDate: () => new Date() },
+      }),
+    } as any);
 
     const result = await adapter.create(dto);
 
-    expect(mockLegacyRepo.createIngredient).toHaveBeenCalled();
-    const call = vi.mocked(mockLegacyRepo.createIngredient).mock.calls[0][0];
-    expect(call.id).toBe('generated-id');
-    expect(call.name).toBe('Tomato');
+    expect(addDoc).toHaveBeenCalled();
     expect(result.id).toBe('generated-id');
+    expect(result.name).toBe('Tomato');
   });
 });

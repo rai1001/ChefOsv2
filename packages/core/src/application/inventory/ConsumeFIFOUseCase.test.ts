@@ -135,7 +135,7 @@ describe('ConsumeFIFOUseCase', () => {
     expect(mockTransactionRepo.create).toHaveBeenCalledWith(
       expect.objectContaining({
         ingredientId,
-        quantity: expect.objectContaining({ value: -3 }),
+        quantity: expect.objectContaining({ value: 3 }),
         type: 'SALE',
       }),
       { transaction: 'mock-txn' }

@@ -26,7 +26,7 @@ export default defineConfig({
     },
   ],
   webServer: {
-    command: 'pnpm --filter @culinaryos/web dev',
+    command: 'npm run dev --prefix ../web',
     url: 'http://localhost:3000',
     reuseExistingServer: !process.env.CI,
   },
