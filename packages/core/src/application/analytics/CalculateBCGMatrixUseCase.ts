@@ -6,7 +6,10 @@ import { Money } from '../../domain/value-objects/Money';
 export class CalculateBCGMatrixUseCase {
   constructor(private readonly recipeRepository: IFichaTecnicaRepository) {}
 
-  async execute(outletId?: string): Promise<MenuEngineeringResult> {
+  async execute(
+    outletId?: string,
+    salesData: Record<string, number> = {}
+  ): Promise<MenuEngineeringResult> {
     const recipes = outletId ? await this.recipeRepository.findByOutletId(outletId) : []; // TODO: Global fetch support?
 
     if (recipes.length === 0) {
@@ -28,9 +31,8 @@ export class CalculateBCGMatrixUseCase {
       const marginAmount = priceAmount - costAmount;
       const margin = Money.fromCents(marginAmount);
 
-      // In a real app, salesCount would come from POS or a dedicated field
-      // Logic from Web implementation:
-      const sales = (recipe as any).salesCount || Math.floor(Math.random() * 100); // Placeholder logic
+      // Usage of real sales data passed via parameters, defaulting to 0 if not provided
+      const sales = salesData[recipe.id] || 0;
 
       const contributionAmount = marginAmount * sales;
       const contribution = Money.fromCents(contributionAmount);

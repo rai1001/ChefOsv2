@@ -45,6 +45,38 @@ export * from './application/inventory/UpdateIngredientUseCase';
 export * from './application/inventory/DeleteIngredientUseCase';
 export * from './application/inventory/GetInventoryStatusUseCase';
 
+// Purchases
+export * from './application/purchases/CreatePurchaseOrderUseCase';
+export * from './application/purchases/ApprovePurchaseOrderUseCase';
+export * from './application/purchases/ReceivePurchaseOrderUseCase';
+export * from './application/purchases/UpdatePurchaseOrderUseCase';
+export * from './application/purchases/CancelPurchaseOrderUseCase';
+export * from './application/purchases/GetPurchaseOrdersUseCase';
+
+// Production
+export * from './application/production/CreateProductionTaskUseCase';
+export * from './application/production/UpdateTaskStatusUseCase';
+export * from './application/production/AssignTaskUseCase';
+export * from './application/production/ScheduleProductionUseCase';
+export * from './application/production/CompleteTaskUseCase';
+export * from './application/production/GetProductionTasksUseCase';
+
+// Events
+export * from './application/events/CreateEventUseCase';
+export * from './application/events/UpdateEventUseCase';
+export * from './application/events/DeleteEventUseCase';
+export * from './application/events/GetEventsUseCase';
+
+// Versioning
+export * from './application/fichas/CreateFichaTecnicaVersionUseCase';
+export * from './application/fichas/GetFichaTecnicaVersionsUseCase';
+export * from './application/fichas/GetIngredientUsageHistoryUseCase';
+
+// HACCP
+export * from './application/haccp/CreateHACCPLogUseCase';
+export * from './application/haccp/GetHACCPLogsUseCase';
+export * from './application/haccp/GetDailyHACCPTasksUseCase';
+
 // Analytics
 export * from './domain/entities/MenuEngineering';
 export * from './application/analytics/CalculateBCGMatrixUseCase';

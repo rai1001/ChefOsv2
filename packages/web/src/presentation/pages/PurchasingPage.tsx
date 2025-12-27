@@ -1,7 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useStore } from '@/presentation/store/useStore';
-import { ShoppingCart, FileText, CheckCircle, Truck, PackageCheck, LayoutDashboard, Settings, BarChart3 } from 'lucide-react';
+import { usePurchases } from '@/presentation/hooks/usePurchases';
+import {
+  ShoppingCart,
+  FileText,
+  CheckCircle,
+  Truck,
+  PackageCheck,
+  LayoutDashboard,
+  Settings,
+  BarChart3,
+} from 'lucide-react';
 import { AutoPurchaseSettingsModal } from '@/presentation/components/purchasing/AutoPurchaseSettings';
 import { AprobacionPedido } from '@/presentation/components/purchasing/AprobacionPedido';
 import { RecepcionPedido } from '@/presentation/components/purchasing/RecepcionPedido';
@@ -12,141 +22,184 @@ import { AIPurchaseAdvisor } from '@/presentation/components/purchasing/AIPurcha
 // Sub-components
 // Sub-components
 
+import { PurchaseOrderStatus } from '@culinaryos/core';
+
 // Dashboard Tab Content
 const DashboardTab: React.FC = () => {
-    const { t } = useTranslation();
-    const { purchaseOrders, activeOutletId, fetchPurchaseOrders } = useStore();
+  const { t } = useTranslation();
+  const { orders, loading, fetchOrders } = usePurchases();
 
-    useEffect(() => {
-        if (activeOutletId) fetchPurchaseOrders({ reset: true });
-    }, [activeOutletId]);
+  useEffect(() => {
+    fetchOrders();
+  }, [fetchOrders]);
 
-    const stats = [
-        { label: t('status.drafts', 'Borradores'), count: purchaseOrders.filter(o => o.status === 'DRAFT').length, color: 'bg-orange-500/20 text-orange-400', icon: FileText },
-        { label: t('status.pending', 'Pendientes'), count: purchaseOrders.filter(o => o.status === 'APPROVED' || o.status === 'ORDERED').length, color: 'bg-blue-500/20 text-blue-400', icon: ShoppingCart },
-        { label: t('status.received', 'Recibidos'), count: purchaseOrders.filter(o => o.status === 'RECEIVED').length, color: 'bg-emerald-500/20 text-emerald-400', icon: CheckCircle },
-    ];
+  const stats = [
+    {
+      label: t('status.drafts', 'Borradores'),
+      count: orders.filter((o) => o.status === PurchaseOrderStatus.DRAFT).length,
+      color: 'bg-orange-500/20 text-orange-400',
+      icon: FileText,
+    },
+    {
+      label: t('status.pending', 'Pendientes'),
+      count: orders.filter(
+        (o) => o.status === PurchaseOrderStatus.APPROVED || o.status === PurchaseOrderStatus.SENT
+      ).length,
+      color: 'bg-blue-500/20 text-blue-400',
+      icon: ShoppingCart,
+    },
+    {
+      label: t('status.received', 'Recibidos'),
+      count: orders.filter((o) => o.status === PurchaseOrderStatus.RECEIVED).length,
+      color: 'bg-emerald-500/20 text-emerald-400',
+      icon: CheckCircle,
+    },
+  ];
 
-    return (
-        <div className="space-y-8 fade-in-up" style={{ animationDelay: '200ms' }}>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                {stats.map((stat, idx) => (
-                    <div key={idx} className="premium-glass p-6 flex items-center gap-5 group hover:scale-[1.02] transition-all duration-500">
-                        <div className={`p-4 rounded-2xl ${stat.color} shadow-lg group-hover:animate-glow transition-all`}>
-                            <stat.icon size={28} />
-                        </div>
-                        <div>
-                            <p className="text-slate-500 text-[10px] font-black uppercase tracking-widest">{stat.label}</p>
-                            <p className="text-3xl font-black text-white font-mono mt-1">{stat.count}</p>
-                        </div>
-                    </div>
-                ))}
+  if (loading) return <div className="p-10 text-center">Loading stats...</div>;
+
+  return (
+    <div className="space-y-8 fade-in-up" style={{ animationDelay: '200ms' }}>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        {stats.map((stat, idx) => (
+          <div
+            key={idx}
+            className="premium-glass p-6 flex items-center gap-5 group hover:scale-[1.02] transition-all duration-500"
+          >
+            <div
+              className={`p-4 rounded-2xl ${stat.color} shadow-lg group-hover:animate-glow transition-all`}
+            >
+              <stat.icon size={28} />
             </div>
-            {/* Alerts for Auto-Purchasing */}
-            {purchaseOrders.some(o => o.status === 'DRAFT' && o.type === 'AUTOMATIC') && (
-                <div className="bg-primary/10 border border-primary/20 p-5 rounded-2xl flex items-center justify-between glow-border">
-                    <div className="flex items-center gap-4">
-                        <div className="p-3 bg-primary/20 rounded-xl text-primary animate-pulse">
-                            <FileText size={24} />
-                        </div>
-                        <div>
-                            <p className="text-white font-black uppercase tracking-tight">Sugerencias AI Detectadas</p>
-                            <p className="text-slate-400 text-xs font-medium">Se han generado borradores automáticos basados en niveles críticos de stock.</p>
-                        </div>
-                    </div>
-                    <button className="bg-primary hover:bg-blue-600 text-white px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all shadow-lg">
-                        REVISAR AHORA
-                    </button>
-                </div>
-            )}
-
-            {/* AI Advisor Panel */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                <div className="lg:col-span-2">
-                    <AIPurchaseAdvisor />
-                </div>
-                <div className="space-y-6">
-                    <div className="premium-glass p-8 flex flex-col items-center justify-center text-center gap-4 h-full border-dashed border-2 border-white/5">
-                        <div className="p-5 bg-white/5 rounded-full">
-                            <BarChart3 className="w-8 h-8 text-slate-500" />
-                        </div>
-                        <div>
-                            <p className="text-white font-black uppercase tracking-widest text-xs">Actividad de Proveedores</p>
-                            <p className="text-slate-500 text-[10px] mt-2 font-medium">Analizando tendencias de entrega y variaciones de coste...</p>
-                        </div>
-                    </div>
-                </div>
+            <div>
+              <p className="text-slate-500 text-[10px] font-black uppercase tracking-widest">
+                {stat.label}
+              </p>
+              <p className="text-3xl font-black text-white font-mono mt-1">{stat.count}</p>
             </div>
+          </div>
+        ))}
+      </div>
+      {/* Alerts for Auto-Purchasing */}
+      {orders.some((o) => o.status === PurchaseOrderStatus.DRAFT && o.isAutoGenerated) && (
+        <div className="bg-primary/10 border border-primary/20 p-5 rounded-2xl flex items-center justify-between glow-border">
+          <div className="flex items-center gap-4">
+            <div className="p-3 bg-primary/20 rounded-xl text-primary animate-pulse">
+              <FileText size={24} />
+            </div>
+            <div>
+              <p className="text-white font-black uppercase tracking-tight">
+                Sugerencias AI Detectadas
+              </p>
+              <p className="text-slate-400 text-xs font-medium">
+                Se han generado borradores automáticos basados en niveles críticos de stock.
+              </p>
+            </div>
+          </div>
+          <button className="bg-primary hover:bg-blue-600 text-white px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all shadow-lg">
+            REVISAR AHORA
+          </button>
         </div>
-    );
+      )}
+
+      {/* AI Advisor Panel */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="lg:col-span-2">
+          <AIPurchaseAdvisor />
+        </div>
+        <div className="space-y-6">
+          <div className="premium-glass p-8 flex flex-col items-center justify-center text-center gap-4 h-full border-dashed border-2 border-white/5">
+            <div className="p-5 bg-white/5 rounded-full">
+              <BarChart3 className="w-8 h-8 text-slate-500" />
+            </div>
+            <div>
+              <p className="text-white font-black uppercase tracking-widest text-xs">
+                Actividad de Proveedores
+              </p>
+              <p className="text-slate-500 text-[10px] mt-2 font-medium">
+                Analizando tendencias de entrega y variaciones de coste...
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
 };
 
 export const PurchasingPage: React.FC = () => {
-    const { t } = useTranslation();
-    const [activeTab, setActiveTab] = useState<'dashboard' | 'approval' | 'receiving' | 'performance' | 'suppliers'>('dashboard');
-    const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-    const { activeOutletId } = useStore();
+  const { t } = useTranslation();
+  const [activeTab, setActiveTab] = useState<
+    'dashboard' | 'approval' | 'receiving' | 'performance' | 'suppliers'
+  >('dashboard');
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const { activeOutletId } = useStore();
 
-    const tabs = [
-        { id: 'dashboard', label: t('tabs.dashboard', 'Dashboard'), icon: LayoutDashboard },
-        { id: 'approval', label: t('tabs.approval', 'Aprobación'), icon: CheckCircle },
-        { id: 'receiving', label: t('tabs.receiving', 'Recepción'), icon: PackageCheck },
-        { id: 'performance', label: t('tabs.performance', 'Rendimiento'), icon: BarChart3 },
-        { id: 'suppliers', label: t('tabs.suppliers', 'Proveedores'), icon: Truck },
-    ];
+  const tabs = [
+    { id: 'dashboard', label: t('tabs.dashboard', 'Dashboard'), icon: LayoutDashboard },
+    { id: 'approval', label: t('tabs.approval', 'Aprobación'), icon: CheckCircle },
+    { id: 'receiving', label: t('tabs.receiving', 'Recepción'), icon: PackageCheck },
+    { id: 'performance', label: t('tabs.performance', 'Rendimiento'), icon: BarChart3 },
+    { id: 'suppliers', label: t('tabs.suppliers', 'Proveedores'), icon: Truck },
+  ];
 
-    return (
-        <div className="p-6 md:p-10 space-y-10 min-h-screen bg-transparent text-slate-100 fade-in">
-            {/* Header */}
-            <div className="flex justify-between items-end">
-                <div>
-                    <h1 className="text-4xl font-black text-white flex items-center gap-4 tracking-tighter uppercase">
-                        <ShoppingCart className="text-primary animate-glow w-10 h-10" />
-                        Suministros <span className="text-primary">&</span> Compras
-                    </h1>
-                    <p className="text-slate-500 text-xs font-bold mt-2 tracking-[0.3em] uppercase">Gestión de Aprovisionamiento Inteligente v2.0</p>
-                </div>
-                <div className="flex gap-3">
-                    <button
-                        onClick={() => setIsSettingsOpen(true)}
-                        className="p-3 bg-white/5 hover:bg-white/10 rounded-2xl text-slate-400 hover:text-white transition-all border border-white/5"
-                    >
-                        <Settings className="w-6 h-6" />
-                    </button>
-                </div>
-            </div>
+  return (
+    <div className="p-6 md:p-10 space-y-10 min-h-screen bg-transparent text-slate-100 fade-in">
+      {/* Header */}
+      <div className="flex justify-between items-end">
+        <div>
+          <h1 className="text-4xl font-black text-white flex items-center gap-4 tracking-tighter uppercase">
+            <ShoppingCart className="text-primary animate-glow w-10 h-10" />
+            Suministros <span className="text-primary">&</span> Compras
+          </h1>
+          <p className="text-slate-500 text-xs font-bold mt-2 tracking-[0.3em] uppercase">
+            Gestión de Aprovisionamiento Inteligente v2.0
+          </p>
+        </div>
+        <div className="flex gap-3">
+          <button
+            onClick={() => setIsSettingsOpen(true)}
+            className="p-3 bg-white/5 hover:bg-white/10 rounded-2xl text-slate-400 hover:text-white transition-all border border-white/5"
+          >
+            <Settings className="w-6 h-6" />
+          </button>
+        </div>
+      </div>
 
-            {/* Tabs */}
-            <div className="flex border-b border-white/5 space-x-2 overflow-x-auto custom-scrollbar pb-1">
-                {tabs.map(tab => (
-                    <button
-                        key={tab.id}
-                        onClick={() => setActiveTab(tab.id as any)}
-                        className={`flex items-center gap-3 px-6 py-4 text-[10px] font-black uppercase tracking-widest transition-all relative whitespace-nowrap group rounded-t-2xl
-                            ${activeTab === tab.id
+      {/* Tabs */}
+      <div className="flex border-b border-white/5 space-x-2 overflow-x-auto custom-scrollbar pb-1">
+        {tabs.map((tab) => (
+          <button
+            key={tab.id}
+            onClick={() => setActiveTab(tab.id as any)}
+            className={`flex items-center gap-3 px-6 py-4 text-[10px] font-black uppercase tracking-widest transition-all relative whitespace-nowrap group rounded-t-2xl
+                            ${
+                              activeTab === tab.id
                                 ? 'text-white bg-white/5'
                                 : 'text-slate-500 hover:text-slate-300 hover:bg-white/[0.02]'
                             }`}
-                    >
-                        <tab.icon className={`w-4 h-4 transition-transform group-hover:scale-110 ${activeTab === tab.id ? 'text-primary animate-glow' : ''}`} />
-                        {tab.label}
-                        {activeTab === tab.id && <div className="absolute bottom-0 left-0 right-0 h-1 bg-primary shadow-[0_0_15px_rgba(var(--primary),0.6)]" />}
-                    </button>
-                ))}
-            </div>
+          >
+            <tab.icon
+              className={`w-4 h-4 transition-transform group-hover:scale-110 ${activeTab === tab.id ? 'text-primary animate-glow' : ''}`}
+            />
+            {tab.label}
+            {activeTab === tab.id && (
+              <div className="absolute bottom-0 left-0 right-0 h-1 bg-primary shadow-[0_0_15px_rgba(var(--primary),0.6)]" />
+            )}
+          </button>
+        ))}
+      </div>
 
-            {/* Content */}
-            <div className="animate-in fade-in duration-300">
-                {activeTab === 'dashboard' && <DashboardTab />}
-                {activeTab === 'approval' && <AprobacionPedido outletId={activeOutletId || ''} />}
-                {activeTab === 'receiving' && <RecepcionPedido outletId={activeOutletId || ''} />}
-                {activeTab === 'performance' && <SupplierPerformance />}
-                {activeTab === 'suppliers' && <SupplierView />}
-            </div>
+      {/* Content */}
+      <div className="animate-in fade-in duration-300">
+        {activeTab === 'dashboard' && <DashboardTab />}
+        {activeTab === 'approval' && <AprobacionPedido outletId={activeOutletId || ''} />}
+        {activeTab === 'receiving' && <RecepcionPedido outletId={activeOutletId || ''} />}
+        {activeTab === 'performance' && <SupplierPerformance />}
+        {activeTab === 'suppliers' && <SupplierView />}
+      </div>
 
-            <AutoPurchaseSettingsModal isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} />
-        </div>
-    );
+      <AutoPurchaseSettingsModal isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} />
+    </div>
+  );
 };
-
-
