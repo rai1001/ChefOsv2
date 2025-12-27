@@ -1,7 +1,7 @@
 import { injectable, inject } from 'inversify';
 import { TYPES } from '../../di/types';
 import { IIngredientRepository } from '@/domain/interfaces/repositories/IIngredientRepository';
-import { Ingredient } from '@/domain/entities/Ingredient';
+import { LegacyIngredient } from '@/domain/entities/Ingredient';
 
 @injectable()
 export class ImportIngredientsUseCase {
@@ -12,7 +12,7 @@ export class ImportIngredientsUseCase {
         // We will loop and create ingredients
         for (const item of items) {
             // Basic validation/mapping
-            const ingredient = new Ingredient(
+            const ingredient = new LegacyIngredient(
                 item.id || crypto.randomUUID(),
                 item.name,
                 item.unit || 'kg',

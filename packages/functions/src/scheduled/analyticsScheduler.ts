@@ -24,7 +24,7 @@ interface Recipe {
 }
 
 // Run every day at 3 AM
-export const calculateMenuEngineering = onSchedule("every day 03:00", async (event) => {
+export const calculateMenuEngineering = onSchedule("every day 03:00", async (_event) => {
     const db = admin.firestore();
     console.log("Starting Menu Engineering Calculation...");
 

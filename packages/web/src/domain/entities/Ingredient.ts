@@ -8,7 +8,7 @@ export interface PriceHistoryEntry {
     changeReason?: string;
 }
 
-export interface Batch {
+export interface LegacyBatch {
     id: string;
     ingredientId?: string;
     batchNumber: string;
@@ -62,13 +62,13 @@ export interface IngredientSupplierConfig {
     };
 }
 
-export class Ingredient {
+export class LegacyIngredient {
     constructor(
         public id: string,
         public name: string,
         public unit: Unit,
         public costPerUnit: number,
-        public yieldVal: number, // renamed from 'yield' to avoid reserved keyword issues if any, though 'yield' is valid in properties
+        public yieldVal: number,
         public allergens: string[],
         public category: InventoryCategory = 'other',
 
@@ -76,7 +76,7 @@ export class Ingredient {
         public stock: number = 0,
         public minStock: number = 0,
         public nutritionalInfo?: NutritionalInfo,
-        public batches: Batch[] = [],
+        public batches: LegacyBatch[] = [],
         public supplierId?: string,
         public priceHistory: PriceHistoryEntry[] = [],
         public defaultBarcode?: string,
@@ -107,3 +107,9 @@ export class Ingredient {
         return this.stock * this.costPerUnit;
     }
 }
+
+/**
+ * @deprecated Use LegacyIngredient or Core Ingredient instead.
+ */
+export type Ingredient = LegacyIngredient;
+export const Ingredient = LegacyIngredient;

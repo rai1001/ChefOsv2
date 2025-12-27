@@ -110,6 +110,7 @@ export const parseStructuredFile = onCall(async (request) => {
 
         workbook.SheetNames.forEach(sheetName => {
             const sheet = workbook.Sheets[sheetName];
+            if (!sheet) return;
             const json = XLSX.utils.sheet_to_json(sheet);
 
             // Heuristic detection of sheet type

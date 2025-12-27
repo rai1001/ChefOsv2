@@ -1,5 +1,5 @@
-import * as functions from "firebase-functions";
 import * as admin from "firebase-admin";
+import { onSchedule } from "firebase-functions/v2/scheduler";
 
 const db = admin.firestore();
 
@@ -7,10 +7,12 @@ const db = admin.firestore();
  * Scheduled Cron Job: Checks stock levels daily at 08:00 AM.
  * Creates notifications for items below minStock.
  */
-export const checkStockAlerts = functions.pubsub
-    .schedule('0 8 * * *')
-    .timeZone('Europe/Madrid') // Adjust timezone as needed
-    .onRun(async (context) => {
+export const checkStockAlerts = onSchedule(
+    {
+        schedule: '0 8 * * *',
+        timeZone: 'Europe/Madrid',
+    },
+    async (_event) => {
         console.log('Running checkStockAlerts...');
 
         // 1. Get all outlets (to iterate inventory per outlet if structure requires, or query global inventory if possible)
@@ -67,5 +69,4 @@ export const checkStockAlerts = functions.pubsub
             console.log('No stock alerts needed.');
         }
 
-        return null;
     });

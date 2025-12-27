@@ -46,7 +46,7 @@ const shouldRunNow = (settings: AutoPurchaseSettings): boolean => {
     return true;
 };
 
-export const autoPurchaseScheduler = onSchedule("every 1 hours", async (event) => {
+export const autoPurchaseScheduler = onSchedule("every 1 hours", async (_event) => {
     const db = admin.firestore();
     console.log("Starting Auto Purchase Scheduler...");
 

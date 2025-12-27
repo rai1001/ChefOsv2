@@ -1,20 +1,21 @@
-import * as functions from "firebase-functions";
+import { onObjectFinalized } from "firebase-functions/v2/storage";
 import * as admin from "firebase-admin";
 import { VertexAI } from "@google-cloud/vertexai";
 
-export const scanBEO = functions.storage.object().onFinalize(async (object) => {
+export const scanBEO = onObjectFinalized({ bucket: "culinaryos-6794e.appspot.com" }, async (event) => {
     // 1. Validation
+    const object = event.data;
     const filePath = object.name; // e.g., "uploads/beo/file.pdf"
     const contentType = object.contentType; // e.g., "application/pdf"
 
     if (!filePath || !filePath.startsWith("uploads/beo/")) {
         console.log("File is not in uploads/beo/. Ignoring.");
-        return null;
+        return; // Return void in V2
     }
 
     if (contentType !== "application/pdf") {
         console.log("File is not a PDF. Ignoring.");
-        return null;
+        return;
     }
 
     const bucketName = object.bucket;
@@ -73,7 +74,7 @@ export const scanBEO = functions.storage.object().onFinalize(async (object) => {
             contents: [{ role: "user", parts: [part as any, { text: prompt }] }]
         });
 
-        const responseText = result.response.candidates?.[0].content.parts[0].text;
+        const responseText = result.response.candidates?.[0]?.content?.parts?.[0]?.text;
 
         if (!responseText) {
             throw new Error("Empty response from AI");
@@ -104,10 +105,10 @@ export const scanBEO = functions.storage.object().onFinalize(async (object) => {
         await db.collection("events").add(newEvent);
 
         console.log("Event created successfully:", newEvent);
-        return { success: true };
+        // return { success: true }; // V2 triggers don't need return value, but it's fine.
 
     } catch (error) {
         console.error("Error processing BEO:", error);
-        return { error: error };
+        // return { error: error };
     }
 });

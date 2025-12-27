@@ -1,65 +1,66 @@
-import * as functions from 'firebase-functions';
+import { onDocumentUpdated } from 'firebase-functions/v2/firestore';
 import * as admin from 'firebase-admin';
 
-export const createOrderNotification = functions.firestore
-    .document('purchaseOrders/{orderId}')
-    .onUpdate(async (change, context) => {
-        const newData = change.after.data();
-        const previousData = change.before.data();
-        const orderId = context.params.orderId;
+export const createOrderNotification = onDocumentUpdated('purchaseOrders/{orderId}', async (event) => {
+    const change = event.data;
+    if (!change) return;
 
-        // Skip if status hasn't changed
-        if (newData.status === previousData.status) return;
+    const newData = change.after.data();
+    const previousData = change.before.data();
+    const orderId = event.params.orderId;
 
-        const db = admin.firestore();
-        const now = admin.firestore.Timestamp.now();
+    // Skip if status hasn't changed
+    if (newData.status === previousData.status) return;
 
-        let notification = null;
+    const db = admin.firestore();
+    const now = admin.firestore.Timestamp.now();
 
-        // 1. Order Approved -> Notify Outlet Staff
-        if (newData.status === 'APPROVED' && previousData.status === 'DRAFT') {
-            notification = {
-                type: 'ORDER_UPDATE',
-                title: 'Pedido Aprobado',
-                message: `El pedido ${newData.orderNumber} ha sido aprobado.`,
-                outletId: newData.outletId,
-                orderId: orderId,
-                link: `/compras/${orderId}`,
-                read: false,
-                timestamp: now
-            };
-        }
+    let notification = null;
 
-        // 2. Order Received -> Notify Outlet Staff
-        else if (newData.status === 'RECEIVED' && previousData.status !== 'RECEIVED') {
-            notification = {
-                type: 'ORDER_UPDATE',
-                title: 'Pedido Recibido',
-                message: `El pedido ${newData.orderNumber} ha sido marcado como recibido.`,
-                outletId: newData.outletId,
-                orderId: orderId,
-                link: `/compras/${orderId}`,
-                read: false,
-                timestamp: now
-            };
-        }
+    // 1. Order Approved -> Notify Outlet Staff
+    if (newData.status === 'APPROVED' && previousData.status === 'DRAFT') {
+        notification = {
+            type: 'ORDER_UPDATE',
+            title: 'Pedido Aprobado',
+            message: `El pedido ${newData.orderNumber} ha sido aprobado.`,
+            outletId: newData.outletId,
+            orderId: orderId,
+            link: `/compras/${orderId}`,
+            read: false,
+            timestamp: now
+        };
+    }
 
-        // 3. Order Rejected -> Notify Creator (if we tracked creatorId, leveraging outletId for now)
-        else if (newData.status === 'REJECTED') {
-            notification = {
-                type: 'ORDER_UPDATE',
-                title: 'Pedido Rechazado',
-                message: `El pedido ${newData.orderNumber} ha sido rechazado.`,
-                outletId: newData.outletId,
-                orderId: orderId,
-                link: `/compras/${orderId}`,
-                read: false,
-                timestamp: now
-            };
-        }
+    // 2. Order Received -> Notify Outlet Staff
+    else if (newData.status === 'RECEIVED' && previousData.status !== 'RECEIVED') {
+        notification = {
+            type: 'ORDER_UPDATE',
+            title: 'Pedido Recibido',
+            message: `El pedido ${newData.orderNumber} ha sido marcado como recibido.`,
+            outletId: newData.outletId,
+            orderId: orderId,
+            link: `/compras/${orderId}`,
+            read: false,
+            timestamp: now
+        };
+    }
 
-        if (notification) {
-            await db.collection('notifications').add(notification);
-            console.log(`Notification created for order ${orderId} (${newData.status})`);
-        }
-    });
+    // 3. Order Rejected -> Notify Creator (if we tracked creatorId, leveraging outletId for now)
+    else if (newData.status === 'REJECTED') {
+        notification = {
+            type: 'ORDER_UPDATE',
+            title: 'Pedido Rechazado',
+            message: `El pedido ${newData.orderNumber} ha sido rechazado.`,
+            outletId: newData.outletId,
+            orderId: orderId,
+            link: `/compras/${orderId}`,
+            read: false,
+            timestamp: now
+        };
+    }
+
+    if (notification) {
+        await db.collection('notifications').add(notification);
+        console.log(`Notification created for order ${orderId} (${newData.status})`);
+    }
+});

@@ -1,4 +1,4 @@
-import * as functions from "firebase-functions";
+import { onCall, HttpsError, CallableRequest } from "firebase-functions/v2/https";
 import { VertexAI } from "@google-cloud/vertexai";
 
 interface MenuGeneratorData {
@@ -8,14 +8,15 @@ interface MenuGeneratorData {
   restrictions?: string[];
 }
 
-export const generateMenu = functions.https.onCall(async (data: MenuGeneratorData, context: functions.https.CallableContext) => {
-  if (!context.auth) {
-    throw new functions.https.HttpsError("unauthenticated", "Must be authenticated.");
+export const generateMenu = onCall(async (request: CallableRequest<MenuGeneratorData>) => {
+  if (!request.auth) {
+    throw new HttpsError("unauthenticated", "Must be authenticated.");
   }
 
+  const data = request.data;
   const projectId = process.env.GCLOUD_PROJECT;
   if (!projectId) {
-    throw new functions.https.HttpsError("failed-precondition", "Missing PROJECT_ID.");
+    throw new HttpsError("failed-precondition", "Missing PROJECT_ID.");
   }
 
   const vertexAI = new VertexAI({ project: projectId, location: "europe-west1" });
@@ -45,7 +46,7 @@ export const generateMenu = functions.https.onCall(async (data: MenuGeneratorDat
   try {
     const result = await model.generateContent(prompt);
     const response = result.response;
-    let text = response.candidates?.[0].content.parts[0].text;
+    let text = response.candidates?.[0]?.content?.parts?.[0]?.text;
 
     if (!text) throw new Error("No response from AI");
 
@@ -53,6 +54,6 @@ export const generateMenu = functions.https.onCall(async (data: MenuGeneratorDat
     return JSON.parse(text);
   } catch (error) {
     console.error("Menu Gen Error:", error);
-    throw new functions.https.HttpsError("internal", "Menu generation failed", error);
+    throw new HttpsError("internal", "Menu generation failed", error);
   }
 });

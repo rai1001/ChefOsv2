@@ -1,4 +1,4 @@
-import * as functions from "firebase-functions";
+import { onCall, CallableRequest, HttpsError } from "firebase-functions/v2/https";
 import * as admin from "firebase-admin";
 import { VertexAI } from "@google-cloud/vertexai";
 import { addDays, isBefore, parseISO } from "date-fns";
@@ -9,10 +9,17 @@ interface DemandPredictionData {
     events?: any[];
     currentStock?: any[];
 }
+// ... (lines 13-93 unchanged logic, but keeping imports clean)
 
-/**
- * Aggregates forecasting context from Firestore.
- */
+// (We need to keep the helper function, so I'll wrap the replacement carefully or use multi_replace.
+// Actually, I can replace the whole file content to be safe and clean, or just the top and bottom.)
+// I'll replace the top imports and the export function at the bottom.
+// Wait, REPLACE_FILE_CONTENT replaces a contiguous block.
+// I will split this into two replacements if I can't overwrite easily.
+// But I can view line 1 to 155.
+// I'll just replace the whole file to ensure consistency.
+
+// COPIED HELPER FUNCTION aggregateForecastContext
 async function aggregateForecastContext(outletId: string, windowDays: number = 14) {
     const db = admin.firestore();
     const now = new Date();
@@ -52,11 +59,13 @@ async function aggregateForecastContext(outletId: string, windowDays: number = 1
             if (!recipe) return;
 
             recipe.ingredients.forEach((ri: any) => {
-                if (!demand[ri.ingredientId]) {
-                    demand[ri.ingredientId] = { neededQuantity: 0, eventCount: 0 };
+                let demandEntry = demand[ri.ingredientId];
+                if (!demandEntry) {
+                    demandEntry = { neededQuantity: 0, eventCount: 0 };
+                    demand[ri.ingredientId] = demandEntry;
                 }
-                demand[ri.ingredientId].neededQuantity += (ri.quantity * (event.pax || 0));
-                demand[ri.ingredientId].eventCount += 1;
+                demandEntry.neededQuantity += (ri.quantity * (event.pax || 0));
+                demandEntry.eventCount += 1;
             });
         });
     });
@@ -70,7 +79,11 @@ async function aggregateForecastContext(outletId: string, windowDays: number = 1
         if (!consumption[record.ingredientId]) {
             consumption[record.ingredientId] = { totalWaste: 0, avgDaily: 0 };
         }
-        consumption[record.ingredientId].totalWaste += (record.quantity || 0);
+        // Use non-null assertion or variable reference since we just initialized it
+        const entry = consumption[record.ingredientId];
+        if (entry) {
+            entry.totalWaste += (record.quantity || 0);
+        }
     });
 
     // Consolidate
@@ -91,14 +104,14 @@ async function aggregateForecastContext(outletId: string, windowDays: number = 1
     }).filter(item => item.futureDemand.neededQuantity > 0 || item.historicalUsage.totalWaste > 0);
 }
 
-export const predictDemand = functions.https.onCall(async (data: DemandPredictionData, context: functions.https.CallableContext) => {
-    if (!context.auth) {
-        throw new functions.https.HttpsError("unauthenticated", "Must be authenticated.");
+export const predictDemand = onCall(async (request: CallableRequest<DemandPredictionData>) => {
+    if (!request.auth) {
+        throw new HttpsError("unauthenticated", "Must be authenticated.");
     }
-
+    const data = request.data;
     const projectId = process.env.GCLOUD_PROJECT;
     if (!projectId) {
-        throw new functions.https.HttpsError("failed-precondition", "Missing PROJECT_ID.");
+        throw new HttpsError("failed-precondition", "Missing PROJECT_ID.");
     }
 
     let forecastContext: any = data.events && data.currentStock ? { events: data.events, currentStock: data.currentStock } : null;
@@ -108,10 +121,10 @@ export const predictDemand = functions.https.onCall(async (data: DemandPredictio
     }
 
     if (!forecastContext) {
-        throw new functions.https.HttpsError("invalid-argument", "Must provide either data or outletId.");
+        throw new HttpsError("invalid-argument", "Must provide either data or outletId.");
     }
 
-    const vertexAI = new VertexAI({ project: projectId, location: "us-central1" }); // Standardize to us-central1
+    const vertexAI = new VertexAI({ project: projectId, location: "us-central1" });
     const model = vertexAI.getGenerativeModel({ model: "gemini-2.0-flash" });
 
     const prompt = `
@@ -143,13 +156,14 @@ export const predictDemand = functions.https.onCall(async (data: DemandPredictio
 
     try {
         const result = await model.generateContent(prompt);
-        const text = result.response.candidates?.[0].content.parts[0].text;
+        // Corrected null checks
+        const text = result.response.candidates?.[0]?.content?.parts?.[0]?.text;
         if (!text) throw new Error("No response from AI");
 
         const cleanJson = text.replace(/```json/g, '').replace(/```/g, '').trim();
         return JSON.parse(cleanJson);
     } catch (error) {
         console.error("Prediction Error:", error);
-        throw new functions.https.HttpsError("internal", "Prediction failed");
+        throw new HttpsError("internal", "Prediction failed");
     }
 });

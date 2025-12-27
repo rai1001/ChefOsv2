@@ -8,13 +8,18 @@ import { v4 as uuidv4 } from "uuid";
  */
 const normalize = (str: string) => str?.toLowerCase().trim().replace(/[^a-z0-9]/g, '') || '';
 
-export const aiSmartImporter = onObjectFinalized("universal_imports/{uid}/{fileId}", async (event) => {
+export const aiSmartImporter = onObjectFinalized({ bucket: "culinaryos-6794e.appspot.com" }, async (event) => {
     const fileBucket = event.data.bucket;
     const filePath = event.data.name;
 
     const pathParts = filePath.split('/');
     const uid = pathParts[1];
     const fileId = pathParts[2];
+
+    if (!fileId) {
+        console.error("Invalid file path, missing fileId:", filePath);
+        return;
+    }
 
     const db = admin.firestore();
     const jobRef = db.collection("import_jobs").doc(fileId);

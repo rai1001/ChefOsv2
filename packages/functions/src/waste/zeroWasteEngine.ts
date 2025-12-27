@@ -21,13 +21,13 @@ interface InventoryItem {
     category?: string;
 }
 
-export const getWasteSuggestions = functions.https.onCall(async (data, context) => {
+export const getWasteSuggestions = functions.https.onCall(async (request) => {
     // 1. Auth Check
-    if (!context.auth) {
+    if (!request.auth) {
         throw new functions.https.HttpsError("unauthenticated", "User must be logged in.");
     }
 
-    const { outletId } = data;
+    const { outletId } = request.data;
     if (!outletId) {
         throw new functions.https.HttpsError("invalid-argument", "Outlet ID is required.");
     }
@@ -119,7 +119,7 @@ export const getWasteSuggestions = functions.https.onCall(async (data, context) 
         `;
 
         const result = await model.generateContent(prompt);
-        const responseText = result.response.candidates?.[0].content.parts[0].text;
+        const responseText = result.response.candidates?.[0]?.content?.parts?.[0]?.text;
 
         if (!responseText) throw new Error("AI returned empty response");
 
@@ -135,8 +135,8 @@ export const getWasteSuggestions = functions.https.onCall(async (data, context) 
     }
 });
 
-export const applyWasteAction = functions.https.onCall(async (data, context) => {
-    if (!context.auth) throw new functions.https.HttpsError("unauthenticated", "Login required.");
+export const applyWasteAction = functions.https.onCall(async (request) => {
+    if (!request.auth) throw new functions.https.HttpsError("unauthenticated", "Login required.");
 
     // Logic to move item to production_tasks and decrement inventory
     // To be implemented or handled by client-side logic + security rules 

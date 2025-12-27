@@ -1,14 +1,14 @@
 import { injectable } from 'inversify';
 import { db } from '@/config/firebase';
-import { collection, doc, getDoc, getDocs, setDoc, deleteDoc, updateDoc, query, where } from 'firebase/firestore';
+import { collection, doc, getDoc, getDocs, setDoc, deleteDoc, updateDoc, query, where, runTransaction } from 'firebase/firestore';
 import { IIngredientRepository } from '@/domain/interfaces/repositories/IIngredientRepository';
-import { Ingredient } from '@/domain/entities/Ingredient';
+import { LegacyIngredient } from '@/domain/entities/Ingredient';
 
 @injectable()
 export class FirebaseIngredientRepository implements IIngredientRepository {
     private collectionName = 'ingredients';
 
-    async getIngredients(outletId: string): Promise<Ingredient[]> {
+    async getIngredients(outletId: string): Promise<LegacyIngredient[]> {
         // Query by outletId if provided, or logic for global ingredients
         // For now, let's assume all ingredients are accessible or filtered by validation if needed.
         // Legacy system often fetched all ingredients. Let's filter by outletId if user is restricted?
@@ -20,7 +20,7 @@ export class FirebaseIngredientRepository implements IIngredientRepository {
 
         return snapshot.docs.map(doc => {
             const data = doc.data();
-            return new Ingredient(
+            return new LegacyIngredient(
                 doc.id,
                 data.name,
                 data.unit,
@@ -54,14 +54,14 @@ export class FirebaseIngredientRepository implements IIngredientRepository {
         });
     }
 
-    async getIngredientById(id: string): Promise<Ingredient | null> {
+    async getIngredientById(id: string): Promise<LegacyIngredient | null> {
         const docRef = doc(db, this.collectionName, id);
         const snapshot = await getDoc(docRef);
 
         if (!snapshot.exists()) return null;
 
         const data = snapshot.data();
-        return new Ingredient(
+        return new LegacyIngredient(
             snapshot.id,
             data.name,
             data.unit,
@@ -92,7 +92,7 @@ export class FirebaseIngredientRepository implements IIngredientRepository {
         );
     }
 
-    async createIngredient(ingredient: Ingredient): Promise<void> {
+    async createIngredient(ingredient: LegacyIngredient): Promise<void> {
         // Map Class to Plain Object for Firestore
         const data = { ...ingredient };
         // Handle renaming if needed (yieldVal -> yield)
@@ -105,7 +105,7 @@ export class FirebaseIngredientRepository implements IIngredientRepository {
         await setDoc(doc(db, this.collectionName, ingredient.id), sanitizedData);
     }
 
-    async updateIngredient(id: string, ingredient: Partial<Ingredient>): Promise<void> {
+    async updateIngredient(id: string, ingredient: Partial<LegacyIngredient>): Promise<void> {
         const data: any = { ...ingredient, updatedAt: new Date().toISOString() };
         if (ingredient.yieldVal !== undefined) {
             data.yield = ingredient.yieldVal;
@@ -127,13 +127,17 @@ export class FirebaseIngredientRepository implements IIngredientRepository {
     }
 
     async updateStock(id: string, quantityChange: number): Promise<void> {
-        // Transactional update recommended for production, simplified here
         const docRef = doc(db, this.collectionName, id);
-        const snapshot = await getDoc(docRef);
-        if (snapshot.exists()) {
+
+        await runTransaction(db, async (transaction) => {
+            const snapshot = await transaction.get(docRef);
+            if (!snapshot.exists()) {
+                throw new Error('Ingredient not found');
+            }
+
             const currentStock = snapshot.data().stock || 0;
-            await updateDoc(docRef, { stock: currentStock + quantityChange });
-        }
+            transaction.update(docRef, { stock: currentStock + quantityChange });
+        });
     }
 
     async updateCost(id: string, newCost: number): Promise<void> {

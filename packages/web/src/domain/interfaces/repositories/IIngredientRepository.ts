@@ -1,10 +1,10 @@
-import { Ingredient } from '../../entities/Ingredient';
+import { LegacyIngredient } from '../../entities/Ingredient';
 
 export interface IIngredientRepository {
-    getIngredients(outletId: string): Promise<Ingredient[]>;
-    getIngredientById(id: string): Promise<Ingredient | null>;
-    createIngredient(ingredient: Ingredient): Promise<void>;
-    updateIngredient(id: string, ingredient: Partial<Ingredient>): Promise<void>;
+    getIngredients(outletId: string): Promise<LegacyIngredient[]>;
+    getIngredientById(id: string): Promise<LegacyIngredient | null>;
+    createIngredient(ingredient: LegacyIngredient): Promise<void>;
+    updateIngredient(id: string, ingredient: Partial<LegacyIngredient>): Promise<void>;
     deleteIngredient(id: string): Promise<void>;
 
     // Batch operations

@@ -34,7 +34,7 @@ export async function enrichIngredientWithAI(name: string): Promise<EnrichmentRe
 
     try {
         const result = await model.generateContent(prompt);
-        const text = result.response.candidates?.[0].content.parts[0].text;
+        const text = result.response.candidates?.[0]?.content?.parts?.[0]?.text;
 
         if (text) {
             // Robust JSON extraction

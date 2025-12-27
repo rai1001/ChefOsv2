@@ -1,16 +1,20 @@
-import * as functions from "firebase-functions";
+import { onCall, CallableRequest, HttpsError } from "firebase-functions/v2/https";
 import * as admin from "firebase-admin";
 import { generateEmbedding } from "../utils/ai";
 
-export const searchRecipes = functions.https.onCall(async (data, context) => {
-    const query = data.query;
+interface SearchData {
+    query: string;
+}
+
+export const searchRecipes = onCall(async (request: CallableRequest<SearchData>) => {
+    const query = request.data.query;
     if (!query) {
-        throw new functions.https.HttpsError("invalid-argument", "The function must be called with a 'query' string.");
+        throw new HttpsError("invalid-argument", "The function must be called with a 'query' string.");
     }
 
     const embedding = await generateEmbedding(query);
     if (!embedding) {
-        throw new functions.https.HttpsError("internal", "Failed to generate embedding.");
+        throw new HttpsError("internal", "Failed to generate embedding.");
     }
 
     try {
@@ -34,6 +38,6 @@ export const searchRecipes = functions.https.onCall(async (data, context) => {
         return { recipes };
     } catch (error) {
         console.error("Vector Search Error:", error);
-        throw new functions.https.HttpsError("internal", "Search failed.", error);
+        throw new HttpsError("internal", "Search failed.", error);
     }
 });

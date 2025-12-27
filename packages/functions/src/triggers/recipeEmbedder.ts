@@ -1,36 +1,37 @@
-import * as functions from "firebase-functions";
+import { onDocumentWritten } from "firebase-functions/v2/firestore";
 import { VertexAI } from "@google-cloud/vertexai";
 
-export const embedRecipe = functions.firestore
-    .document("recipes/{recipeId}")
-    .onWrite(async (change, context) => {
-        const after = change.after.data();
+export const embedRecipe = onDocumentWritten("recipes/{recipeId}", async (event) => {
+    const change = event.data;
+    if (!change) return null;
 
-        // If deleted or no name, skip
-        if (!after || !after.name) return null;
+    const after = change.after.data();
 
-        // If embedding already exists and name/ingredients haven't changed meaningfully, skip (simplified check)
-        // For now, always re-embed on generic update to be safe
+    // If deleted or no name, skip
+    if (!after || !after.name) return null;
 
-        const projectId = process.env.GCLOUD_PROJECT;
-        if (!projectId) return null;
+    // If embedding already exists and name/ingredients haven't changed meaningfully, skip (simplified check)
+    // For now, always re-embed on generic update to be safe
 
-        const vertexAI = new VertexAI({ project: projectId, location: "europe-west1" });
-        const model = vertexAI.getGenerativeModel({ model: "text-embedding-004" });
+    const projectId = process.env.GCLOUD_PROJECT;
+    if (!projectId) return null;
 
-        const textToEmbed = `Recipe: ${after.name}. Station: ${after.station}.`;
+    const vertexAI = new VertexAI({ project: projectId, location: "europe-west1" });
+    const model = vertexAI.getGenerativeModel({ model: "text-embedding-004" });
 
-        try {
-            // API usage for embeddings in this SDK version might require casting or specific method
-            const result = await (model as any).embedContent(textToEmbed);
-            const embedding = result.embedding.values;
+    const textToEmbed = `Recipe: ${after.name}. Station: ${after.station}.`;
 
-            return change.after.ref.update({
-                _embedding: embedding
-            });
+    try {
+        // API usage for embeddings in this SDK version might require casting or specific method
+        const result = await (model as any).embedContent(textToEmbed);
+        const embedding = result.embedding.values;
 
-        } catch (error) {
-            console.error("Embedding Error:", error);
-        }
-        return null;
-    });
+        return change.after.ref.update({
+            _embedding: embedding
+        });
+
+    } catch (error) {
+        console.error("Embedding Error:", error);
+    }
+    return null;
+});

@@ -1,14 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { X, Save, ArrowRightLeft, AlertTriangle, DollarSign, Archive, ClipboardCheck } from 'lucide-react';
-import { Ingredient } from '@/domain/entities/Ingredient';
+import { LegacyIngredient } from '@/domain/entities/Ingredient';
 import { StockTransactionType } from '@/domain/entities/StockTransaction';
 import { useInventory } from '@/presentation/store/inventoryAtoms';
 import { useAtomValue } from 'jotai';
 import { userAtom } from '@/presentation/store/authAtoms';
 
 interface StockMovementModalProps {
-    ingredient: Ingredient;
+    ingredient: LegacyIngredient;
     onClose: () => void;
     onSuccess: () => void;
 }

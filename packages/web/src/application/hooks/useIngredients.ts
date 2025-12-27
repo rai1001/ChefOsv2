@@ -5,10 +5,10 @@ import { GetIngredientsUseCase } from '../use-cases/ingredients/GetIngredientsUs
 import { CreateIngredientUseCase } from '../use-cases/ingredients/CreateIngredientUseCase';
 import { UpdateIngredientUseCase } from '../use-cases/ingredients/UpdateIngredientUseCase';
 import { DeleteIngredientUseCase } from '../use-cases/ingredients/DeleteIngredientUseCase';
-import { Ingredient } from '@/domain/entities/Ingredient';
+import { LegacyIngredient } from '@/domain/entities/Ingredient';
 
 export function useIngredients(outletId?: string) {
-  const [ingredients, setIngredients] = useState<Ingredient[]>([]);
+  const [ingredients, setIngredients] = useState<LegacyIngredient[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
 
@@ -35,11 +35,12 @@ export function useIngredients(outletId?: string) {
 
   // Initial Fetch
   useEffect(() => {
-    fetchIngredients();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // Run once on mount, or when outletId changes if included (fetchIngredients depends on it)
+    if (outletId) {
+      fetchIngredients();
+    }
+  }, [fetchIngredients, outletId]);
 
-  const addIngredient = async (ingredient: Ingredient) => {
+  const addIngredient = async (ingredient: LegacyIngredient) => {
     try {
       await createIngredientUseCase.execute(ingredient);
       // Optimistic or Refresh
@@ -51,7 +52,7 @@ export function useIngredients(outletId?: string) {
     }
   };
 
-  const updateIngredient = async (id: string, data: Partial<Ingredient>) => {
+  const updateIngredient = async (id: string, data: Partial<LegacyIngredient>) => {
     try {
       await updateIngredientUseCase.execute(id, data);
       await fetchIngredients();

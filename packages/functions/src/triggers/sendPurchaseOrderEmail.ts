@@ -1,13 +1,12 @@
-import * as functions from 'firebase-functions';
 import * as admin from 'firebase-admin';
 import { Resend } from 'resend';
-import * as PDFDocument from 'pdfkit';
+import PDFDocument from 'pdfkit';
 
 // Initialize Resend with API Key from environment variables
 const resend = new Resend(process.env.RESEND_API_KEY || 're_123456789'); // Valid placeholder or env var
 
 const generatePDF = (order: any, supplier: any, branchName: string): Promise<Buffer> => {
-    return new Promise((resolve, reject) => {
+    return new Promise((resolve) => {
         const doc = new PDFDocument({ margin: 50 });
         const buffers: Buffer[] = [];
 
@@ -75,33 +74,40 @@ const generatePDF = (order: any, supplier: any, branchName: string): Promise<Buf
     });
 };
 
-export const sendPurchaseOrderEmail = functions.firestore
-    .document('purchaseOrders/{orderId}')
-    .onUpdate(async (change, context) => {
-        const newData = change.after.data();
-        const previousData = change.before.data();
+import { onDocumentUpdated } from "firebase-functions/v2/firestore";
 
-        // Only trigger when status changes to ORDERED
-        if (newData.status === 'ORDERED' && previousData.status !== 'ORDERED') {
-            console.log(`Processing order ${context.params.orderId} - Status changed to ORDERED`);
+// ... (keep generatedPDF helper)
 
-            try {
-                // 1. Fetch Supplier Details
-                const supplierDoc = await admin.firestore().collection('suppliers').doc(newData.supplierId).get();
-                const supplier = supplierDoc.data();
+export const sendPurchaseOrderEmail = onDocumentUpdated("purchaseOrders/{orderId}", async (event) => {
+    const change = event.data;
+    if (!change) return;
 
-                if (!supplier || !supplier.email) {
-                    console.error('Supplier not found or has no email');
-                    return;
-                }
+    const newData = change.after.data();
+    const previousData = change.before.data();
 
-                // 2. Fetch Outlet Details (for sender info)
-                const outletDoc = await admin.firestore().collection('outlets').doc(newData.outletId).get();
-                const outlet = outletDoc.data();
-                const branchName = outlet?.name || 'ChefOS Kitchen';
+    if (!newData || !previousData) return;
 
-                // 3. Generate HTML Table for Items (kept for email body)
-                const itemsHtml = newData.items.map((item: any) => `
+    // Only trigger when status changes to ORDERED
+    if (newData.status === 'ORDERED' && previousData.status !== 'ORDERED') {
+        console.log(`Processing order ${event.params.orderId} - Status changed to ORDERED`);
+
+        try {
+            // 1. Fetch Supplier Details
+            const supplierDoc = await admin.firestore().collection('suppliers').doc(newData.supplierId).get();
+            const supplier = supplierDoc.data();
+
+            if (!supplier || !supplier.email) {
+                console.error('Supplier not found or has no email');
+                return;
+            }
+
+            // 2. Fetch Outlet Details (for sender info)
+            const outletDoc = await admin.firestore().collection('outlets').doc(newData.outletId).get();
+            const outlet = outletDoc.data();
+            const branchName = outlet?.name || 'ChefOS Kitchen';
+
+            // 3. Generate HTML Table for Items (kept for email body)
+            const itemsHtml = newData.items.map((item: any) => `
                     <tr>
                         <td style="padding: 12px 8px; border-bottom: 1px solid #eee; color: #334155; font-weight: 500;">
                             ${item.tempDescription || 'Ingrediente ' + item.ingredientId}
@@ -119,7 +125,7 @@ export const sendPurchaseOrderEmail = functions.firestore
                     </tr>
                 `).join('');
 
-                const emailHtml = `
+            const emailHtml = `
                     <!DOCTYPE html>
                     <html>
                     <body style="background-color: #f8fafc; padding: 40px 20px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
@@ -217,32 +223,32 @@ export const sendPurchaseOrderEmail = functions.firestore
                     </html>
                 `;
 
-                // 4. Generate PDF
-                const pdfBuffer = await generatePDF(newData, supplier, branchName);
+            // 4. Generate PDF
+            const pdfBuffer = await generatePDF(newData, supplier, branchName);
 
-                // 5. Send Email via Resend with Attachment
-                await resend.emails.send({
-                    from: 'ChefOS <orders@chefos.app>',
-                    to: supplier.email,
-                    subject: `Pedido ${newData.orderNumber} - ${branchName}`,
-                    html: emailHtml,
-                    attachments: [
-                        {
-                            filename: `Pedido_${newData.orderNumber}.pdf`,
-                            content: pdfBuffer // Buffer works directly
-                        }
-                    ]
-                });
+            // 5. Send Email via Resend with Attachment
+            await resend.emails.send({
+                from: 'ChefOS <orders@chefos.app>',
+                to: supplier.email,
+                subject: `Pedido ${newData.orderNumber} - ${branchName}`,
+                html: emailHtml,
+                attachments: [
+                    {
+                        filename: `Pedido_${newData.orderNumber}.pdf`,
+                        content: pdfBuffer // Buffer works directly
+                    }
+                ]
+            });
 
-                console.log(`Email sent to ${supplier.email} for order ${newData.orderNumber} with PDF`);
+            console.log(`Email sent to ${supplier.email} for order ${newData.orderNumber} with PDF`);
 
-                // 6. Update Order with sentAt timestamp
-                await change.after.ref.update({
-                    sentAt: new Date().toISOString()
-                });
+            // 6. Update Order with sentAt timestamp
+            await change.after.ref.update({
+                sentAt: new Date().toISOString()
+            });
 
-            } catch (error) {
-                console.error('Error sending email:', error);
-            }
+        } catch (error) {
+            console.error('Error sending email:', error);
         }
-    });
+    }
+});

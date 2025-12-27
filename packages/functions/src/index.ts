@@ -1,4 +1,7 @@
 import * as admin from "firebase-admin";
+import { setGlobalOptions } from "firebase-functions/v2";
+
+setGlobalOptions({ region: "europe-south1" });
 
 admin.initializeApp();
 

@@ -11,14 +11,18 @@ const normalize = (str: string) => str?.toLowerCase().trim().replace(/[^a-z0-9]/
 /**
  * Storage trigger to process Excel files in the background.
  */
-export const processExcelImport = onObjectFinalized("incoming_imports/{uid}/{fileId}", async (event) => {
+export const processExcelImport = onObjectFinalized({ bucket: "culinaryos-6794e.appspot.com" }, async (event) => {
     const fileBucket = event.data.bucket;
     const filePath = event.data.name;
 
     // Extract params from path
     const pathParts = filePath.split('/');
+    if (pathParts.length < 3) return;
+
     const uid = pathParts[1];
     const fileId = pathParts[2];
+
+    if (!fileId) return;
 
     const db = admin.firestore();
     const jobRef = db.collection("import_jobs").doc(fileId);
@@ -65,9 +69,11 @@ export const processExcelImport = onObjectFinalized("incoming_imports/{uid}/{fil
             if (str.includes('/')) {
                 const parts = str.split('/');
                 if (parts.length === 3) {
-                    const [d, m, y] = parts.map(Number);
-                    if (d > 0 && d <= 31 && m > 0 && m <= 12 && y > 1900) {
-                        return new Date(y, m - 1, d);
+                    const day = Number(parts[0]);
+                    const month = Number(parts[1]);
+                    const year = Number(parts[2]);
+                    if (day > 0 && day <= 31 && month > 0 && month <= 12 && year > 1900) {
+                        return new Date(year, month - 1, day);
                     }
                 }
             }
@@ -162,7 +168,10 @@ export const processExcelImport = onObjectFinalized("incoming_imports/{uid}/{fil
 
             // Generic PAX column
             const genericPax = row['PAX'] || row['Pax'] || row['Personas'] || row['personas'];
-            if (genericPax !== undefined && !meals.some(m => row[m.key[0]] !== undefined)) {
+            if (genericPax !== undefined && !meals.some(m => {
+                const key = m.key[0];
+                return key && row[key] !== undefined;
+            })) {
                 const type = String(row['Tipo'] || row['Meal Type'] || 'breakfast').toLowerCase();
                 const docId = `${dateStr}_${type}`;
                 occupancyMap.set(docId, {
@@ -185,6 +194,9 @@ export const processExcelImport = onObjectFinalized("incoming_imports/{uid}/{fil
         } else if (workbook) {
             for (const sheetName of workbook.SheetNames) {
                 const sheet = workbook.Sheets[sheetName];
+                if (!sheet) continue;
+
+                // Using unknown to bypass potential WorkSheet | undefined mismatches if types are strict
                 const json = XLSX.utils.sheet_to_json<any>(sheet);
 
                 const isMasterList = sheetName.toUpperCase().includes('PRODUCTOS') ||
@@ -215,19 +227,18 @@ export const processExcelImport = onObjectFinalized("incoming_imports/{uid}/{fil
                 } else if (isOccupancySheet) {
                     json.forEach(processOccupancyRow);
                 } else if (isRecipeSheet) {
-                    // Simple Recipe Parsing: Name in first row or header
-                    // This is a heuristic, in a real scenario we'd need a more rigid template
+                    // Simple Recipe Parsing
                     const recipeName = sheetName;
                     const ingredients: any[] = [];
 
-                    json.forEach(row => {
+                    json.forEach((row: any) => {
                         const ingName = row['Ingrediente'] || row['Nombre'] || row['Producto'];
                         const qty = parseFloat(String(row['Cantidad'] || row['Quantity'] || '0').replace(',', '.'));
 
                         if (ingName && qty > 0) {
                             const key = normalize(ingName);
 
-                            // AUTO-CREATION logic: If not in master list, create a "ghost" ingredient
+                            // AUTO-CREATION logic
                             if (!ingredientsMap.has(key)) {
                                 ingredientsMap.set(key, {
                                     id: uuidv4(),
@@ -236,7 +247,7 @@ export const processExcelImport = onObjectFinalized("incoming_imports/{uid}/{fil
                                     costPerUnit: 0, // Mark for manual review
                                     yield: 1,
                                     outletId: "GLOBAL",
-                                    isTrackedInInventory: false, // Never to inventory automatically
+                                    isTrackedInInventory: false,
                                     updatedAt: admin.firestore.FieldValue.serverTimestamp()
                                 });
                             }
@@ -334,9 +345,6 @@ export const processExcelImport = onObjectFinalized("incoming_imports/{uid}/{fil
                 occupancyFound: occupancyMap.size
             }
         });
-
-        // Clean up storage? Optional.
-        // await bucket.file(filePath).delete();
 
     } catch (error: any) {
         console.error("Excel Import Error:", error);

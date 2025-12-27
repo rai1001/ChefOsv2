@@ -1,19 +1,24 @@
-import * as functions from "firebase-functions";
+import { onCall, CallableRequest, HttpsError } from "firebase-functions/v2/https";
 import * as admin from "firebase-admin";
 import { VertexAI } from "@google-cloud/vertexai";
 import { generateEmbedding } from "../utils/ai";
 import { allTools } from "../tools";
 
-export const chatWithCopilot = functions.https.onCall(async (data) => {
-    const { message, history } = data;
+interface ChatData {
+    message: string;
+    history?: any[];
+}
+
+export const chatWithCopilot = onCall(async (request: CallableRequest<ChatData>) => {
+    const { message, history } = request.data;
 
     if (!message) {
-        throw new functions.https.HttpsError("invalid-argument", "Message is required.");
+        throw new HttpsError("invalid-argument", "Message is required.");
     }
 
     const projectId = process.env.GCLOUD_PROJECT;
     if (!projectId) {
-        throw new functions.https.HttpsError("internal", "GCLOUD_PROJECT not set.");
+        throw new HttpsError("internal", "GCLOUD_PROJECT not set.");
     }
 
     const vertexAI = new VertexAI({ project: projectId, location: "europe-west1" });
@@ -59,10 +64,10 @@ export const chatWithCopilot = functions.https.onCall(async (data) => {
     If the user asks to create an issue, payment link, send message or email, USE THE TOOLS.
     Context: ${contextData}`;
 
-    const chatHistory = history.map((msg: any) => ({
+    const chatHistory = history?.map((msg: any) => ({
         role: msg.role === 'user' ? 'user' : 'model',
         parts: [{ text: msg.content }]
-    }));
+    })) || [];
 
     const chat = model.startChat({
         history: chatHistory,
@@ -73,9 +78,10 @@ export const chatWithCopilot = functions.https.onCall(async (data) => {
         const result = await chat.sendMessage(`${systemPrompt}\nUser: ${message}`);
         const candidates = result.response.candidates;
 
-        if (!candidates || candidates.length === 0) return { response: "No response from AI." };
+        if (!candidates || candidates.length === 0 || !candidates[0]?.content?.parts || candidates[0].content.parts.length === 0) return { response: "No response from AI." };
 
         const firstPart = candidates[0].content.parts[0];
+        if (!firstPart) return { response: "No response content." }; // Redundant but satisfying TS
 
         // 3. Handle Function Call
         if (firstPart.functionCall) {
@@ -96,20 +102,21 @@ export const chatWithCopilot = functions.https.onCall(async (data) => {
                     }];
 
                     const finalResult = await chat.sendMessage(toolResponse as any);
-                    const finalResponseText = finalResult.response.candidates?.[0].content.parts[0].text;
-                    return { response: finalResponseText };
+                    const finalResponseText = finalResult.response.candidates?.[0]?.content?.parts?.[0]?.text;
+                    return { response: finalResponseText || "Action completed." };
 
                 } catch (err: any) {
-                    return { response: `Tool execution failed: ${err.message}` };
+                    console.error("Tool execution failed", err);
+                    return { response: `Error executing tool: ${err.message}` };
                 }
             }
         }
 
         // Return text if no tool called
-        return { response: firstPart.text };
+        return { response: firstPart.text || "I processed your request." };
 
     } catch (error: any) {
         console.error("Chat Error:", error);
-        throw new functions.https.HttpsError("internal", `Failed: ${error.message}`, error);
+        throw new HttpsError("internal", "Chat failed", error);
     }
 });
