@@ -43,11 +43,25 @@ const toDomain = (id: string, data: any): Ingredient => {
     averageCost: data.averageCost
       ? new Money(data.averageCost.amount, data.averageCost.currency)
       : undefined,
-    supplier: data.supplier,
+    suppliers:
+      data.suppliers ||
+      (data.supplier
+        ? [
+            {
+              supplierId: data.supplier,
+              name: 'Unknown',
+              price: 0,
+              unit: data.unit,
+              isPrimary: true,
+            },
+          ]
+        : []),
     sku: data.sku,
     allergens: data.allergens || [],
     createdAt: (data.createdAt as Timestamp).toDate(),
     updatedAt: (data.updatedAt as Timestamp).toDate(),
+    yieldFactor: data.yieldFactor || 1,
+    isActive: data.isActive ?? true,
   };
 };
 
@@ -68,7 +82,7 @@ export class FirestoreIngredientRepository implements IIngredientRepository {
       unit: dto.unit,
       currentStock: { value: 0, unit: dto.unit },
       minimumStock: dto.minimumStock.toJSON(),
-      supplier: dto.supplier,
+      suppliers: dto.suppliers || [],
       sku: dto.sku,
       allergens: dto.allergens || [],
       createdAt: now,
@@ -143,7 +157,7 @@ export class FirestoreIngredientRepository implements IIngredientRepository {
     const updates: any = { updatedAt: new Date() };
     if (dto.name) updates.name = dto.name;
     if (dto.category) updates.category = dto.category;
-    if (dto.supplier) updates.supplier = dto.supplier;
+    if (dto.suppliers) updates.suppliers = dto.suppliers;
     if (dto.sku) updates.sku = dto.sku;
     if (dto.allergens) updates.allergens = dto.allergens;
     if (dto.minimumStock) updates.minimumStock = dto.minimumStock.toJSON();

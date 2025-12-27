@@ -1,16 +1,20 @@
 import { StockTransaction } from '../entities/StockTransaction';
 
 export interface IInventoryRepository {
-    // Transaction Logging
-    addTransaction(transaction: StockTransaction): Promise<void>;
+  // Transaction Logging
+  addTransaction(transaction: StockTransaction): Promise<void>;
+  addTransactionRecord(
+    transaction: StockTransaction,
+    options?: { transaction?: any }
+  ): Promise<void>;
 
-    // Retrieval
-    getTransactionsByIngredient(ingredientId: string, limit?: number): Promise<StockTransaction[]>;
-    getTransactionsByDateRange(startDate: Date, endDate: Date): Promise<StockTransaction[]>;
+  // Retrieval
+  getTransactionsByIngredient(ingredientId: string, limit?: number): Promise<StockTransaction[]>;
+  getTransactionsByDateRange(startDate: Date, endDate: Date): Promise<StockTransaction[]>;
 
-    // Aggregations
-    getCurrentStockLevel(ingredientId: string): Promise<number>; // Can be calculated or cached
+  // Aggregations
+  getCurrentStockLevel(ingredientId: string): Promise<number>; // Can be calculated or cached
 
-    // Batch Operations
-    getTransactionsForBatch(batchId: string): Promise<StockTransaction[]>;
+  // Batch Operations
+  getTransactionsForBatch(batchId: string): Promise<StockTransaction[]>;
 }

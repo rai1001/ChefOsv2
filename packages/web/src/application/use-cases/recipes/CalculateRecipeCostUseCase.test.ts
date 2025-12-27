@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { CalculateRecipeCostUseCase } from './CalculateRecipeCostUseCase';
 import { Recipe as LegacyRecipe } from '@/domain/entities/Recipe';
-import { CalculateFichaCostUseCase as CoreCalculateRecipeCostUseCase } from '@culinaryos/core/use-cases/fichas/CalculateFichaCostUseCase';
+import { CalculateFichaCostUseCase as CoreCalculateRecipeCostUseCase } from '@culinaryos/core';
 import { RecipeAdapter } from '@/adapters/RecipeAdapter';
 
 // Mock RecipeAdapter

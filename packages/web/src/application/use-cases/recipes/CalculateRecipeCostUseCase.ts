@@ -1,7 +1,7 @@
 import { injectable, inject } from 'inversify';
 import { TYPES } from '../../di/types';
 import { Recipe } from '@/domain/entities/Recipe';
-import { CalculateFichaCostUseCase as CoreCalculateRecipeCostUseCase } from '@culinaryos/core/use-cases/fichas/CalculateFichaCostUseCase';
+import { CalculateFichaCostUseCase as CoreCalculateRecipeCostUseCase } from '@culinaryos/core';
 import { RecipeAdapter } from '@/adapters/RecipeAdapter';
 
 @injectable()

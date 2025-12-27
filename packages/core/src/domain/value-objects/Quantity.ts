@@ -7,11 +7,7 @@ export class Quantity {
   constructor(
     public readonly value: number,
     public readonly unit: Unit
-  ) {
-    if (value < 0) {
-      throw new Error('Quantity value cannot be negative');
-    }
-  }
+  ) {}
 
   /**
    * Convierte esta cantidad a otra unidad
@@ -45,9 +41,6 @@ export class Quantity {
    * Multiplica la cantidad por un factor
    */
   multiply(factor: number): Quantity {
-    if (factor < 0) {
-      throw new Error('Cannot multiply by negative factor');
-    }
     return new Quantity(this.value * factor, this.unit);
   }
 

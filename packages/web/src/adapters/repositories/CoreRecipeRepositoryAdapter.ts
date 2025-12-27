@@ -1,5 +1,5 @@
 import { injectable, inject } from 'inversify';
-import { IFichaTecnicaRepository } from '@culinaryos/core/domain/interfaces/repositories/IFichaTecnicaRepository';
+import { IFichaTecnicaRepository } from '@culinaryos/core/infrastructure/repositories/IFichaTecnicaRepository';
 import {
   FichaTecnica,
   CreateFichaTecnicaDTO,

@@ -1,6 +1,6 @@
 import { injectable, inject } from 'inversify';
 import { TYPES } from '../../di/types';
-import { DeleteIngredientUseCase as CoreUseCase } from '@culinaryos/core/use-cases/inventory/DeleteIngredientUseCase';
+import { DeleteIngredientUseCase as CoreUseCase } from '@culinaryos/core';
 
 @injectable()
 export class DeleteIngredientUseCase {

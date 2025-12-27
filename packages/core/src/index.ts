@@ -7,36 +7,44 @@ export { Quantity } from './domain/value-objects/Quantity';
 export * from './domain/entities/Ingredient';
 export * from './domain/entities/Batch';
 export * from './domain/entities/FichaTecnica';
+export * from './domain/entities/ProductionTask';
 export * from './domain/entities/PurchaseOrder';
 export * from './domain/entities/Event';
-export * from './domain/entities/ProductionTask';
+export * from './domain/entities/StockTransaction';
 
 // Repository Interfaces
-export * from './domain/interfaces/repositories/IIngredientRepository';
-export * from './domain/interfaces/repositories/IBatchRepository';
-export * from './domain/interfaces/repositories/IFichaTecnicaRepository';
-export * from './domain/interfaces/repositories/IPurchaseOrderRepository';
-export * from './domain/interfaces/repositories/IProductionTaskRepository';
+export * from './infrastructure/repositories/IIngredientRepository';
+export * from './infrastructure/repositories/IBatchRepository';
+export * from './infrastructure/repositories/IFichaTecnicaRepository';
+export * from './infrastructure/repositories/IPurchaseOrderRepository';
+export * from './infrastructure/repositories/IProductionTaskRepository';
+export * from './infrastructure/repositories/IStockTransactionRepository';
 
 // Service Interfaces
-export * from './domain/interfaces/services/IAIService';
-export * from './domain/interfaces/services/IStorageService';
-export * from './domain/interfaces/ITransactionManager';
-export * from './domain/interfaces/repositories/RepositoryOptions';
+export * from './infrastructure/services/IAIService';
+export * from './infrastructure/services/IStorageService';
+export * from './infrastructure/ITransactionManager';
+export * from './infrastructure/repositories/RepositoryOptions';
 
 // Use Cases
-export * from './use-cases/inventory/AddBatchUseCase';
-export * from './use-cases/inventory/ConsumeFIFOUseCase';
-export * from './use-cases/inventory/CheckExpiryUseCase';
-export * from './use-cases/inventory/AdjustStockUseCase';
-export * from './use-cases/inventory/PerformAuditUseCase';
-export * from './use-cases/inventory/ProcessStockMovementUseCase';
-export * from './use-cases/fichas/GetFichasTecnicasUseCase';
-export * from './use-cases/fichas/CreateFichaTecnicaUseCase';
-export * from './use-cases/fichas/UpdateFichaTecnicaUseCase';
-export * from './use-cases/fichas/DeleteFichaTecnicaUseCase';
-export * from './use-cases/fichas/CalculateFichaCostUseCase';
-export * from './use-cases/inventory/GetIngredientsUseCase';
-export * from './use-cases/inventory/CreateIngredientUseCase';
-export * from './use-cases/inventory/UpdateIngredientUseCase';
-export * from './use-cases/inventory/DeleteIngredientUseCase';
+export * from './application/inventory/AddBatchUseCase';
+export * from './application/inventory/ConsumeFIFOUseCase';
+export * from './application/inventory/CheckExpiryUseCase';
+export * from './application/inventory/AdjustStockUseCase';
+export * from './application/inventory/PerformAuditUseCase';
+export * from './application/inventory/ProcessStockMovementUseCase';
+export * from './application/fichas/GetFichasTecnicasUseCase';
+export * from './application/fichas/CreateFichaTecnicaUseCase';
+export * from './application/fichas/UpdateFichaTecnicaUseCase';
+export * from './application/fichas/DeleteFichaTecnicaUseCase';
+export * from './application/fichas/CalculateFichaCostUseCase';
+export * from './application/inventory/GetIngredientsUseCase';
+export * from './application/inventory/CreateIngredientUseCase';
+export * from './application/inventory/UpdateIngredientUseCase';
+export * from './application/inventory/DeleteIngredientUseCase';
+export * from './application/inventory/GetInventoryStatusUseCase';
+
+// Analytics
+export * from './domain/entities/MenuEngineering';
+export * from './application/analytics/CalculateBCGMatrixUseCase';
+export * from './application/analytics/GenerateProfitabilityReportUseCase';

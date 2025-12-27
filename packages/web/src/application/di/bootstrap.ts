@@ -40,6 +40,10 @@ import {
   CreateIngredientUseCase as CoreCreateIngredientUseCase,
   UpdateIngredientUseCase as CoreUpdateIngredientUseCase,
   DeleteIngredientUseCase as CoreDeleteIngredientUseCase,
+  GetInventoryStatusUseCase as CoreGetInventoryStatusUseCase,
+  IStockTransactionRepository as ICoreStockTransactionRepository,
+  CalculateBCGMatrixUseCase,
+  GenerateProfitabilityReportUseCase,
 } from '@culinaryos/core';
 
 import { IRecipeRepository } from '@/domain/interfaces/repositories/IRecipeRepository';
@@ -55,11 +59,12 @@ import { IInventoryRepository } from '@/domain/repositories/IInventoryRepository
 import { FirebaseInventoryRepository } from '@/infrastructure/repositories/FirebaseInventoryRepository';
 import { FirestoreBatchRepository } from '@/infrastructure/firebase/repositories/FirestoreBatchRepository';
 import { FirestoreTransactionManager } from '@/infrastructure/firebase/repositories/FirestoreTransactionManager';
+import { CoreStockTransactionRepositoryAdapter } from '@/adapters/repositories/CoreStockTransactionRepositoryAdapter';
 import { RegisterStockMovementUseCase } from '../use-cases/inventory/RegisterStockMovementUseCase';
 import { GetInventoryStatusUseCase } from '../use-cases/inventory/GetInventoryStatusUseCase';
 import { PerformAuditUseCase } from '../use-cases/inventory/PerformAuditUseCase';
 
-import { CalculateBCGMatrixUseCase } from '../use-cases/analytics/CalculateBCGMatrixUseCase';
+// Removed legacy CalculateBCGMatrixUseCase import
 
 // Schedule & Events Module Imports
 import { GenerateScheduleUseCase } from '../use-cases/schedule/GenerateScheduleUseCase';
@@ -133,6 +138,10 @@ export function bootstrap() {
   container
     .bind<IInventoryRepository>(TYPES.InventoryRepository)
     .to(FirebaseInventoryRepository)
+    .inSingletonScope();
+  container
+    .bind<ICoreStockTransactionRepository>(TYPES.StockTransactionRepository)
+    .to(CoreStockTransactionRepositoryAdapter)
     .inSingletonScope();
 
   // Services
@@ -278,7 +287,18 @@ export function bootstrap() {
       return new CoreAddBatchUseCase(
         container.get(TYPES.BatchRepository),
         container.get(TYPES.CoreIngredientRepository),
+        container.get(TYPES.StockTransactionRepository),
         container.get(TYPES.TransactionManager)
+      );
+    })
+    .inTransientScope();
+
+  container
+    .bind<CoreGetInventoryStatusUseCase>(TYPES.CoreGetInventoryStatusUseCase)
+    .toDynamicValue(() => {
+      return new CoreGetInventoryStatusUseCase(
+        container.get(TYPES.CoreIngredientRepository),
+        container.get(TYPES.StockTransactionRepository)
       );
     })
     .inTransientScope();
@@ -289,6 +309,7 @@ export function bootstrap() {
       return new CoreConsumeFIFOUseCase(
         container.get(TYPES.BatchRepository),
         container.get(TYPES.CoreIngredientRepository),
+        container.get(TYPES.StockTransactionRepository),
         container.get(TYPES.TransactionManager)
       );
     })
@@ -325,7 +346,18 @@ export function bootstrap() {
   // Analytics Use Cases
   container
     .bind<CalculateBCGMatrixUseCase>(TYPES.CalculateBCGMatrixUseCase)
-    .to(CalculateBCGMatrixUseCase)
+    .toDynamicValue(() => {
+      const coreRepo = container.get<ICoreRecipeRepository>(TYPES.CoreRecipeRepository);
+      return new CalculateBCGMatrixUseCase(coreRepo);
+    })
+    .inTransientScope();
+
+  container
+    .bind<GenerateProfitabilityReportUseCase>(TYPES.GenerateProfitabilityReportUseCase)
+    .toDynamicValue(() => {
+      const coreRepo = container.get<ICoreRecipeRepository>(TYPES.CoreRecipeRepository);
+      return new GenerateProfitabilityReportUseCase(coreRepo);
+    })
     .inTransientScope();
 
   // Schedule & Events Use Cases

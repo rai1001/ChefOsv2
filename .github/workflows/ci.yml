@@ -37,3 +37,12 @@ jobs:
         
       - name: Build
         run: pnpm build
+
+      - name: Check bundle size
+        run: pnpm --filter @culinaryos/web build && ls -lh packages/web/dist
+
+      - name: Security audit
+        run: pnpm audit --audit-level=high
+
+      - name: Check for secrets
+        uses: trufflesecurity/trufflehog@main

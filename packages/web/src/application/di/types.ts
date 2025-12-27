@@ -36,13 +36,14 @@ export const TYPES = {
   DeleteRecipeUseCase: Symbol.for('DeleteRecipeUseCase'),
   CoreDeleteRecipeUseCase: Symbol.for('CoreDeleteRecipeUseCase'),
 
-  // Inventory Module
   InventoryRepository: Symbol.for('InventoryRepository'),
   BatchRepository: Symbol.for('BatchRepository'),
+  StockTransactionRepository: Symbol.for('StockTransactionRepository'),
   TransactionManager: Symbol.for('TransactionManager'),
   RegisterStockMovementUseCase: Symbol.for('RegisterStockMovementUseCase'),
   CoreProcessStockMovementUseCase: Symbol.for('CoreProcessStockMovementUseCase'),
   GetInventoryStatusUseCase: Symbol.for('GetInventoryStatusUseCase'),
+  CoreGetInventoryStatusUseCase: Symbol.for('CoreGetInventoryStatusUseCase'),
   PerformAuditUseCase: Symbol.for('PerformAuditUseCase'),
   CorePerformAuditUseCase: Symbol.for('CorePerformAuditUseCase'),
   AddBatchUseCase: Symbol.for('AddBatchUseCase'),
@@ -52,6 +53,7 @@ export const TYPES = {
 
   // Analytics Module
   CalculateBCGMatrixUseCase: Symbol.for('CalculateBCGMatrixUseCase'),
+  GenerateProfitabilityReportUseCase: Symbol.for('GenerateProfitabilityReportUseCase'),
 
   // Schedule & Events Module
   ShiftRepository: Symbol.for('ShiftRepository'),
