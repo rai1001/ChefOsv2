@@ -1,0 +1,140 @@
+src/adapters/repositories/CoreIngredientRepositoryAdapter.ts(16,14): error TS2420: Class 'CoreIngredientRepositoryAdapter' incorrectly implements interface 'IIngredientRepository'.
+  Property 'updateStock' is missing in type 'CoreIngredientRepositoryAdapter' but required in type 'IIngredientRepository'.
+src/application/di/bootstrap.ts(120,9): error TS2345: Argument of type 'typeof CoreIngredientRepositoryAdapter' is not assignable to parameter of type 'Newable<IIngredientRepository>'.
+  Property 'updateStock' is missing in type 'CoreIngredientRepositoryAdapter' but required in type 'IIngredientRepository'.
+src/application/hooks/useIngredients.ts(27,22): error TS2345: Argument of type 'Ingredient[]' is not assignable to parameter of type 'SetStateAction<LegacyIngredient[]>'.
+  Type 'Ingredient[]' is not assignable to type 'LegacyIngredient[]'.
+    Type 'Ingredient' is missing the following properties from type 'LegacyIngredient': costPerUnit, yieldVal, stock, minStock, and 4 more.
+src/application/hooks/useIngredients.ts(46,45): error TS2345: Argument of type 'LegacyIngredient' is not assignable to parameter of type 'CreateIngredientRequest'.
+  Types of property 'outletId' are incompatible.
+    Type 'string | undefined' is not assignable to type 'string'.
+      Type 'undefined' is not assignable to type 'string'.
+src/application/use-cases/ingredients/CreateIngredientUseCase.ts(20,61): error TS2345: Argument of type 'string' is not assignable to parameter of type 'UnitType'.
+src/application/use-cases/ingredients/UpdateIngredientUseCase.ts(20,66): error TS2345: Argument of type 'string' is not assignable to parameter of type 'UnitType'.
+src/application/use-cases/ingredients/UpdateIngredientUseCase.ts(23,63): error TS2345: Argument of type 'string' is not assignable to parameter of type 'UnitType'.
+src/hooks/sync/useIngredientsSync.ts(8,33): error TS6133: 'NutritionalInfo' is declared but its value is never read.
+src/presentation/components/common/DataView.tsx(90,55): error TS18048: 'ing.yield' is possibly 'undefined'.
+src/presentation/components/dashboard/ManualPurchaseModal.tsx(103,17): error TS2322: Type 'string' is not assignable to type 'Unit | undefined'.
+src/presentation/components/dashboard/ManualPurchaseModal.tsx(250,102): error TS18048: 'selectedIng.cost' is possibly 'undefined'.
+src/presentation/components/dashboard/ManualPurchaseModal.tsx(250,122): error TS18048: 'selectedIng.cost' is possibly 'undefined'.
+src/presentation/components/fichas/IngredientesSelector.tsx(43,13): error TS2322: Type 'string' is not assignable to type 'Unit'.
+src/presentation/components/fichas/IngredientesSelector.tsx(44,13): error TS2322: Type 'number | undefined' is not assignable to type 'number'.
+  Type 'undefined' is not assignable to type 'number'.
+src/presentation/components/fichas/IngredientesSelector.tsx(71,75): error TS18048: 'ing.costPerUnit' is possibly 'undefined'.
+src/presentation/components/ingredients/IngredientForm.tsx(4,47): error TS6196: 'IngredientEnrichment' is declared but never used.
+src/presentation/components/ingredients/IngredientForm.tsx(14,1): error TS6133: 'NutritionalInfo' is declared but its value is never read.
+src/presentation/components/ingredients/IngredientForm.tsx(24,9): error TS2345: Argument of type 'Ingredient | { name: string; unit: string; costPerUnit: number; yieldFactor: number; shelfLife: number; allergens: string[]; stock: number; minStock: number; supplierId: string; category: string; supplierInfo: never[]; isActive: true; nutritionalInfo: { ...; }; autoSupplierConfig: { ...; }; }' is not assignable to parameter of type 'Partial<Ingredient> | (() => Partial<Ingredient>)'.
+  Type '{ name: string; unit: string; costPerUnit: number; yieldFactor: number; shelfLife: number; allergens: string[]; stock: number; minStock: number; supplierId: string; category: string; supplierInfo: never[]; isActive: true; nutritionalInfo: { ...; }; autoSupplierConfig: { ...; }; }' is not assignable to type 'Partial<Ingredient> | (() => Partial<Ingredient>)'.
+    Types of property 'nutritionalInfo' are incompatible.
+      Property 'perPortion' is missing in type '{ values: { energyKcal: number; protein: number; carbohydrates: number; sugars: number; fat: number; saturatedFat: number; fiber: number; sodium: number; }; portionSize: number; portionUnit: string; }' but required in type 'NutritionalInfo'.
+src/presentation/components/ingredients/IngredientForm.tsx(75,29): error TS2345: Argument of type '(prev: Partial<Ingredient>) => { nutritionalInfo: { values: { energyKcal: any; protein: any; carbohydrates: any; sugars: any; fat: any; saturatedFat: any; fiber: any; sodium: any; }; portionSize: number; portionUnit: string; }; ... 35 more ...; wastageFactor?: number | undefined; }' is not assignable to parameter of type 'SetStateAction<Partial<Ingredient>>'.
+  Type '(prev: Partial<Ingredient>) => { nutritionalInfo: { values: { energyKcal: any; protein: any; carbohydrates: any; sugars: any; fat: any; saturatedFat: any; fiber: any; sodium: any; }; portionSize: number; portionUnit: string; }; ... 35 more ...; wastageFactor?: number | undefined; }' is not assignable to type '(prevState: Partial<Ingredient>) => Partial<Ingredient>'.
+    Call signature return types '{ nutritionalInfo: { values: { energyKcal: any; protein: any; carbohydrates: any; sugars: any; fat: any; saturatedFat: any; fiber: any; sodium: any; }; portionSize: number; portionUnit: string; }; allergens: any; ... 34 more ...; wastageFactor?: number | undefined; }' and 'Partial<Ingredient>' are incompatible.
+      The types of 'nutritionalInfo' are incompatible between these types.
+        Property 'perPortion' is missing in type '{ values: { energyKcal: any; protein: any; carbohydrates: any; sugars: any; fat: any; saturatedFat: any; fiber: any; sodium: any; }; portionSize: number; portionUnit: string; }' but required in type 'NutritionalInfo'.
+src/presentation/components/ingredients/IngredientForm.tsx(164,57): error TS2532: Object is possibly 'undefined'.
+src/presentation/components/ingredients/IngredientForm.tsx(168,13): error TS2741: Property 'perPortion' is missing in type '{ values: { energyKcal: number; protein: number; carbohydrates: number; sugars: number; fat: number; saturatedFat: number; fiber: number; sodium: number; }; portionSize: number; portionUnit: string; }' but required in type 'NutritionalInfo'.
+src/presentation/components/lists/IngredientList.tsx(27,32): error TS2345: Argument of type 'import("C:/Users/trabajo/Documents/claude/chefosv2/ChefOs-claude-start-here-c2JxH/packages/web/src/types/inventory").Ingredient' is not assignable to parameter of type 'import("C:/Users/trabajo/Documents/claude/chefosv2/ChefOs-claude-start-here-c2JxH/packages/core/dist/domain/entities/Ingredient").Ingredient'.
+  Types of property 'createdAt' are incompatible.
+    Type 'string | Date | undefined' is not assignable to type 'Date'.
+      Type 'undefined' is not assignable to type 'Date'.
+src/presentation/components/lists/RecipeList.tsx(47,63): error TS2339: Property 'calories' does not exist on type 'NutritionalInfo'.
+src/presentation/components/purchasing/SmartProcurement.tsx(9,5): error TS2740: Type '{ id: string; name: string; unit: string; costPerUnit: number; yield: number; wastageFactor: number; allergens: never[]; }' is missing the following properties from type 'Ingredient': currentStock, minimumStock, yieldFactor, suppliers, and 3 more.
+src/presentation/components/purchasing/SmartProcurement.tsx(10,5): error TS2740: Type '{ id: string; name: string; unit: string; costPerUnit: number; yield: number; wastageFactor: number; allergens: never[]; }' is missing the following properties from type 'Ingredient': currentStock, minimumStock, yieldFactor, suppliers, and 3 more.
+src/presentation/components/purchasing/SmartProcurement.tsx(31,5): error TS2740: Type '{ id: string; name: string; unit: string; costPerUnit: number; yield: number; wastageFactor: number; allergens: string[]; }' is missing the following properties from type 'Ingredient': currentStock, minimumStock, yieldFactor, suppliers, and 3 more.
+src/presentation/components/purchasing/SmartProcurement.tsx(32,5): error TS2740: Type '{ id: string; name: string; unit: string; costPerUnit: number; yield: number; wastageFactor: number; allergens: string[]; }' is missing the following properties from type 'Ingredient': currentStock, minimumStock, yieldFactor, suppliers, and 3 more.
+src/presentation/components/ui/CommandPalette.tsx(52,45): error TS18048: 'ingredient.costPerUnit' is possibly 'undefined'.
+src/presentation/pages/IngredientsPage.tsx(232,21): error TS2322: Type 'import("C:/Users/trabajo/Documents/claude/chefosv2/ChefOs-claude-start-here-c2JxH/packages/web/src/types/inventory").Ingredient[]' is not assignable to type 'import("C:/Users/trabajo/Documents/claude/chefosv2/ChefOs-claude-start-here-c2JxH/packages/core/dist/domain/entities/Ingredient").Ingredient[]'.
+  Type 'import("C:/Users/trabajo/Documents/claude/chefosv2/ChefOs-claude-start-here-c2JxH/packages/web/src/types/inventory").Ingredient' is not assignable to type 'import("C:/Users/trabajo/Documents/claude/chefosv2/ChefOs-claude-start-here-c2JxH/packages/core/dist/domain/entities/Ingredient").Ingredient'.
+    Types of property 'createdAt' are incompatible.
+      Type 'string | Date | undefined' is not assignable to type 'Date'.
+        Type 'undefined' is not assignable to type 'Date'.
+src/presentation/pages/InventoryPage.tsx(124,21): error TS2322: Type 'import("C:/Users/trabajo/Documents/claude/chefosv2/ChefOs-claude-start-here-c2JxH/packages/core/dist/domain/value-objects/NutritionalInfo").NutritionalInfo | undefined' is not assignable to type 'import("C:/Users/trabajo/Documents/claude/chefosv2/ChefOs-claude-start-here-c2JxH/packages/web/src/types/inventory").NutritionalInfo | undefined'.
+  Type 'NutritionalInfo' is missing the following properties from type 'NutritionalInfo': calories, protein, carbs, fat
+src/presentation/pages/InventoryPage.tsx(129,34): error TS18048: 'existingIngredient.costPerUnit' is possibly 'undefined'.
+src/presentation/pages/InventoryPage.tsx(323,68): error TS2769: No overload matches this call.
+  Overload 1 of 3, '(callbackfn: (previousValue: Batch | { id: `${string}-${string}-${string}-${string}-${string}`; ingredientId: string; initialQuantity: number; currentQuantity: number; expiresAt: string; receivedAt: string; costPerUnit: number | undefined; ... 4 more ...; status: "ACTIVE"; }, currentValue: Batch | { ...; }, currentIndex: number, array: (Batch | { ...; })[]) => Batch | { ...; }, initialValue: Batch | { ...; }): Batch | { ...; }', gave the following error.
+    Argument of type '(sum: number, b: IngredientBatch) => number' is not assignable to parameter of type '(previousValue: Batch | { id: `${string}-${string}-${string}-${string}-${string}`; ingredientId: string; initialQuantity: number; currentQuantity: number; expiresAt: string; receivedAt: string; costPerUnit: number | undefined; ... 4 more ...; status: "ACTIVE"; }, currentValue: Batch | { ...; }, currentIndex: number,...'.
+      Types of parameters 'sum' and 'previousValue' are incompatible.
+        Type 'Batch | { id: `${string}-${string}-${string}-${string}-${string}`; ingredientId: string; initialQuantity: number; currentQuantity: number; expiresAt: string; receivedAt: string; costPerUnit: number | undefined; ... 4 more ...; status: "ACTIVE"; }' is not assignable to type 'number'.
+          Type 'Batch' is not assignable to type 'number'.
+  Overload 2 of 3, '(callbackfn: (previousValue: number, currentValue: Batch | { id: `${string}-${string}-${string}-${string}-${string}`; ingredientId: string; initialQuantity: number; currentQuantity: number; expiresAt: string; receivedAt: string; ... 5 more ...; status: "ACTIVE"; }, currentIndex: number, array: (Batch | { ...; })[]) => number, initialValue: number): number', gave the following error.
+    Argument of type '(sum: number, b: IngredientBatch) => number' is not assignable to parameter of type '(previousValue: number, currentValue: Batch | { id: `${string}-${string}-${string}-${string}-${string}`; ingredientId: string; initialQuantity: number; currentQuantity: number; expiresAt: string; receivedAt: string; ... 5 more ...; status: "ACTIVE"; }, currentIndex: number, array: (Batch | { ...; })[]) => number'.
+      Types of parameters 'b' and 'currentValue' are incompatible.
+        Type 'Batch | { id: `${string}-${string}-${string}-${string}-${string}`; ingredientId: string; initialQuantity: number; currentQuantity: number; expiresAt: string; receivedAt: string; costPerUnit: number | undefined; ... 4 more ...; status: "ACTIVE"; }' is not assignable to type 'Batch'.
+          Type '{ id: `${string}-${string}-${string}-${string}-${string}`; ingredientId: string; initialQuantity: number; currentQuantity: number; expiresAt: string; receivedAt: string; costPerUnit: number | undefined; ... 4 more ...; status: "ACTIVE"; }' is not assignable to type 'Batch'.
+            Types of property 'unit' are incompatible.
+              Type 'string' is not assignable to type 'Unit'.
+src/presentation/pages/InventoryPage.tsx(337,33): error TS2322: Type '(Batch | { id: `${string}-${string}-${string}-${string}-${string}`; ingredientId: string; initialQuantity: number; currentQuantity: number; expiresAt: string; receivedAt: string; costPerUnit: number | undefined; ... 4 more ...; status: "ACTIVE"; })[]' is not assignable to type 'Batch[]'.
+  Type 'Batch | { id: `${string}-${string}-${string}-${string}-${string}`; ingredientId: string; initialQuantity: number; currentQuantity: number; expiresAt: string; receivedAt: string; costPerUnit: number | undefined; ... 4 more ...; status: "ACTIVE"; }' is not assignable to type 'Batch'.
+    Type '{ id: `${string}-${string}-${string}-${string}-${string}`; ingredientId: string; initialQuantity: number; currentQuantity: number; expiresAt: string; receivedAt: string; costPerUnit: number | undefined; ... 4 more ...; status: "ACTIVE"; }' is not assignable to type 'Batch'.
+      Types of property 'unit' are incompatible.
+        Type 'string' is not assignable to type 'Unit'.
+src/presentation/pages/InventoryPage.tsx(338,33): error TS2322: Type 'Batch | { id: `${string}-${string}-${string}-${string}-${string}`; ingredientId: string; initialQuantity: number; currentQuantity: number; expiresAt: string; receivedAt: string; costPerUnit: number | undefined; ... 4 more ...; status: "ACTIVE"; }' is not assignable to type 'number'.
+  Type 'Batch' is not assignable to type 'number'.
+src/presentation/pages/InventoryPage.tsx(347,33): error TS2322: Type 'string' is not assignable to type 'Unit'.
+src/presentation/pages/InventoryPage.tsx(354,43): error TS2322: Type '{ id: `${string}-${string}-${string}-${string}-${string}`; ingredientId: string; initialQuantity: number; currentQuantity: number; expiresAt: string; receivedAt: string; costPerUnit: number | undefined; ... 4 more ...; status: "ACTIVE"; }' is not assignable to type 'Batch'.
+  Types of property 'unit' are incompatible.
+    Type 'string' is not assignable to type 'Unit'.
+src/presentation/pages/WastePage.tsx(46,13): error TS2322: Type 'string' is not assignable to type 'Unit'.
+src/presentation/pages/WastePage.tsx(47,13): error TS2322: Type 'number | undefined' is not assignable to type 'number'.
+  Type 'undefined' is not assignable to type 'number'.
+src/presentation/store/slices/createIngredientSlice.ts(41,17): error TS2322: Type 'number | undefined' is not assignable to type 'number'.
+  Type 'undefined' is not assignable to type 'number'.
+src/services/costosService.ts(37,9): error TS2322: Type 'string' is not assignable to type 'Unit'.
+src/services/inventoryAnalytics.ts(117,13): error TS2322: Type '{ currentStock: number; usageHistory: { ingredientId: string; ingredientName: string; totalConsumed: number; unit: string; daysCounted: number; avgDaily: number; }; futureDemand: { ingredientId: string; ingredientName: string; neededQuantity: number; unit: string; eventCount: number; }; ... 35 more ...; wastageFacto...' is not assignable to type '(Ingredient & { usageHistory?: IngredientConsumption | undefined; futureDemand?: FutureDemand | undefined; currentStock: number; })[]'.
+  Type '{ currentStock: number; usageHistory: { ingredientId: string; ingredientName: string; totalConsumed: number; unit: string; daysCounted: number; avgDaily: number; }; futureDemand: { ingredientId: string; ingredientName: string; neededQuantity: number; unit: string; eventCount: number; }; ... 35 more ...; wastageFacto...' is not assignable to type 'Ingredient & { usageHistory?: IngredientConsumption | undefined; futureDemand?: FutureDemand | undefined; currentStock: number; }'.
+    Type '{ currentStock: number; usageHistory: { ingredientId: string; ingredientName: string; totalConsumed: number; unit: string; daysCounted: number; avgDaily: number; }; futureDemand: { ingredientId: string; ingredientName: string; neededQuantity: number; unit: string; eventCount: number; }; ... 35 more ...; wastageFacto...' is not assignable to type 'Ingredient'.
+      Types of property 'currentStock' are incompatible.
+        Type 'number' is not assignable to type 'Quantity'.
+src/services/inventoryService.ts(68,9): error TS2322: Type 'string' is not assignable to type 'Unit'.
+src/services/inventoryService.ts(72,9): error TS2322: Type 'number | undefined' is not assignable to type 'number'.
+  Type 'undefined' is not assignable to type 'number'.
+src/services/necesidadesService.ts(79,37): error TS2365: Operator '>' cannot be applied to types 'Quantity' and 'number'.
+src/services/necesidadesService.ts(80,21): error TS2365: Operator '<=' cannot be applied to types 'number' and 'Quantity'.
+src/services/necesidadesService.ts(81,57): error TS2362: The left-hand side of an arithmetic operation must be of type 'any', 'number', 'bigint' or an enum type.
+src/services/necesidadesService.ts(82,37): error TS2362: The left-hand side of an arithmetic operation must be of type 'any', 'number', 'bigint' or an enum type.
+src/services/necesidadesService.ts(116,29): error TS2322: Type 'Quantity' is not assignable to type 'number'.
+src/services/necesidadesService.ts(117,29): error TS2322: Type 'number | Quantity' is not assignable to type 'number'.
+  Type 'Quantity' is not assignable to type 'number'.
+src/services/purchasingService.ts(32,11): error TS2322: Type '{ ingredientId: string; quantity: number; unit: string; costPerUnit: number | undefined; }[]' is not assignable to type 'PurchaseOrderItem[]'.
+  Type '{ ingredientId: string; quantity: number; unit: string; costPerUnit: number | undefined; }' is not assignable to type 'PurchaseOrderItem'.
+    Types of property 'unit' are incompatible.
+      Type 'string' is not assignable to type 'Unit'.
+src/services/purchasingService.ts(73,55): error TS2362: The left-hand side of an arithmetic operation must be of type 'any', 'number', 'bigint' or an enum type.
+src/services/purchasingService.ts(75,20): error TS2365: Operator '>' cannot be applied to types 'number | Quantity' and 'number'.
+src/services/purchasingService.ts(75,35): error TS2365: Operator '<=' cannot be applied to types 'number' and 'number | Quantity'.
+src/services/purchasingService.ts(79,22): error TS2362: The left-hand side of an arithmetic operation must be of type 'any', 'number', 'bigint' or an enum type.
+src/services/recepcionService.ts(52,17): error TS2322: Type 'string' is not assignable to type 'Unit'.
+src/services/recepcionService.ts(53,17): error TS2322: Type 'number | undefined' is not assignable to type 'number'.
+  Type 'undefined' is not assignable to type 'number'.
+src/services/recepcionService.ts(86,21): error TS18048: 'currentPrice' is possibly 'undefined'.
+src/services/recepcionService.ts(91,99): error TS18048: 'currentPrice' is possibly 'undefined'.
+src/services/recepcionService.ts(102,17): error TS2322: Type 'number | undefined' is not assignable to type 'number'.
+  Type 'undefined' is not assignable to type 'number'.
+src/services/recetaToFichaService.ts(49,11): error TS2322: Type '{ ingredienteId: string; nombre: string; cantidad: number; unidad: string; costoUnitario: number; costoTotal: number; esOpcional: false; }[]' is not assignable to type 'IngredienteFicha[]'.
+  Type '{ ingredienteId: string; nombre: string; cantidad: number; unidad: string; costoUnitario: number; costoTotal: number; esOpcional: false; }' is not assignable to type 'IngredienteFicha'.
+    Types of property 'unidad' are incompatible.
+      Type 'string' is not assignable to type 'Unit'.
+src/services/reorderService.ts(16,13): error TS2365: Operator '>' cannot be applied to types 'number | Quantity' and 'number'.
+src/services/reorderService.ts(16,33): error TS2365: Operator '<=' cannot be applied to types 'number' and 'number | Quantity'.
+src/types/inventory.ts(49,35): error TS6133: 'CoreUnit' is declared but its value is never read.
+src/utils/excelImport.ts(316,64): error TS2345: Argument of type '{ id: string; name: string; unit: Unit; costPerUnit: number; yield: number; allergens: string[]; }' is not assignable to parameter of type 'Ingredient'.
+  Type '{ id: string; name: string; unit: Unit; costPerUnit: number; yield: number; allergens: string[]; }' is missing the following properties from type 'Ingredient': currentStock, minimumStock, yieldFactor, suppliers, and 3 more.
+src/utils/excelImport.ts(344,64): error TS2345: Argument of type '{ id: string; name: string; unit: Unit; costPerUnit: number; yield: number; allergens: never[]; }' is not assignable to parameter of type 'Ingredient'.
+  Type '{ id: string; name: string; unit: Unit; costPerUnit: number; yield: number; allergens: never[]; }' is missing the following properties from type 'Ingredient': currentStock, minimumStock, yieldFactor, suppliers, and 3 more.
+src/utils/excelImport.ts(415,37): error TS2740: Type '{ id: string; name: string; unit: Unit; costPerUnit: number; yield: number; allergens: never[]; }' is missing the following properties from type 'Ingredient': currentStock, minimumStock, yieldFactor, suppliers, and 3 more.
+src/utils/excelImport.ts(423,64): error TS2345: Argument of type 'Ingredient | undefined' is not assignable to parameter of type 'Ingredient'.
+  Type 'undefined' is not assignable to type 'Ingredient'.
+src/utils/excelImport.ts(426,51): error TS18048: 'ingredient' is possibly 'undefined'.
+src/utils/purchasing.ts(63,21): error TS2322: Type 'string' is not assignable to type 'Unit'.
+src/utils/sampleData.ts(26,9): error TS2740: Type '{ id: string; name: string; unit: string; costPerUnit: number; yield: number; allergens: never[]; stock: number; minStock: number; supplierId: string; }' is missing the following properties from type 'Ingredient': currentStock, minimumStock, yieldFactor, suppliers, and 3 more.
+src/utils/sampleData.ts(27,9): error TS2740: Type '{ id: string; name: string; unit: string; costPerUnit: number; yield: number; allergens: string[]; stock: number; minStock: number; supplierId: string; }' is missing the following properties from type 'Ingredient': currentStock, minimumStock, yieldFactor, suppliers, and 3 more.
+src/utils/sampleData.ts(28,9): error TS2740: Type '{ id: string; name: string; unit: string; costPerUnit: number; yield: number; allergens: never[]; stock: number; minStock: number; supplierId: string; }' is missing the following properties from type 'Ingredient': currentStock, minimumStock, yieldFactor, suppliers, and 3 more.
+src/utils/sampleData.ts(29,9): error TS2740: Type '{ id: string; name: string; unit: string; costPerUnit: number; yield: number; allergens: never[]; stock: number; minStock: number; supplierId: string; }' is missing the following properties from type 'Ingredient': currentStock, minimumStock, yieldFactor, suppliers, and 3 more.
+src/utils/sampleData.ts(30,9): error TS2740: Type '{ id: string; name: string; unit: string; costPerUnit: number; yield: number; allergens: string[]; stock: number; minStock: number; supplierId: string; }' is missing the following properties from type 'Ingredient': currentStock, minimumStock, yieldFactor, suppliers, and 3 more.
+src/utils/sampleData.ts(31,9): error TS2740: Type '{ id: string; name: string; unit: string; costPerUnit: number; yield: number; allergens: never[]; stock: number; minStock: number; supplierId: string; }' is missing the following properties from type 'Ingredient': currentStock, minimumStock, yieldFactor, suppliers, and 3 more.
+src/utils/validation.ts(86,105): error TS2345: Argument of type 'Partial<Ingredient>' is not assignable to parameter of type 'Partial<{ name: string; unit: string; costPerUnit?: number | undefined; yield?: number | undefined; stock?: number | undefined; minStock?: number | undefined; nutritionalInfo?: { calories: number; protein: number; carbs: number; fat: number; } | undefined; }>'.
+  Types of property 'nutritionalInfo' are incompatible.
+    Type 'NutritionalInfo | undefined' is not assignable to type '{ calories: number; protein: number; carbs: number; fat: number; } | undefined'.
+      Type 'NutritionalInfo' is missing the following properties from type '{ calories: number; protein: number; carbs: number; fat: number; }': calories, protein, carbs, fat

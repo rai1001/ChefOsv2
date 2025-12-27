@@ -11,7 +11,7 @@ import { CreateIngredientRequest, UpdateIngredientRequest } from '@/types/invent
 import { SupplierManager } from './SupplierManager';
 import { SupplierSelectionSimulator } from './SupplierSelectionSimulator';
 import { ALLERGENS } from '@/utils/allergenUtils';
-import { NutritionalInfo, NutritionalValues } from '@culinaryos/core';
+import { NutritionalInfo, type NutritionalValues } from '@culinaryos/core';
 
 export const IngredientForm: React.FC<{ initialData?: Ingredient; onClose?: () => void }> = ({
   initialData,

@@ -2,6 +2,7 @@
   "name": "culinaryos-v2",
   "version": "2.0.0",
   "private": true,
+  "type": "module",
   "description": "SaaS de gestión para cocinas profesionales",
   "scripts": {
     "dev": "pnpm --filter @culinaryos/web dev",

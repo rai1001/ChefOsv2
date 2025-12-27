@@ -2,17 +2,48 @@ import { test, expect } from '@playwright/test';
 
 test.describe('Analytics & Inventory Flow', () => {
   test.beforeEach(async ({ page }) => {
+    // Monitor errors
+    page.on('console', (msg) => {
+      if (msg.type() === 'error') console.log(`CONSOLE ERROR: "${msg.text()}"`);
+    });
+    page.on('pageerror', (exception) => {
+      console.log(`PAGE EXCEPTION: "${exception}"`);
+    });
+
+    // Seed user in emulator via standard endpoint
+    const res = await fetch(
+      'http://127.0.0.1:9099/identitytoolkit.googleapis.com/v1/accounts:signUp?key=AIzaSyC2Ne6AoEZlOa6glHtVki67CkJSbWey5Lg',
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: 'test@chefos.com',
+          password: 'password123',
+          returnSecureToken: true,
+        }),
+      }
+    );
+    if (!res.ok) {
+      const text = await res.text();
+      if (!text.includes('EMAIL_EXISTS')) {
+        console.log('Seeding failed:', res.status, text);
+      }
+    } else {
+      console.log('User seeded successfully');
+    }
+
     // 1. Login
-    await page.goto('/login');
-    await page.getByLabel(/Email/i).fill('test@chefos.com');
-    await page.getByLabel(/Contraseña/i).fill('password123'); // Emulators accept any password if user exists or specific config
+    await page.goto('/login', { timeout: 60000 });
+
+    // Wait for the form to be visible (avoid spinner)
+    await expect(page.getByPlaceholder('tu@email.com')).toBeVisible({ timeout: 15000 });
+
+    await page.getByPlaceholder('tu@email.com').fill('test@chefos.com');
+    await page.getByPlaceholder('••••••••').fill('password123');
     await page.getByRole('button', { name: /Entrar/i }).click();
 
     // 2. Wait for redirect to dashboard
-    await expect(page).toHaveURL('/');
-
-    // 3. Select Outlet if not selected (assuming there's a selector in the header)
-    // For now, let's assume the first outlet is selected by default in the emulator/test data
+    await expect(page).toHaveURL(/\/dashboard/, { timeout: 30000 });
   });
 
   test('should create an ingredient and then a recipe with correct cost calculation', async ({
@@ -42,26 +73,23 @@ test.describe('Analytics & Inventory Flow', () => {
     await expect(page).toHaveURL('/recipes');
 
     // 4. Create Recipe
+    const recipeName = `Cost Test Recipe ${Date.now()}`;
     await page.getByRole('button', { name: /Nueva Receta/i }).click();
-    await page.locator('#recipe-name').fill(`Test Recipe ${Date.now()}`);
+    await page.locator('#recipe-name').fill(recipeName);
     await page.locator('#recipe-yield').fill('1');
 
     // Add ingredient to recipe
     await page.getByRole('button', { name: /Añadir Ingrediente/i }).click();
-    await page.getByLabel(/Ingrediente 1/i).selectOption({ label: new RegExp(ingredientName) });
+    await page.getByLabel(/Ingrediente 1/i).selectOption({ label: ingredientName });
     await page.getByLabel(/Cantidad del ingrediente 1/i).fill('2'); // 2 units
 
     await page.getByRole('button', { name: /Guardar Receta/i }).click();
 
     // 5. Verify Cost Calculation
     // Total cost should be 10.5 * 2 = 21.0
-    const recipeRow = page.locator('tr', { hasText: ingredientName }).first(); // Assuming list shows components or we search the recipe
-    // Let's search for the recipe name first if it's a list
-    const recipeName = `Test Recipe ${Date.now()}`; // Wait, I need a stable name for lookup
-    const stableRecipeName = `Cost Test Recipe ${Date.now()}`;
 
     // Actually, let's just search it in the list
-    await page.getByPlaceholder(/BUSCAR RECETA/i).fill(stableRecipeName);
+    await page.getByPlaceholder(/BUSCAR RECETA/i).fill(recipeName);
     // Wait for calculation to show up in the stats or list
     // According to RecipesPage, cost is displayed using getRecipeCost
     await expect(page.getByText('21.00€')).toBeVisible();

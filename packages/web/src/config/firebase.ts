@@ -14,7 +14,9 @@ const firebaseConfig = {
   storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || 'chefosv2.firebasestorage.app',
   messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || '462911840752',
   appId: import.meta.env.VITE_FIREBASE_APP_ID || '1:462911840752:web:13284f498bbf5045507d35',
-  databaseURL: import.meta.env.VITE_FIREBASE_DATABASE_URL || 'https://chefosv2-default-rtdb.europe-west1.firebasedatabase.app',
+  databaseURL:
+    import.meta.env.VITE_FIREBASE_DATABASE_URL ||
+    'https://chefosv2-default-rtdb.europe-west1.firebasedatabase.app',
 };
 
 // Detectar si estamos en modo emulator
@@ -26,7 +28,8 @@ export const auth: Auth = getAuth(app);
 export const db: Firestore = getFirestore(app);
 export const storage: FirebaseStorage = getStorage(app);
 export const functions: Functions = getFunctions(app);
-export const perf: FirebasePerformance = getPerformance(app);
+export const perf: FirebasePerformance | null =
+  typeof window !== 'undefined' && !USE_EMULATOR ? getPerformance(app) : null;
 export const rtdb: Database = getDatabase(app);
 // Initialize Messaging safely (may fail in test/SSR environments)
 let _messaging: Messaging | null = null;
