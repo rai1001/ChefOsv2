@@ -1,0 +1,2 @@
+src/infrastructure/repositories/FirebaseInventoryRepository.ts(99,15): error TS6133: 'snapshot' is declared but its value is never read.
+src/presentation/store/inventoryAtoms.ts(7,1): error TS6133: 'StockTransaction' is declared but its value is never read.

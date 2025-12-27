@@ -5,7 +5,7 @@ import { GetIngredientsUseCase } from '../use-cases/ingredients/GetIngredientsUs
 import { CreateIngredientUseCase } from '../use-cases/ingredients/CreateIngredientUseCase';
 import { UpdateIngredientUseCase } from '../use-cases/ingredients/UpdateIngredientUseCase';
 import { DeleteIngredientUseCase } from '../use-cases/ingredients/DeleteIngredientUseCase';
-import { Ingredient } from '../../domain/entities/Ingredient';
+import { Ingredient } from '@/domain/entities/Ingredient';
 
 export function useIngredients(outletId?: string) {
   const [ingredients, setIngredients] = useState<Ingredient[]>([]);

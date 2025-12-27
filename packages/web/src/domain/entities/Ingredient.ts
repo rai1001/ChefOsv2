@@ -1,4 +1,4 @@
-import { Unit, InventoryCategory, NutritionalInfo } from '../types';
+import { Unit, InventoryCategory, NutritionalInfo } from '@/types';
 
 export interface PriceHistoryEntry {
     date: string;

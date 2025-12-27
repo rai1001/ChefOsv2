@@ -24,7 +24,7 @@ import {
   collectionGroup,
   documentId,
 } from 'firebase/firestore';
-import { db } from '../../../config/firebase';
+import { db } from '@/config/firebase';
 
 const toDomain = (id: string, data: any): Batch => {
   return {

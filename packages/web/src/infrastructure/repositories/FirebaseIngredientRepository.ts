@@ -1,8 +1,8 @@
 import { injectable } from 'inversify';
-import { db } from '../../config/firebase';
+import { db } from '@/config/firebase';
 import { collection, doc, getDoc, getDocs, setDoc, deleteDoc, updateDoc, query, where } from 'firebase/firestore';
-import { IIngredientRepository } from '../../domain/interfaces/repositories/IIngredientRepository';
-import { Ingredient } from '../../domain/entities/Ingredient';
+import { IIngredientRepository } from '@/domain/interfaces/repositories/IIngredientRepository';
+import { Ingredient } from '@/domain/entities/Ingredient';
 
 @injectable()
 export class FirebaseIngredientRepository implements IIngredientRepository {

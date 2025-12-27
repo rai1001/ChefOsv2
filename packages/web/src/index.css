@@ -19,7 +19,8 @@
   }
 
   body {
-    @apply bg-background text-slate-100 font-sans antialiased overflow-x-hidden;
+    background-color: #111315;
+    @apply text-slate-100 font-sans antialiased overflow-x-hidden;
     background-image:
       radial-gradient(at 0% 0%, hsla(224, 76%, 15%, 0.2) 0, transparent 50%),
       radial-gradient(at 100% 0%, hsla(38, 92%, 15%, 0.08) 0, transparent 50%),

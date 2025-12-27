@@ -35,7 +35,7 @@ const KPICard: React.FC<KPICardProps> = ({ title, value, change, isPositive, ico
 };
 
 export const KPIGrid: React.FC = () => {
-    // Mock Data for Initial Port
+    // These would eventually come from Task 1 (Jules' cached Summary)
     const metrics = [
         { title: 'Ventas Hoy', value: '€2,450', change: '+12.5%', isPositive: true, icon: TrendingUp, color: 'primary' },
         { title: 'Food Cost %', value: '28.4%', change: '-2.1%', isPositive: true, icon: DollarSign, color: 'accent' },

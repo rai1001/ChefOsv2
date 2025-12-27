@@ -1,5 +1,5 @@
 import { ITransactionManager } from '@culinaryos/core/dist/domain/interfaces/ITransactionManager';
-import { db } from '../../../config/firebase'; // Adjust path if needed
+import { db } from '@/config/firebase'; // Adjust path if needed
 import { runTransaction, Transaction } from 'firebase/firestore';
 
 export class FirestoreTransactionManager implements ITransactionManager {

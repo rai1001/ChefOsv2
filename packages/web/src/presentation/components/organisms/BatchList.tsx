@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { BatchStatus, Ingredient } from '@culinaryos/core';
 import { Button } from '@culinaryos/ui';
-import { useBatches } from '../../../application/hooks/useBatches';
+import { useBatches } from '@/application/hooks/useBatches';
 import { AddBatchForm } from '../molecules/AddBatchForm';
 import { ConsumeBatchForm } from '../molecules/ConsumeBatchForm';
 import { ExpiryAlert } from '../molecules/ExpiryAlert';

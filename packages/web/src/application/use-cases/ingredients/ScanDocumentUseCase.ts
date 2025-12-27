@@ -1,7 +1,7 @@
 import { injectable, inject } from 'inversify';
 import { TYPES } from '../../di/types';
-import { IImportService, ImportResult } from '../../../domain/interfaces/services/IImportService';
-import { IAIService } from '../../../domain/interfaces/services/IAIService';
+import { IImportService, ImportResult } from '@/domain/interfaces/services/IImportService';
+import { IAIService } from '@/domain/interfaces/services/IAIService';
 
 @injectable()
 export class ScanDocumentUseCase {

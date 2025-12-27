@@ -1,0 +1,1 @@
+export { WasteDashboard } from './WasteDashboard';

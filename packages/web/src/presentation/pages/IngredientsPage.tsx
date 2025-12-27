@@ -1,30 +1,30 @@
 import React, { useState, useMemo } from 'react';
-import { Package, Search, Plus, TrendingDown, DollarSign, Layers, ArrowUpRight } from 'lucide-react';
-import { useIngredients } from '../../application/hooks/useIngredients';
-import { Ingredient } from '../../domain/entities/Ingredient';
-import { IngredientForm } from '../components/ingredients/IngredientForm';
-import { UniversalImporter } from '../components/imports/UniversalImporter';
+import { useStore } from '@/presentation/store/useStore';
+import { Package, Search, Plus, X, TrendingDown, DollarSign, Layers, ArrowUpRight } from 'lucide-react';
+import { Button } from '@/presentation/components/atoms/Button';
+import { Input } from '@/presentation/components/atoms/Input';
+import { IngredientList } from '@/presentation/components/lists/IngredientList';
+import { IngredientForm } from '@/presentation/components/ingredients/IngredientForm';
+import { deleteDocument } from '@/services/firestoreService';
+import { UniversalImporter } from '@/presentation/components/common/UniversalImporter';
+import { useToast } from '@/presentation/components/ui';
+import { COLLECTIONS } from '@/config/collections';
+import type { Ingredient } from '@/types';
 
 export const IngredientsPage: React.FC = () => {
-    const { ingredients, loading, addIngredient, updateIngredient, deleteIngredient, refresh } = useIngredients();
+    const { ingredients } = useStore();
+    const { addToast } = useToast();
     const [searchTerm, setSearchTerm] = useState('');
-    const [activeCategory, setActiveCategory] = useState<string>('all');
-
-    // Modal State
     const [showAddModal, setShowAddModal] = useState(false);
     const [editingIngredient, setEditingIngredient] = useState<Ingredient | undefined>(undefined);
-
-    // Stats Logic
-    const stats = useMemo(() => {
-        const totalItems = ingredients.length;
-        const lowStock = ingredients.filter(i => (i.stock || 0) < (i.minStock || 0)).length;
-        const totalValue = ingredients.reduce((acc, i) => acc + ((i.stock || 0) * (i.costPerUnit || 0)), 0);
-        const categoriesCount = new Set(ingredients.map(i => i.category)).size;
-        return { totalItems, lowStock, totalValue, categoriesCount };
-    }, [ingredients]);
+    const [activeCategory, setActiveCategory] = useState<string>('all');
+    const [sortConfig, setSortConfig] = useState<{ key: keyof Ingredient | 'stock'; direction: 'asc' | 'desc' }>({
+        key: 'name',
+        direction: 'asc'
+    });
 
     const CATEGORIES = [
-        { id: 'all', label: 'Todos' },
+        { id: 'all', label: 'Todos', icon: Package },
         { id: 'meat', label: 'Carne' },
         { id: 'fish', label: 'Pescado' },
         { id: 'produce', label: 'Vegetales' },
@@ -35,37 +35,65 @@ export const IngredientsPage: React.FC = () => {
         { id: 'other', label: 'Otros' }
     ];
 
+    const handleImportComplete = () => {
+        // Data is already committed to Firestore by UniversalImporter
+        // We just need to refresh or notify
+        addToast('Importación completada y lista de ingredientes actualizada', 'success');
+    };
+
+    const handleSort = (key: keyof Ingredient | 'stock') => {
+        setSortConfig(prev => ({
+            key,
+            direction: prev.key === key && prev.direction === 'asc' ? 'desc' : 'asc'
+        }));
+    };
+
+    const filteredIngredients = useMemo(() => {
+        const result = ingredients.filter(i =>
+            i.name.toLowerCase().includes(searchTerm.toLowerCase()) &&
+            (activeCategory === 'all' || i.category === activeCategory)
+        );
+
+        return [...result].sort((a, b) => {
+            const aValue = a[sortConfig.key] ?? 0;
+            const bValue = b[sortConfig.key] ?? 0;
+
+            if (aValue < bValue) return sortConfig.direction === 'asc' ? -1 : 1;
+            if (aValue > bValue) return sortConfig.direction === 'asc' ? 1 : -1;
+            return 0;
+        });
+    }, [ingredients, searchTerm, activeCategory, sortConfig]);
+
+    const handleDelete = async (id: string) => {
+        if (confirm('¿Estás seguro de que quieres eliminar este ingrediente de la biblioteca maestra?')) {
+            try {
+                await deleteDocument(COLLECTIONS.INGREDIENTS, id);
+            } catch (error) {
+                console.error("Error deleting ingredient:", error);
+                alert("Error al eliminar");
+            }
+        }
+    };
+
+
     const handleEdit = (ingredient: Ingredient) => {
         setEditingIngredient(ingredient);
         setShowAddModal(true);
     };
 
-    const handleDelete = async (id: string) => {
-        if (confirm('Eliminar ingrediente?')) {
-            await deleteIngredient(id);
-        }
-    };
-
-    const handleFormSubmit = async (data: Ingredient) => {
-        if (editingIngredient) {
-            await updateIngredient(editingIngredient.id, data);
-        } else {
-            await addIngredient(data);
-        }
-    };
-
-    const handleImportComplete = () => {
-        refresh(); // Reload ingredients after import
-    };
-
     const closeModal = () => {
         setShowAddModal(false);
         setEditingIngredient(undefined);
-    }
+    };
 
-    if (loading && ingredients.length === 0) {
-        return <div className="p-10 text-white animate-pulse">Cargando ingredientes...</div>;
-    }
+    // Derived Stats
+    const stats = useMemo(() => {
+        const totalItems = ingredients.length;
+        const lowStock = ingredients.filter(i => (i.stock || 0) < (i.minStock || 0)).length;
+        const totalValue = ingredients.reduce((acc, i) => acc + ((i.stock || 0) * (i.costPerUnit || 0)), 0);
+        const categoriesCount = new Set(ingredients.map(i => i.category)).size;
+        return { totalItems, lowStock, totalValue, categoriesCount };
+    }, [ingredients]);
 
     return (
         <div className="p-6 md:p-10 space-y-8 min-h-screen bg-transparent text-slate-100 fade-in">
@@ -85,13 +113,16 @@ export const IngredientsPage: React.FC = () => {
                         defaultType="ingredient"
                         onCompleted={handleImportComplete}
                     />
-                    <button
-                        onClick={() => { setEditingIngredient(undefined); setShowAddModal(true); }}
-                        className="bg-primary text-white px-6 py-3 rounded-xl font-black text-xs uppercase tracking-widest flex items-center gap-2 hover:bg-primary/90 transition-all shadow-lg shadow-primary/20"
+                    <Button
+                        onClick={() => {
+                            setEditingIngredient(undefined);
+                            setShowAddModal(true);
+                        }}
+                        leftIcon={<Plus size={16} />}
+                        className="bg-primary text-white px-6 py-3 rounded-xl font-black text-xs uppercase tracking-widest flex items-center gap-2 hover:bg-primary/90 transition-all active:scale-95 shadow-[0_0_20px_rgba(59,130,246,0.5)] border border-primary/50"
                     >
-                        <Plus size={16} />
                         Nuevo Ingrediente
-                    </button>
+                    </Button>
                 </div>
             </div>
 
@@ -138,7 +169,7 @@ export const IngredientsPage: React.FC = () => {
                 </div>
             </div>
 
-            {/* Search & Filter */}
+            {/* Filter Tabs & Search Container */}
             <div className="premium-glass p-2 flex flex-col xl:flex-row gap-4 justify-between items-center rounded-2xl">
                 <div className="flex gap-1 overflow-x-auto max-w-full pb-1 custom-scrollbar">
                     {CATEGORIES.map(cat => (
@@ -154,71 +185,53 @@ export const IngredientsPage: React.FC = () => {
                         </button>
                     ))}
                 </div>
+
+                {/* Search */}
                 <div className="w-full xl:w-96 relative group">
-                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                        <Search className="text-slate-500 group-focus-within:text-primary transition-colors h-4 w-4" />
-                    </div>
-                    <input
-                        type="text"
+                    <Input
+                        leftIcon={<Search className="text-slate-500 group-focus-within:text-primary transition-colors" size={16} />}
                         placeholder="BUSCAR INGREDIENTE..."
                         value={searchTerm}
                         onChange={e => setSearchTerm(e.target.value)}
-                        className="w-full pl-10 pr-4 py-2 bg-black/20 border border-white/5 rounded-lg focus:border-primary/50 text-slate-200 placeholder-slate-600 font-medium focus:outline-none transition-colors"
+                        className="bg-black/20 border-white/5 focus:border-primary/50 text-slate-200 placeholder-slate-600 font-medium"
                     />
                 </div>
             </div>
 
-            {/* List */}
-            <div className="premium-glass p-6 min-h-[400px]">
-                <h3 className="text-xl font-bold mb-4">Lista de Ingredientes</h3>
-                {ingredients.length === 0 ? (
-                    <div className="text-center text-slate-500 py-20">
-                        <Package className="w-16 h-16 mx-auto mb-4 opacity-20" />
-                        <p>No hay ingredientes en esta categoría.</p>
-                    </div>
-                ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                        {ingredients
-                            .filter(i => activeCategory === 'all' || i.category === activeCategory)
-                            .filter(i => i.name.toLowerCase().includes(searchTerm.toLowerCase()))
-                            .map(item => (
-                                <div key={item.id} className="bg-white/5 p-4 rounded-xl border border-white/5 hover:border-primary/30 transition-colors group relative">
-                                    <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity flex gap-2">
-                                        <button onClick={(e) => { e.stopPropagation(); handleEdit(item); }} className="text-xs bg-blue-500/20 text-blue-300 px-2 py-1 rounded hover:bg-blue-500/30">Edit</button>
-                                        <button onClick={(e) => { e.stopPropagation(); handleDelete(item.id); }} className="text-xs bg-red-500/20 text-red-300 px-2 py-1 rounded hover:bg-red-500/30">Del</button>
-                                    </div>
-                                    <div className="flex justify-between items-start">
-                                        <div>
-                                            <h4 className="font-bold text-white">{item.name}</h4>
-                                            <p className="text-xs text-slate-400 capitalize">{item.category}</p>
-                                        </div>
-                                        <span className="text-sm font-mono text-primary font-bold">{item.costPerUnit}€/{item.unit}</span>
-                                    </div>
-                                    <div className="mt-4 flex justify-between items-end">
-                                        <div className="text-xs text-slate-500">
-                                            Stock: <span className={Number(item.stock) < Number(item.minStock) ? 'text-red-400 font-bold' : 'text-slate-300'}>{item.stock} {item.unit}</span>
-                                        </div>
-                                    </div>
-                                </div>
-                            ))}
-                    </div>
-                )}
+            {/* Content Area - Wrapped for Glass Effect */}
+            <div className="premium-glass p-0 overflow-hidden">
+                <IngredientList
+                    ingredients={filteredIngredients}
+                    onEdit={handleEdit}
+                    onDelete={handleDelete}
+                    sortConfig={sortConfig}
+                    onSort={handleSort}
+                />
             </div>
 
-            {/* Modal */}
-            {showAddModal && (
-                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-200">
-                    <div className="relative w-full max-w-lg h-[85vh] flex flex-col premium-glass overflow-hidden rounded-2xl border border-white/10 shadow-2xl">
-                        <div className="flex-1 min-h-0">
-                            <IngredientForm
-                                onClose={closeModal}
-                                initialData={editingIngredient}
-                                onSubmit={handleFormSubmit}
-                            />
+            {
+                showAddModal && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-200">
+                        <div className="relative w-full max-w-lg h-[85vh] flex flex-col premium-glass overflow-hidden">
+                            <button
+                                onClick={closeModal}
+                                className="absolute top-4 right-4 text-slate-400 hover:text-white z-50 p-2 hover:bg-white/10 rounded-full transition-colors"
+                            >
+                                <X className="w-5 h-5" />
+                            </button>
+                            <div className="flex-1 min-h-0" onClick={e => e.stopPropagation()}>
+                                <IngredientForm
+                                    onClose={closeModal}
+                                    initialData={editingIngredient}
+                                />
+                            </div>
                         </div>
                     </div>
-                </div>
-            )}
+                )
+            }
+
         </div>
     );
 };
+
+

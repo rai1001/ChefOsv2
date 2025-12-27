@@ -1,0 +1,10 @@
+src/presentation/components/recipes/RecipeForm.tsx(4,24): error TS2307: Cannot find module '../../../../domain/entities/Recipe' or its corresponding type declarations.
+src/presentation/components/recipes/RecipeForm.tsx(6,28): error TS2307: Cannot find module '../../../store/recipesAtoms' or its corresponding type declarations.
+src/presentation/components/recipes/RecipeForm.tsx(50,37): error TS7006: Parameter 'item' implicitly has an 'any' type.
+src/presentation/components/recipes/RecipeForm.tsx(57,45): error TS7006: Parameter 'r' implicitly has an 'any' type.
+src/presentation/components/recipes/RecipeForm.tsx(80,40): error TS7006: Parameter 'r' implicitly has an 'any' type.
+src/presentation/components/recipes/RecipeForm.tsx(80,134): error TS7006: Parameter 'r' implicitly has an 'any' type.
+src/presentation/components/recipes/RecipeForm.tsx(215,80): error TS2339: Property 'name' does not exist on type 'Record<"id", string>'.
+src/presentation/components/recipes/RecipeForm.tsx(223,90): error TS2339: Property 'unit' does not exist on type 'Record<"id", string>'.
+src/presentation/pages/RecipesPage.tsx(3,28): error TS2307: Cannot find module '../../store/recipesAtoms' or its corresponding type declarations.
+src/presentation/pages/RecipesPage.tsx(4,24): error TS2307: Cannot find module '../../../domain/entities/Recipe' or its corresponding type declarations.

@@ -1,9 +1,9 @@
 import React, { useState, useRef } from 'react';
 import { Upload, Check, Loader2, Sparkles } from 'lucide-react';
-import { container } from '../../../application/di/Container';
-import { TYPES } from '../../../application/di/types';
-import { ScanDocumentUseCase } from '../../../application/use-cases/ingredients/ScanDocumentUseCase';
-import { ImportIngredientsUseCase } from '../../../application/use-cases/ingredients/ImportIngredientsUseCase';
+import { container } from '@/application/di/Container';
+import { TYPES } from '@/application/di/types';
+import { ScanDocumentUseCase } from '@/application/use-cases/ingredients/ScanDocumentUseCase';
+import { ImportIngredientsUseCase } from '@/application/use-cases/ingredients/ImportIngredientsUseCase';
 
 interface UniversalImporterProps {
     buttonLabel?: string;

@@ -2,13 +2,13 @@ import React from 'react';
 import {
     LayoutDashboard, Calendar, ShoppingCart, Database, CalendarDays, ChefHat,
     Package, Truck, ClipboardList, ShoppingBag, Trash2, ShieldCheck,
-    TrendingUp, Search, BookOpen, Sparkles, Coffee, LogOut, Settings,
-    Zap, Briefcase, Activity, Layers, X
+    TrendingUp, BookOpen, Sparkles, Coffee, LogOut, Settings,
+    Zap, Briefcase, Layers, X
 } from 'lucide-react';
 import { NavItem } from './molecules/NavItem';
 import { NavGroup } from './molecules/NavGroup';
 import { useAtomValue } from 'jotai';
-import { userAtom } from '../store/authAtoms';
+import { userAtom } from '@/presentation/store/authAtoms';
 import { getAuth } from 'firebase/auth';
 
 interface SidebarProps {
@@ -42,36 +42,26 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
                 <NavGroup
                     label="Logística / Operaciones"
                     icon={<Layers />}
-                    activePaths={['/dashboard', '/schedule', '/events', '/hospitality', '/breakfast', '/purchasing', '/waste', '/haccp', '/analytics']}
+                    activePaths={['/dashboard', '/schedule', '/events', '/logistics', '/purchasing', '/waste', '/haccp', '/menu-engineering']}
                 >
                     <NavItem to="/dashboard" icon={<LayoutDashboard />} label="Inicio" />
                     <NavItem to="/schedule" icon={<Calendar />} label="Horario" />
                     <NavItem to="/events" icon={<CalendarDays />} label="Eventos" />
-                    <NavItem to="/hospitality" icon={<Coffee />} label="Logística Hotel" />
-                    <NavItem to="/breakfast" icon={<Coffee />} label="Servicio Diario" />
+                    <NavItem to="/logistics" icon={<Coffee />} label="Logística Hotel" />
                     <NavItem to="/purchasing" icon={<ShoppingBag />} label="Compras Auto" />
                     <NavItem to="/waste" icon={<Trash2 />} label="Mermas" />
                     <NavItem to="/haccp" icon={<ShieldCheck />} label="HACCP Digital" />
-                    <NavItem to="/analytics" icon={<TrendingUp />} label="Ingeniería Menú" />
+                    <NavItem to="/menu-engineering" icon={<TrendingUp />} label="Ingeniería Menú" />
                 </NavGroup>
 
                 <NavGroup
                     label="Estrategia Menús"
                     icon={<BookOpen />}
-                    activePaths={['/menus', '/fichas-tecnicas', '/ai-menu']}
+                    activePaths={['/menu', '/fichas', '/ai-features']}
                 >
-                    <NavItem to="/menus" icon={<BookOpen />} label="Mis Menús" />
-                    <NavItem to="/fichas-tecnicas" icon={<ClipboardList />} label="Fichas Técnicas" />
-                    <NavItem to="/ai-menu" icon={<Sparkles />} label="Generador IA" />
-                </NavGroup>
-
-                <NavGroup
-                    label="Inteligencia AI"
-                    icon={<Sparkles />}
-                    activePaths={['/ai-search', '/ai-usage']}
-                >
-                    <NavItem to="/ai-search" icon={<Search />} label="Asistente Chef" />
-                    <NavItem to="/ai-usage" icon={<Activity />} label="Control de Costes" />
+                    <NavItem to="/menu" icon={<BookOpen />} label="Mis Menús" />
+                    <NavItem to="/fichas" icon={<ClipboardList />} label="Fichas Técnicas" />
+                    <NavItem to="/ai-features" icon={<Sparkles />} label="Funciones IA" />
                 </NavGroup>
 
                 <NavGroup
@@ -89,11 +79,10 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
                 <NavGroup
                     label="Producción / Modo KDS"
                     icon={<Zap />}
-                    activePaths={['/production', '/kds', '/data']}
+                    activePaths={['/production', '/kds', '/integrations']}
                 >
                     <NavItem to="/production" icon={<ShoppingCart />} label="Producción" />
                     <NavItem to="/kds" icon={<ChefHat />} label="Modo KDS (Tablet)" />
-                    <NavItem to="/data" icon={<Database />} label="Datos" />
                 </NavGroup>
 
                 <div className="pt-4 border-t border-white/5">

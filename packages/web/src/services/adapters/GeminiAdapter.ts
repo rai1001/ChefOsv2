@@ -1,0 +1,166 @@
+import { getAI, getGenerativeModel } from "firebase/ai";
+import { app } from "@/config/firebase";
+import type { IAIService, AIRequestOptions, AIResponse, EnrichedIngredientData, ScannedDocumentResult } from "@/domain/interfaces/services/IAIService";
+import { ResilientGeminiWrapper } from "../wrappers/ResilientGeminiWrapper";
+import { CostTracker } from "../monitoring/CostTracker";
+
+import { injectable } from 'inversify';
+
+@injectable()
+export class GeminiAdapter implements IAIService {
+    private model;
+    private resiliencer: ResilientGeminiWrapper;
+
+    constructor() {
+        const vertexAI = getAI(app);
+        this.model = getGenerativeModel(vertexAI, { model: "gemini-2.0-flash" });
+        this.resiliencer = new ResilientGeminiWrapper();
+    }
+
+    async enrichIngredient(name: string): Promise<EnrichedIngredientData> {
+        const prompt = `
+            Analyze this ingredient: "${name}". 
+            Return a JSON object with this structure:
+            {
+                "nutritionalInfo": { "calories": 0, "protein": 0, "carbs": 0, "fat": 0 },
+                "allergens": ["Allergen1", "Allergen2"]
+            }
+            Use per 100g values. If unknown, estimate.
+        `;
+        const result = await this.generateText(prompt);
+        // Extract JSON
+        try {
+            const text = result.text;
+            const jsonMatch = (/```json\n([\s\S]*?)\n```/.exec(text)) || (/\{[\s\S]*\}/.exec(text));
+            const jsonStr = jsonMatch ? jsonMatch[1] || jsonMatch[0] : text;
+            return JSON.parse(jsonStr);
+        } catch (e) {
+            console.error("Failed to enrich ingredient via Gemini", e);
+            return { nutritionalInfo: { calories: 0, protein: 0, carbs: 0, fat: 0 }, allergens: [] };
+        }
+    }
+
+    async scanDocument(fileOrBase64: File | string, type?: string): Promise<ScannedDocumentResult> {
+        // reuse generic analyze logic or specific prompts?
+        // For simplicity, we assume the caller (geminiService usually) handles the sophisticated prompts via analyzeImage,
+        // BUT if this is called directly (legacy mode), we need a prompt.
+
+        let base64 = "";
+        if (typeof fileOrBase64 === 'string') {
+            base64 = fileOrBase64.includes(',') ? fileOrBase64.split(',')[1]! : fileOrBase64;
+        } else {
+            // File to base64 not implemented here synchronously easily without await.
+            throw new Error("GeminiAdapter.scanDocument requires Base64 string for now");
+        }
+
+        const prompt = `Analyze this document (Type: ${type || 'General'}). Return a JSON with { "items": [], "rawText": "..." }`;
+        const response = await this.analyzeImage(base64, prompt);
+
+        try {
+            // Naive parse
+            const jsonMatch = (/```json\n([\s\S]*?)\n```/.exec(response.text)) || (/\{[\s\S]*\}/.exec(response.text));
+            const jsonStr = jsonMatch ? (jsonMatch[1] || jsonMatch[0]) : response.text;
+            const json = JSON.parse(jsonStr);
+            return { items: json.items || [], rawText: response.text };
+        } catch {
+            return { items: [], rawText: response.text };
+        }
+    }
+
+    async scanSportsMenu(fileOrBase64: File | string): Promise<ScannedDocumentResult> {
+        return this.scanDocument(fileOrBase64, 'SportsMenu');
+    }
+
+    async generateText(prompt: string, _options?: AIRequestOptions): Promise<AIResponse> {
+        return this.resiliencer.execute(async () => {
+            console.log("[GeminiAdapter] Calling generateContent (Text)...");
+            const result = await this.model.generateContent(prompt);
+            const response = await result.response;
+
+            console.log("[GeminiAdapter] Text response keys:", Object.keys(response));
+
+            const usage = response.usageMetadata ? {
+                promptTokens: Number(response.usageMetadata.promptTokenCount || 0),
+                completionTokens: Number(response.usageMetadata.candidatesTokenCount || 0),
+                totalTokens: Number(response.usageMetadata.totalTokenCount || 0)
+            } : undefined;
+
+            if (usage) {
+                CostTracker.logUsage(usage, { feature: 'generateText' });
+            }
+
+            return {
+                text: response.text(),
+                usage
+            };
+        });
+    }
+
+    async analyzeImage(imageBase64: string, prompt: string, _options?: AIRequestOptions): Promise<AIResponse> {
+        return this.resiliencer.execute(async () => {
+            console.log("[GeminiAdapter] Calling generateContent (Multimodal)...");
+            const isPdf = imageBase64.startsWith('JVBERi');
+            const imagePart = {
+                inlineData: {
+                    data: imageBase64,
+                    mimeType: isPdf ? "application/pdf" : "image/jpeg"
+                }
+            };
+
+            const result = await this.model.generateContent([prompt, imagePart]);
+            console.log("[GeminiAdapter] Multimodal result objects keys:", Object.keys(result));
+
+            const response = await result.response;
+            console.log("[GeminiAdapter] Multimodal response keys:", Object.keys(response));
+
+            // EXTREME USAGE LOGGING
+            if (response.usageMetadata) {
+                console.log("[GeminiAdapter] usageMetadata found:", JSON.stringify(response.usageMetadata));
+            } else {
+                console.warn("[GeminiAdapter] usageMetadata MISSING from response");
+            }
+
+            const usage = response.usageMetadata ? {
+                promptTokens: Number(response.usageMetadata.promptTokenCount || 0),
+                completionTokens: Number(response.usageMetadata.candidatesTokenCount || 0),
+                totalTokens: Number(response.usageMetadata.totalTokenCount || 0)
+            } : undefined;
+
+            if (usage) {
+                CostTracker.logUsage(usage, { feature: 'analyzeImage' });
+            }
+
+            // DEFENSIVE TEXT EXTRACTION
+            let text = "";
+            try {
+                text = response.text();
+                console.log("[GeminiAdapter] Extracted text length:", text.length);
+            } catch (textError) {
+                console.error("[GeminiAdapter] CRITICAL: response.text() failed", textError);
+                // Fallback to candidates structure
+                const candidates = (response as any).candidates;
+                if (candidates?.[0]?.content?.parts?.[0]?.text) {
+                    text = candidates[0].content.parts[0].text;
+                    console.log("[GeminiAdapter] Recovered text from candidates fallback.");
+                } else {
+                    console.error("[GeminiAdapter] Could not recover text from candidates.");
+                }
+            }
+
+            const finalResponse: AIResponse = {
+                text,
+                usage
+            };
+
+            console.log("[GeminiAdapter] Returning finalResponse with keys:", Object.keys(finalResponse));
+            return finalResponse;
+        });
+    }
+
+    async *streamGenerateText(prompt: string, _options?: AIRequestOptions): AsyncIterable<string> {
+        const result = await this.model.generateContentStream(prompt);
+        for await (const chunk of result.stream) {
+            yield chunk.text();
+        }
+    }
+}

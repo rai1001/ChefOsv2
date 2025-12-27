@@ -1,8 +1,8 @@
 import { injectable } from 'inversify';
-import { IAuthRepository } from '../../domain/interfaces/repositories/IAuthRepository';
-import { User, UserRole } from '../../domain/entities/User';
-import { auth } from '../../config/firebase';
-import { GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
+import { IAuthRepository } from '@/domain/interfaces/repositories/IAuthRepository';
+import { User, UserRole } from '@/domain/entities/User';
+import { auth } from '@/config/firebase';
+import { GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged, User as FirebaseUser, signInWithEmailAndPassword } from 'firebase/auth';
 
 @injectable()
 export class FirebaseAuthRepository implements IAuthRepository {
@@ -25,6 +25,13 @@ export class FirebaseAuthRepository implements IAuthRepository {
     async signInWithGoogle(): Promise<User> {
         const provider = new GoogleAuthProvider();
         const result = await signInWithPopup(auth, provider);
+        const user = this.mapFirebaseUserToEntity(result.user);
+        this._currentUser = user;
+        return user;
+    }
+
+    async signInWithEmail(email: string, password: string): Promise<User> {
+        const result = await signInWithEmailAndPassword(auth, email, password);
         const user = this.mapFirebaseUserToEntity(result.user);
         this._currentUser = user;
         return user;

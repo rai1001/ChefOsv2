@@ -9,12 +9,14 @@ export * from './domain/entities/Batch';
 export * from './domain/entities/FichaTecnica';
 export * from './domain/entities/PurchaseOrder';
 export * from './domain/entities/Event';
+export * from './domain/entities/ProductionTask';
 
 // Repository Interfaces
 export * from './domain/interfaces/repositories/IIngredientRepository';
 export * from './domain/interfaces/repositories/IBatchRepository';
 export * from './domain/interfaces/repositories/IFichaTecnicaRepository';
 export * from './domain/interfaces/repositories/IPurchaseOrderRepository';
+export * from './domain/interfaces/repositories/IProductionTaskRepository';
 
 // Service Interfaces
 export * from './domain/interfaces/services/IAIService';

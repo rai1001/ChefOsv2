@@ -1,8 +1,8 @@
 import { injectable } from 'inversify';
 import * as XLSX from 'xlsx';
 import { v4 as uuidv4 } from 'uuid';
-import { IImportService, ImportResult, ImportItem } from '../../domain/interfaces/services/IImportService';
-import { Unit } from '../../domain/types';
+import { IImportService, ImportResult, ImportItem } from '@/domain/interfaces/services/IImportService';
+import { Unit } from '@/domain/types';
 
 
 
