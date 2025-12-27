@@ -1,13 +1,15 @@
 import { injectable, inject } from 'inversify';
 import { TYPES } from '../../di/types';
-import { IIngredientRepository } from '@/domain/interfaces/repositories/IIngredientRepository';
+import { GetIngredientsUseCase as CoreUseCase } from '@culinaryos/core/use-cases/inventory/GetIngredientsUseCase';
 import { LegacyIngredient } from '@/domain/entities/Ingredient';
+import { toLegacy } from '@/adapters/IngredientAdapter';
 
 @injectable()
 export class GetIngredientsUseCase {
-    constructor(@inject(TYPES.IngredientRepository) private repository: IIngredientRepository) { }
+  constructor(@inject(TYPES.CoreGetIngredientsUseCase) private coreUseCase: CoreUseCase) {}
 
-    async execute(outletId: string = ''): Promise<LegacyIngredient[]> {
-        return this.repository.getIngredients(outletId);
-    }
+  async execute(outletId: string = ''): Promise<LegacyIngredient[]> {
+    const coreIngredients = await this.coreUseCase.execute(outletId);
+    return coreIngredients.map(toLegacy);
+  }
 }

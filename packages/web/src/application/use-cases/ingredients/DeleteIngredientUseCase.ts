@@ -1,12 +1,12 @@
 import { injectable, inject } from 'inversify';
 import { TYPES } from '../../di/types';
-import { IIngredientRepository } from '@/domain/interfaces/repositories/IIngredientRepository';
+import { DeleteIngredientUseCase as CoreUseCase } from '@culinaryos/core/use-cases/inventory/DeleteIngredientUseCase';
 
 @injectable()
 export class DeleteIngredientUseCase {
-    constructor(@inject(TYPES.IngredientRepository) private repository: IIngredientRepository) { }
+  constructor(@inject(TYPES.CoreDeleteIngredientUseCase) private coreUseCase: CoreUseCase) {}
 
-    async execute(id: string): Promise<void> {
-        return this.repository.deleteIngredient(id);
-    }
+  async execute(id: string): Promise<void> {
+    return this.coreUseCase.execute(id);
+  }
 }
