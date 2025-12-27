@@ -28,6 +28,12 @@ import { IIngredientRepository as ICoreIngredientRepository } from '@culinaryos/
 
 import { IRecipeRepository } from '@/domain/interfaces/repositories/IRecipeRepository';
 import { FirebaseRecipeRepository } from '@/infrastructure/repositories/FirebaseRecipeRepository';
+import { CoreRecipeRepositoryAdapter } from '@/adapters/repositories/CoreRecipeRepositoryAdapter';
+import { GetFichasTecnicasUseCase as CoreGetRecipesUseCase } from '@culinaryos/core/use-cases/fichas/GetFichasTecnicasUseCase';
+import { CreateFichaTecnicaUseCase as CoreCreateRecipeUseCase } from '@culinaryos/core/use-cases/fichas/CreateFichaTecnicaUseCase';
+import { UpdateFichaTecnicaUseCase as CoreUpdateRecipeUseCase } from '@culinaryos/core/use-cases/fichas/UpdateFichaTecnicaUseCase';
+import { DeleteFichaTecnicaUseCase as CoreDeleteRecipeUseCase } from '@culinaryos/core/use-cases/fichas/DeleteFichaTecnicaUseCase';
+import { IFichaTecnicaRepository as ICoreRecipeRepository } from '@culinaryos/core/domain/interfaces/repositories/IFichaTecnicaRepository';
 import { CalculateRecipeCostUseCase } from '../use-cases/recipes/CalculateRecipeCostUseCase';
 import { GetRecipesUseCase } from '../use-cases/recipes/GetRecipesUseCase';
 import { CreateRecipeUseCase } from '../use-cases/recipes/CreateRecipeUseCase';
@@ -98,6 +104,10 @@ export function bootstrap() {
   container
     .bind<IRecipeRepository>(TYPES.RecipeRepository)
     .to(FirebaseRecipeRepository)
+    .inSingletonScope();
+  container
+    .bind<ICoreRecipeRepository>(TYPES.CoreRecipeRepository)
+    .to(CoreRecipeRepositoryAdapter)
     .inSingletonScope();
   container.bind<IAIService>(TYPES.AIService).to(GeminiAdapter).inSingletonScope();
   container.bind<IImportService>(TYPES.ImportService).to(ExcelImportService).inSingletonScope();
@@ -180,6 +190,34 @@ export function bootstrap() {
   container
     .bind<DeleteRecipeUseCase>(TYPES.DeleteRecipeUseCase)
     .to(DeleteRecipeUseCase)
+    .inTransientScope();
+  container
+    .bind<CoreGetRecipesUseCase>(TYPES.CoreGetRecipesUseCase)
+    .toDynamicValue(() => {
+      const coreRepo = container.get<ICoreRecipeRepository>(TYPES.CoreRecipeRepository);
+      return new CoreGetRecipesUseCase(coreRepo);
+    })
+    .inTransientScope();
+  container
+    .bind<CoreCreateRecipeUseCase>(TYPES.CoreCreateRecipeUseCase)
+    .toDynamicValue(() => {
+      const coreRepo = container.get<ICoreRecipeRepository>(TYPES.CoreRecipeRepository);
+      return new CoreCreateRecipeUseCase(coreRepo);
+    })
+    .inTransientScope();
+  container
+    .bind<CoreUpdateRecipeUseCase>(TYPES.CoreUpdateRecipeUseCase)
+    .toDynamicValue(() => {
+      const coreRepo = container.get<ICoreRecipeRepository>(TYPES.CoreRecipeRepository);
+      return new CoreUpdateRecipeUseCase(coreRepo);
+    })
+    .inTransientScope();
+  container
+    .bind<CoreDeleteRecipeUseCase>(TYPES.CoreDeleteRecipeUseCase)
+    .toDynamicValue(() => {
+      const coreRepo = container.get<ICoreRecipeRepository>(TYPES.CoreRecipeRepository);
+      return new CoreDeleteRecipeUseCase(coreRepo);
+    })
     .inTransientScope();
 
   // Inventory Use Cases

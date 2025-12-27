@@ -6,7 +6,8 @@ export const TYPES = {
   // Ingredients Module
   IngredientRepository: Symbol.for('IngredientRepository'),
   CoreIngredientRepository: Symbol.for('CoreIngredientRepository'), // Core interface
-  RecipeRepository: Symbol.for('RecipeRepository'), // Added
+  RecipeRepository: Symbol.for('RecipeRepository'),
+  CoreRecipeRepository: Symbol.for('CoreRecipeRepository'),
   AIService: Symbol.for('AIService'),
   ImportService: Symbol.for('ImportService'),
 
@@ -26,9 +27,13 @@ export const TYPES = {
   // Recipe Use Cases
   CalculateRecipeCostUseCase: Symbol.for('CalculateRecipeCostUseCase'),
   GetRecipesUseCase: Symbol.for('GetRecipesUseCase'),
+  CoreGetRecipesUseCase: Symbol.for('CoreGetRecipesUseCase'),
   CreateRecipeUseCase: Symbol.for('CreateRecipeUseCase'),
+  CoreCreateRecipeUseCase: Symbol.for('CoreCreateRecipeUseCase'),
   UpdateRecipeUseCase: Symbol.for('UpdateRecipeUseCase'),
+  CoreUpdateRecipeUseCase: Symbol.for('CoreUpdateRecipeUseCase'),
   DeleteRecipeUseCase: Symbol.for('DeleteRecipeUseCase'),
+  CoreDeleteRecipeUseCase: Symbol.for('CoreDeleteRecipeUseCase'),
 
   // Inventory Module
   InventoryRepository: Symbol.for('InventoryRepository'),
