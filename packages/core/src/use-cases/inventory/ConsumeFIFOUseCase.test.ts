@@ -79,9 +79,16 @@ describe('ConsumeFIFOUseCase', () => {
       reason: 'Production',
     };
 
-    // Need to mock consume return (updated batch)
-    (mockBatchRepo.consume as any).mockResolvedValue({});
-    (mockBatchRepo.updateStatus as any).mockResolvedValue({});
+    // Mock consume return (updated batches with remainingQuantity)
+    (mockBatchRepo.consume as any)
+      .mockResolvedValueOnce({
+        id: 'b1',
+        remainingQuantity: new Quantity(0, new Unit(UnitType.KG)), // Fully depleted
+      })
+      .mockResolvedValueOnce({
+        id: 'b2',
+        remainingQuantity: new Quantity(4, new Unit(UnitType.KG)), // 5 - 1 = 4
+      });
 
     await consumeFIFOUseCase.execute(dto);
 
