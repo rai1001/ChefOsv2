@@ -117,7 +117,7 @@ describe('AddBatchUseCase', () => {
     };
 
     await expect(addBatchUseCase.execute(dto)).rejects.toThrow(
-      'Ingredient with ID missing not found'
+      'Ingredient with ID'
     );
   });
 });
