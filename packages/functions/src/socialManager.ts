@@ -1,7 +1,7 @@
 import { onCall, HttpsError } from 'firebase-functions/v2/https';
 import { VertexAI } from '@google-cloud/vertexai';
 import { generateSocialManagerPrompt } from './prompts';
-import { logInfo, logError } from './utils/logger';
+import { logError } from './utils/logger';
 import { checkRateLimit } from './utils/rateLimiter';
 
 interface SocialManagerData {

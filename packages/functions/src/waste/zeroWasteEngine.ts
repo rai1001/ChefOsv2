@@ -1,7 +1,7 @@
 import { onCall, HttpsError } from 'firebase-functions/v2/https';
 import * as admin from 'firebase-admin';
 import { VertexAI } from '@google-cloud/vertexai';
-import { logInfo, logError, logWarn } from '../utils/logger';
+import { logError } from '../utils/logger';
 import { checkRateLimit } from '../utils/rateLimiter';
 
 // Standardizing interfaces for internal use
