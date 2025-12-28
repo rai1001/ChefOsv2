@@ -42,9 +42,25 @@ export interface IngestionItem<T = any> {
   sheetName?: string;
 }
 
-export interface ScannedDocumentResult<T = any> {
-  items: T[];
+export interface ScannedItem {
+  name: string;
+  quantity?: number;
+  unit?: string;
+  unitPrice?: number;
+  totalPrice?: number;
+  category?: string;
+  code?: string;
+}
+
+export interface ScannedDocumentResult {
+  items: ScannedItem[];
   rawText?: string;
+  metadata?: {
+    totalAmount?: number;
+    currency?: string;
+    date?: string;
+    vendor?: string;
+  };
 }
 
 export interface AIRequestOptions {

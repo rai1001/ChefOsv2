@@ -25,7 +25,7 @@ export class GeminiAdapter implements IAIService {
 
   async enrichIngredient(name: string): Promise<EnrichedIngredientData> {
     const prompt = `
-            You are a nutrition database expert specializing in European food standards.
+            You are a nutrition database expert specializing in European food standards (EU Regulation 1169/2011).
 
             Analyze this ingredient: "${name}"
 
@@ -39,23 +39,26 @@ export class GeminiAdapter implements IAIService {
                     "fiber": <grams per 100g>,
                     "sodium": <mg per 100g>
                 },
-                "allergens": ["List following EU Regulation 1169/2011: Gluten, Crustaceans, Eggs, Fish, Peanuts, Soy, Milk, Nuts, Celery, Mustard, Sesame, Sulphites, Lupin, Molluscs"]
+                "allergens": ["List ALL allergens present or potentially present as traces according to EU Regulation 1169/2011: Gluten, Crustaceans, Eggs, Fish, Peanuts, Soy, Milk, Nuts, Celery, Mustard, Sesame, Sulphites, Lupin, Molluscs"]
             }
 
             RULES:
-            1. Prioritize BEDCA (Spanish) or USDA databases
-            2. Use 0 only for truly zero values, not unknowns
-            3. If data unavailable, use category averages (e.g., "white fish" for unknown fish)
-            4. Include allergen traces when scientifically documented
-            5. All numbers must be numeric types, not strings
+            1. Prioritize BEDCA (Spanish) or USDA databases.
+            2. Use 0 only for truly zero values. Use null or average if unknown.
+            3. If specific variant unknown, use category averages.
+            4. STRICTLY follow EU 1169/2011 for allergen naming.
+            5. All numbers must be numeric types.
         `;
-    const result = await this.generateText(prompt);
-    // Extract JSON
+
+    // Use JSON mode for reliable output
+    const result = await this.generateText(prompt, { jsonMode: true });
+
     try {
-      const text = result.text;
-      const jsonMatch = /```json\n([\s\S]*?)\n```/.exec(text) || /\{[\s\S]*\}/.exec(text);
-      const jsonStr = jsonMatch ? jsonMatch[1] || jsonMatch[0] : text;
-      return JSON.parse(jsonStr);
+      // With jsonMode, text should be valid JSON.
+      // We still handle potential Markdown wrapping just in case.
+      const text = result.text.trim();
+      const cleanJson = text.replace(/^```json\s*|\s*```$/g, '');
+      return JSON.parse(cleanJson);
     } catch (e) {
       console.error('Failed to enrich ingredient via Gemini', e);
       return { nutritionalInfo: { calories: 0, protein: 0, carbs: 0, fat: 0 }, allergens: [] };
@@ -76,16 +79,15 @@ export class GeminiAdapter implements IAIService {
     }
 
     const prompt = `Analyze this document (Type: ${type || 'General'}). Return a JSON with { "items": [], "rawText": "..." }`;
-    const response = await this.analyzeImage(base64, prompt);
+    const response = await this.analyzeImage(base64, prompt, { jsonMode: true });
 
     try {
-      // Naive parse
-      const jsonMatch =
-        /```json\n([\s\S]*?)\n```/.exec(response.text) || /\{[\s\S]*\}/.exec(response.text);
-      const jsonStr = jsonMatch ? jsonMatch[1] || jsonMatch[0] : response.text;
-      const json = JSON.parse(jsonStr);
+      const text = response.text.trim();
+      const cleanJson = text.replace(/^```json\s*|\s*```$/g, '');
+      const json = JSON.parse(cleanJson);
       return { items: json.items || [], rawText: response.text };
     } catch {
+      console.warn('Failed to parse JSON from scanDocument, returning raw text only');
       return { items: [], rawText: response.text };
     }
   }

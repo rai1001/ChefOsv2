@@ -18,6 +18,9 @@ const CACHE_TTL: Record<AIFeature, number> = {
   menuGenerator: 24,
 };
 
+// Basic prompt versioning to invalidate cache when prompts change
+const PROMPT_VERSION = 'v1';
+
 async function generateHash(message: string): Promise<string> {
   const msgBuffer = new TextEncoder().encode(message);
   const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
@@ -26,14 +29,15 @@ async function generateHash(message: string): Promise<string> {
 }
 
 /**
- * Generates a SHA-256 hash key for caching based on feature and input.
+ * Generates a SHA-256 hash key for caching based on feature, input, and PROMPT_VERSION.
  * @param feature The AI feature.
  * @param input The input data (string or object).
  * @returns SHA-256 hash string.
  */
 export async function generateCacheKey(feature: AIFeature, input: any): Promise<string> {
   const inputString = typeof input === 'string' ? input : JSON.stringify(input);
-  const hash = await generateHash(`${feature}:${inputString}`);
+  // Include PROMPT_VERSION in hash to invalidate old entries when logic changes
+  const hash = await generateHash(`${feature}:${PROMPT_VERSION}:${inputString}`);
   return hash;
 }
 

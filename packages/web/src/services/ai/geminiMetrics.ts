@@ -9,7 +9,7 @@ import { performanceUtils } from '@/utils/performance';
 // Pricing Constants (Gemini 2.0 Flash - Fallback rates per 1M tokens)
 const DEFAULT_INPUT_COST_PER_1M = 0.1;
 const DEFAULT_OUTPUT_COST_PER_1M = 0.4;
-const DEFAULT_SPANISH_MULTIPLIER = 3.2; // Updated from 2.0 to 3.2 as per P2 requirements
+const DEFAULT_SPANISH_MULTIPLIER = 1.0; // Normalized since we use 3.7 chars/token base
 
 interface PricingConfig {
   inputCostPer1M: number;
@@ -59,11 +59,19 @@ async function getPricingConfig(): Promise<PricingConfig> {
  * @param imageBytes The size of the image in bytes (default 0).
  * @returns Estimated number of tokens.
  */
-function estimateTokens(text: string, imageBytes: number = 0, multiplier: number = 3.2): number {
-  // Rough estimate: Spanish to English token ratio is higher
-  // Base estimate: 4 chars = 1 token
-  const baseTokens = text.length / 4;
-  const textTokens = baseTokens * multiplier;
+// ... (existing helper code)
+
+/**
+ * Estimates the number of tokens for text and image inputs.
+ * Optimized for Spanish content (approx 3.7 chars per token)
+ * @param text The input text string.
+ * @param imageBytes The size of the image in bytes (default 0).
+ * @returns Estimated number of tokens.
+ */
+function estimateTokens(text: string, imageBytes: number = 0, multiplier: number = 1.0): number {
+  // Average for Spanish/Code mix: ~3.7 chars per token
+  const CHARS_PER_TOKEN = 3.7;
+  const textTokens = (text.length / CHARS_PER_TOKEN) * multiplier;
 
   // Prompt formula: (imageBytes / 750)
   const imageTokens = imageBytes / 750;

@@ -15,7 +15,7 @@ TIPO DE NEGOCIO: ${businessType}
 
 GENERA (formato JSON estricto):
 {
-  "copy": "Descripción apetecible para Instagram (80-120 caracteres, incluye 2-3 emojis estratégicos)",
+  "copy": "Descripción apetecible para Instagram (100-280 caracteres, incluye 2-3 emojis estratégicos)",
   "hashtags": [
     "Array de 10 hashtags",
     "OBLIGATORIO incluir: #Galicia",
@@ -99,7 +99,7 @@ GENERA CONTENIDO PARA MÚLTIPLES PLATAFORMAS (JSON estricto):
   },
   "content": {
     "instagram": {
-      "copy": "Copy de 100-150 caracteres con 3-4 emojis estratégicos",
+      "copy": "Copy de 150-300 caracteres con 3-4 emojis estratégicos",
       "hashtags": [
         "#Galicia",
         "#ACoruña",
