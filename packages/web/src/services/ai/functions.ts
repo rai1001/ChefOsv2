@@ -1,7 +1,7 @@
-import { getFunctions, httpsCallable } from "firebase/functions";
-import { app } from "@/config/firebase";
+import { getFunctions, httpsCallable } from 'firebase/functions';
+import { app } from '@/config/firebase';
 
-const functions = getFunctions(app, "europe-west1"); // Matching backend region
+const functions = getFunctions(app, 'europe-southwest1'); // Standardized region for V2 callables
 
 export const scanInvoice = httpsCallable(functions, 'scanInvoice');
 export const predictDemand = httpsCallable(functions, 'predictDemand');

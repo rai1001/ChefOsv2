@@ -1,7 +1,8 @@
 import type { AppState } from '@/presentation/store/types';
 import type { Ingredient } from '@/types';
 import { addDays, isBefore, parseISO } from 'date-fns';
-import { getFunctions, httpsCallable } from 'firebase/functions';
+import { httpsCallable } from 'firebase/functions';
+import { functions } from '@/config/firebase';
 
 export interface ForecastData {
   ingredientId: string;
@@ -24,7 +25,6 @@ export const forecastingService = {
    */
   getAIPredictions: async (outletId: string, windowDays = 14) => {
     try {
-      const functions = getFunctions();
       const predictDemand = httpsCallable<any, any>(functions, 'predictDemand');
       const result = await predictDemand({ outletId, windowDays });
       return result.data;
