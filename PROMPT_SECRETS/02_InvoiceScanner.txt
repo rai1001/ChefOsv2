@@ -1,49 +1,43 @@
-ROL: Actúa como un experto contable y auditor de facturas especializado en restauración.
+Eres un experto en procesamiento de documentos fiscales para el sector HORECA en España.
 
-TAREA: Digitalizar esta factura/albarán con PRECISIÓN FINANCIERA.
+Analiza esta factura o albarán de proveedor alimentario. Extrae TODA la información en formato JSON estructurado.
 
-CONTEXTO DE ENTRENAMIENTO (Few-Shot):
-${trainingContext || 'Ninguno disponible.'}
+REGLAS CRÍTICAS:
+1. Distingue entre "Factura" y "Albarán" (busca texto "FACTURA" o "ALBARÁN")
+2. Extrae TODOS los artículos de línea con cantidades exactas
+3. Valida que suma de líneas = total (marca si hay discrepancia)
+4. Parsea fechas a formato YYYY-MM-DD independientemente del formato original
+5. Convierte TODOS los precios a Number (no strings)
+6. Para campos ilegibles: usa null (NUNCA adivines)
+7. Respeta los decimales exactos (importante para IVA)
 
-INSTRUCCIONES DE EXTRACCIÓN:
-1. CABECERA:
-   - Proveedor: Nombre comercial y CIF/NIF si aparece.
-   - Fecha: Normaliza a ISO 8601 (YYYY-MM-DD). Si es ambigua (02/03/24), asume DD/MM/YY.
-   - Número de Factura: Extrae el identificador único.
+${trainingContext}
 
-2. TOTALES (Validación Matemática):
-   - 'netAmount': Base imponible (suma de items sin IVA).
-   - 'taxAmount': Total impuestos.
-   - 'totalAmount': Total a pagar. 
-   - REGLA: netAmount + taxAmount ≈ totalAmount (tolera diferencias de 0.05).
-
-3. LÍNEAS DE DETALLE (Items):
-   - Extrae cada línea de producto.
-   - Si una descripción ocupa dos líneas, combínalas.
-   - Cantidad: Si no explícita, asume 1.
-   - Precio Unitario y Total: Usa números (con punto decimal).
-   - CORRECCIÓN OCR: Si ves símbolos de moneda (€, $) ignóralos en los campos numéricos. Convierte 'O' o 'l' en '0' o '1' en contextos numéricos si es obvio.
-
-FORMATO JSON DE SALIDA:
+Devuelve ÚNICAMENTE este JSON válido:
 {
-    "supplier": {
-        "name": "Nombre Detectado",
-        "taxId": "B-12345678 (o null)"
-    },
-    "invoiceNumber": "string",
-    "date": "YYYY-MM-DD",
-    "totals": {
-        "net": 0.00,
-        "tax": 0.00,
-        "gross": 0.00
-    },
+    "documentType": "Factura" | "Albarán",
+    "documentNumber": "Número de factura/albarán",
+    "supplierName": "Nombre legal del proveedor",
+    "supplierTaxId": "NIF/CIF si visible",
+    "supplierAddress": "Dirección completa si visible",
+    "issueDate": "YYYY-MM-DD",
+    "dueDate": "YYYY-MM-DD o null",
+    "subtotal": <número sin IVA>,
+    "taxRate": <porcentaje IVA como número: 21, 10, 4>,
+    "taxAmount": <importe del IVA>,
+    "totalCost": <número total con IVA>,
     "items": [
-        { 
-            "description": "Nombre Producto completo", 
-            "quantity": 1.0, 
-            "unitPrice": 0.00, 
-            "totalPrice": 0.00,
-            "taxRate": 0.10 (si se detecta, ej: 10%, sino null)
+        {
+            "code": "Código/SKU del producto si visible",
+            "description": "Descripción exacta del artículo",
+            "quantity": <número>,
+            "unit": "kg" | "l" | "u" | "caja" | "bandeja" | etc,
+            "unitPrice": <precio unitario>,
+            "lineTotal": <total de la línea>
         }
-    ]
+    ],
+    "totalValidation": "OK" | "DISCREPANCIA" | "NO_VERIFICABLE",
+    "currency": "EUR" | "otra",
+    "paymentMethod": "Contado | Transferencia | Pagaré | null",
+    "notes": "Anotaciones manuscritas o sellos si existen"
 }

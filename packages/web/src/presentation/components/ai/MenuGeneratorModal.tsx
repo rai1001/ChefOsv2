@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { generateMenuFromCriteria } from '@/services/geminiService';
 import type { GeneratedMenu } from '@/types';
-import { useInventory } from '@/presentation/store/inventoryAtoms';
+import { useStore } from '@/presentation/store/useStore';
 import { X, Sparkles, Loader2, Check } from 'lucide-react';
 
 interface MenuGeneratorModalProps {
@@ -28,7 +28,7 @@ export const MenuGeneratorModal: React.FC<MenuGeneratorModalProps> = ({
   const [error, setError] = useState<string | null>(null);
 
   // Get inventory for AI context
-  const { ingredients } = useInventory();
+  const { ingredients } = useStore();
 
   if (!isOpen) return null;
 
@@ -46,7 +46,7 @@ export const MenuGeneratorModal: React.FC<MenuGeneratorModalProps> = ({
           .split(',')
           .map((s) => s.trim())
           .filter(Boolean),
-        availableIngredients: ingredients.map((i) => i.name),
+        availableIngredients: ingredients.map((i: any) => i.name),
       });
 
       if (response.success && response.data) {

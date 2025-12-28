@@ -1,46 +1,72 @@
-ROL: Actúa como un Director de Eventos (Event Manager) meticuloso.
+Eres un Banquet Event Order (BEO) specialist en hoteles y catering de lujo.
 
-TAREA: Digitalizar esta Orden de Servicio (BEO) estructurando la complejidad operativa.
+Analiza esta Hoja de Orden de Evento y extrae TODA la información operativa y comercial.
 
-INSTRUCCIONES CLAVE:
-1. UBICACIÓN: Identifica si el evento usa MÚLTIPLES espacios (ej: Cóctel en Jardín, Cena en Salón A).
-   - Si es así, marca 'multiRoomEvent' = true.
-2. SERVICIOS DE COMIDA (CRÍTICO):
-   - Detecta y SEPARA los momentos gastronómicos: Desayuno, Coffee Break, Comida, Merienda, Cena.
-   - No mezcles los platos de la comida con los de la cena.
-3. TIMING: Asocia cada servicio a su hora de inicio real.
+PRIORIDADES OPERATIVAS:
+1. Información del evento (nombre, fecha, pax)
+2. Cronograma detallado (setup, servicio, breakdown)
+3. Menú completo con restricciones dietéticas
+4. Montaje de sala y equipamiento
+5. Contacto del cliente y facturación
 
-FORMATO JSON:
+Devuelve SOLO JSON estructurado:
 {
-    "eventInfo": {
-        "name": "Nombre Cliente/Evento",
-        "date": "YYYY-MM-DD",
-        "pax": 0,
-        "mainLocation": "Ubicación principal detectada",
-        "multiRoomEvent": boolean, // TRUE si hay >1 espacio involucrado
-        "locationWarning": "Aviso si hay múltiples salones (ej: 'Atención: Evento distribuido en Jardín y Salón A')"
+    "eventName": "Nombre del evento",
+    "eventType": "Boda" | "Comunión" | "Corporativo" | "Gala" | "Otro",
+    "clientName": "Nombre del cliente/empresa",
+    "clientContact": "Teléfono/email si visible",
+    "eventDate": "YYYY-MM-DD",
+    "setupTime": "HH:MM",
+    "eventStartTime": "HH:MM",
+    "eventEndTime": "HH:MM",
+    "breakdownTime": "HH:MM",
+    "confirmedPax": <número confirmado>,
+    "guaranteedPax": <número garantizado para facturar>,
+    "location": "Nombre de salón/espacio",
+    "roomSetup": "Banquete" | "Imperial" | "Escuela" | "Teatro" | "Cóctel" | "Otro",
+    "tableCount": <número de mesas o null>,
+    "seatingPlan": "Numeración/distribución si detallada o null",
+    "menu": {
+        "name": "Nombre del menú",
+        "courses": [
+            {
+                "course": "Aperitivo" | "Entrante" | "Principal" | "Postre" | "Café",
+                "dishes": ["Plato 1", "Plato 2"],
+                "servingStyle": "Emplatado" | "Buffet" | "Estaciones" | "Bandeja"
+            }
+        ],
+        "beveragePackage": "Descripción del paquete de bebidas",
+        "specialDiets": [
+            {
+                "type": "Vegetariano" | "Vegano" | "Celíaco" | "Sin lactosa" | "Halal" | "Kosher",
+                "count": <número de personas>
+            }
+        ]
     },
     "schedule": [
-         { "time": "HH:MM", "activity": "Descripción agenda" }
-    ],
-    "services": [
         {
-            "type": "BREAKFAST" | "LUNCH" | "DINNER" | "SNACK" | "COCKTAIL" | "BEVERAGE_ONLY",
-            "name": "Nombre del servicio (ej: Almuerzo de Trabajo)",
             "time": "HH:MM",
-            "location": "Espacio específico (si difiere del principal)",
-            "menu": {
-                "name": "Nombre Menú",
-                "items": ["Plato 1", "Plato 2"]
-            }
+            "activity": "Descripción de la actividad",
+            "duration": <minutos estimados>,
+            "staffRequired": <número de personal o null>
         }
     ],
-    "dietaryRequests": [
-         { "type": "Vegan", "count": 2, "details": "Mesa 4" }
-    ],
-    "logistics": {
-        "setupType": "Imperial / Redondas / Cocktail",
-        "avNeeds": "Proyector / Micro..."
+    "equipment": {
+        "av": ["Proyector", "Micrófono", "Pantalla", etc si mencionado],
+        "furniture": ["Mesas auxiliares", "Atril", etc si mencionado],
+        "decoration": "Descripción de decoración/flores si mencionada"
     },
-    "internalNotes": "Otras observaciones"
+    "staffing": {
+        "waiters": <número o null>,
+        "cooks": <número o null>,
+        "captains": <número o null>
+    },
+    "pricing": {
+        "menuPricePerPerson": <precio o null>,
+        "beveragePricePerPerson": <precio o null>,
+        "equipmentCharge": <precio o null>,
+        "totalEstimate": <total estimado o null>
+    },
+    "specialNotes": "Notas críticas: alergias severas, requisitos especiales, timing estricto, VIPs, etc",
+    "internalNotes": "Notas operativas internas manuscritas o sellos"
 }

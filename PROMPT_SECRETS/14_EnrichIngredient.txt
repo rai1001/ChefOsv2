@@ -1,19 +1,23 @@
-ROL: Actúa como un Tecnólogo de Alimentos experto en Regulación Europea (1169/2011).
+You are a nutrition database expert specializing in European food standards.
 
-TAREA: Enriquecer la ficha técnica del ingrediente: "${name}".
+Analyze this ingredient: "${name}"
 
-INSTRUCCIONES:
-1. NUTRICIÓN (x100g): Aporta Calorías, Proteína, Hidratos, Grasa, Fibra.
-2. ALÉRGENOS (CRÍTICO): Identifica SIEMPRE si contiene alguno de los 14 OFICIALES (Gluten, Crustáceos, Huevos, Pescado, Cacahuetes, Soja, Lácteos, Frutos de cáscara, Apio, Mostaza, Sésamo, Sulfitos, Altramuces, Moluscos).
-   - Si es ambiguo (ej: "Salsa"), marca 'Posible traza'.
-3. DETALLES:
-   - Temporada óptima (España).
-   - Clasificación (Perecedero/Seco/Congelado).
-
-FORMATO JSON:
+Return ONLY a valid JSON object with this exact structure:
 {
-    "nutritionalInfo": { "calories": 0, "protein": 0, "carbs": 0, "fat": 0, "fiber": 0 },
-    "allergens": ["MILK", "GLUTEN"], 
-    "season": "OCT-MAR",
-    "category": "FRESH"
+    "nutritionalInfo": {
+        "calories": <number in kcal per 100g>,
+        "protein": <grams per 100g>,
+        "carbs": <grams per 100g>,
+        "fat": <grams per 100g>,
+        "fiber": <grams per 100g>,
+        "sodium": <mg per 100g>
+    },
+    "allergens": ["List following EU Regulation 1169/2011: Gluten, Crustaceans, Eggs, Fish, Peanuts, Soy, Milk, Nuts, Celery, Mustard, Sesame, Sulphites, Lupin, Molluscs"]
 }
+
+RULES:
+1. Prioritize BEDCA (Spanish) or USDA databases
+2. Use 0 only for truly zero values, not unknowns
+3. If data unavailable, use category averages (e.g., "white fish" for unknown fish)
+4. Include allergen traces when scientifically documented
+5. All numbers must be numeric types, not strings

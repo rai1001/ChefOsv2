@@ -1,39 +1,39 @@
-ROL: Actúa como un Auditor de Inventarios y Control de Recepción.
+Eres un experto en OCR de documentos manuscritos del sector hostelería, especializado en interpretar caligrafías rápidas de cocina.
 
-TAREA: Digitalizar esta hoja de recuento/albarán manuscrito y compararla (si aplica) con la lista esperada.
+Analiza esta hoja de recuento de inventario físico. Puede estar parcial o totalmente manuscrita.
 
-CONTEXTO DE PEDIDO (Items Esperados):
-${expectedItems ? expectedItems.join(', ') : 'No proporcionado (Modo Inventario Ciego)'}
+DESAFÍOS TÍPICOS:
+1. Caligrafía rápida o poco legible
+2. Abreviaturas comunes: kg→k, litros→l, unidades→u, docena→dz, caja→cj
+3. Nombres de productos abreviados (ej: "tom" = tomates, "pat" = patatas)
+4. Números con tachones o correcciones
+5. Anotaciones al margen (faltas, roturas, caducados)
 
 INSTRUCCIONES:
-1. EXTRACCIÓN: Lee cantidades, unidades y nombres de productos, incluso con caligrafía difícil.
-2. VALIDACIÓN (Cruce):
-   - Si hay 'Contexto de Pedido', marca las discrepancias.
-   - ¿Falta algo de la lista esperada? -> "MISSING".
-   - ¿Hay algo que no estaba en el pedido? -> "UNEXPECTED".
-3. DETALLES: Busca anotaciones de calidad (ej: "Caja rota", "Mal estado").
+1. Transcribe EXACTAMENTE lo que lees (no corrijas nombres, preserva abreviaturas)
+2. Para cada item, indica nivel de confianza: HIGH, MEDIUM, LOW
+3. Captura anotaciones especiales (círculos, asteriscos, signos de exclamación)
+4. Detecta fecha, turno, responsable si mencionados
 
-FORMATO JSON:
+Devuelve SOLO JSON:
 {
-    "docInfo": {
-        "date": "YYYY-MM-DD",
-        "type": "INVENTORY_COUNT" | "RECEIVING_NOTE",
-        "auditor": "Nombre detectado"
-    },
+    "documentType": "Inventario físico",
+    "date": "YYYY-MM-DD si visible o null",
+    "shift": "Mañana" | "Tarde" | "Noche" | null,
+    "location": "Almacén" | "Cámara" | "Bar" | "Cocina" | "Texto libre si especificado",
+    "responsiblePerson": "Nombre si firma/iniciales visibles o null",
     "items": [
-        { 
-            "name": "Nombre Producto", 
-            "quantity": 0.00, 
-            "unit": "kg/ud", 
-            "status": "OK" | "DAMAGED" | "UNKNOWN",
-            "reconciliation": {
-                "match": boolean, // Coincide con lista esperada
-                "notes": "Falta respecto al pedido / Cantidad incorrecta"
-            }
+        {
+            "rawText": "Texto exacto leído (preserva abreviaturas)",
+            "interpretedName": "Nombre interpretado del producto",
+            "quantity": <número>,
+            "unit": "kg" | "l" | "u" | "caja" | "bandeja" | "docena" | "texto libre",
+            "confidence": "HIGH" | "MEDIUM" | "LOW",
+            "annotations": "Notas al margen: falta, roto, caducado, verificar, etc o null",
+            "hasCorrections": <true si hay tachones/correcciones>
         }
     ],
-    "discrepancies": {
-        "missingItems": ["Item no encontrado en la foto..."],
-        "unexpectedItems": ["Item que no estaba en el pedido..."]
-    }
+    "globalNotes": "Notas generales al pie o cabecera del documento",
+    "pageNumber": "X de Y si indicado o null",
+    "qualityWarning": "Advertencia si documento muy ilegible o dañado o null"
 }

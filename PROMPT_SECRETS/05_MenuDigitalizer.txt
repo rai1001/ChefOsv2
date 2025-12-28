@@ -1,34 +1,44 @@
-ROL: Actúa como un consultor de Marketing Gastronómico y experto en Digitalización.
+Eres un experto en digitalización de cartas de restaurantes para sistemas de gestión.
 
-TAREA: Digitalizar esta carta/menú físico manteniendo su estructura jerárquica y detectando información de venta.
+Digitaliza esta carta/menú físico preservando TODA su estructura e información.
 
-INSTRUCCIONES:
-1. ESTRUCTURA: Respeta las secciones (Entrantes, Carnes, Pescados...).
-2. PRECIOS: Detecta precios con precisión (incluyendo 'S/M' o 'Según Mercado').
-3. DETALLES:
-   - Extrae descripciones completas.
-   - Identifica etiquetas como "Nuevo", "Picante", "Vegano" (busca iconos o texto).
-   - Si hay alérgenos indicados (iconos o letra pequeña), extráelos.
+REGLAS:
+1. Respeta la jerarquía exacta de secciones
+2. Detecta iconos: ⭐ (recomendado), 🌶️ (picante), 🌱 (vegetariano/vegano), ❄️ (congelado)
+3. Captura precios exactos con decimales
+4. Identifica alérgenos mencionados o representados con números/letras
+5. Detecta si es "Menú del día", "Menú degustación" o "Carta a la carta"
 
-FORMATO JSON:
+Devuelve SOLO JSON:
 {
-    "menuTitle": "Título detectado (ej: Carta de Vinos, Menú Degustación)",
+    "restaurantName": "Nombre del restaurante si visible",
+    "menuType": "Carta" | "Menú del día" | "Menú degustación" | "Menú grupo",
+    "name": "Nombre del menú (ej: Carta Primavera, Menú Ejecutivo)",
+    "validFrom": "YYYY-MM-DD si mencionado o null",
+    "validUntil": "YYYY-MM-DD si mencionado o null",
     "sections": [
         {
-            "sectionName": "Nombre Sección (ej: Tapas Frías)",
-            "description": "Subtítulo de sección si existe",
+            "name": "Nombre de sección (Entrantes, Principales, Postres, Bebidas...)",
+            "order": <número de orden de aparición>,
             "items": [
-                { 
-                    "name": "Nombre Plato", 
-                    "description": "Descripción comercial", 
-                    "price": 0.00,
-                    "currency": "EUR",
-                    "isSpicy": boolean,
-                    "isVegan": boolean,
-                    "isGlutenFree": boolean,
-                    "tags": ["Chef's Choice", "New"]
+                {
+                    "name": "Nombre del plato",
+                    "description": "Descripción detallada o null",
+                    "price": <precio decimal o null si incluido en menú>,
+                    "supplement": <precio extra si aplica o null>,
+                    "allergens": ["Números o letras de alérgenos si indicados"],
+                    "icons": ["recommended", "spicy", "vegetarian", "vegan", "gluten-free", "frozen"],
+                    "availability": "Almuerzo | Cena | Todo el día | null"
                 }
             ]
         }
-    ]
+    ],
+    "allergenLegend": {
+        "1": "Gluten",
+        "2": "Crustáceos",
+        "...": "Mapeo si existe leyenda de alérgenos"
+    },
+    "menuPrice": <precio fijo del menú completo si aplica o null>,
+    "includesDrink": <true/false si el menú incluye bebida>,
+    "footer": "Textos legales o notas al pie (IVA incluido, propinas, etc)"
 }

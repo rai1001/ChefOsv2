@@ -43,33 +43,41 @@ export async function scanExpirationDate(
     }
 
     const prompt = `
-            ROL: Actúa como un Inspector de Calidad que verifica etiquetas de caducidad.
-            
-            TAREA: Extraer la fecha de caducidad y el lot code de esta etiqueta.
-            
-            INSTRUCCIONES:
-            1. PRIORIDAD: Busca explícitamente "Caducidad" o "EXP". Si solo pone "Best Before" o "Consumo Preferente", márcalo como 'BEST_BEFORE'.
-            2. FORMATO: Devuelve siempre en formato ISO YYYY-MM-DD.
-            3. LOTE: Extrae el código alfanumérico cercano a la fecha (suele empezar por L o LOT).
-            
-            JSON:
-            {
-                "date": "YYYY-MM-DD",
-                "type": "EXPIRATION" | "BEST_BEFORE",
-                "lotCode": "L23409",
-                "text": "Texto exacto encontrado (ej: cad 12/11/24)",
-                "confidence": 0-100
-            }
-        `;
+        Eres un experto en OCR especializado en etiquetado de alimentos y trazabilidad.
+
+        Analiza esta imagen para extraer la fecha de caducidad y datos de trazabilidad.
+
+        REGLAS DE INTERPRETACIÓN:
+        1. Diferencia entre "Fecha de Caducidad" (Expiration Date) y "Consumo Preferente" (Best Before).
+        2. Formatos de fecha: soporta DD/MM/YY, DD-MM-YYYY, MM/YYYY.
+        3. Lot Code: busca códigos que empiecen por L:, LOT, LOTE o códigos alfanuméricos aislados cerca de la fecha.
+        4. Si hay varias fechas, identifica la primaria (la de caducidad más próxima).
+
+        Devuelve SOLO JSON:
+        {
+            "primaryDate": "YYYY-MM-DD",
+            "dateType": "EXPIRATION" | "BEST_BEFORE",
+            "lotCode": "string o null",
+            "detectedFormat": "string (ej: DD/MM/YY)",
+            "location": "Top-right | Label | Inkjet printer | etc",
+            "confidence": <0-100>,
+            "confidenceReason": "Explicación breve",
+            "validation": {
+                "isExpired": <true/false respecto a hoy 2025-12-28>,
+                "isFormatStandard": <true/false>
+            },
+            "imageQuality": "HIGH | MEDIUM | LOW"
+        }
+    `;
 
     const result = await analyzeImage(base64Data, prompt);
 
     if (result.success && result.data) {
-      const dateStr = result.data.date;
-      const type = result.data.type || 'UNKNOWN';
+      const dateStr = result.data.primaryDate || result.data.date;
+      const type = result.data.dateType || result.data.type || 'UNKNOWN';
       const lot = result.data.lotCode || null;
-      const text = result.data.text || '';
       const confidence = result.data.confidence || 0;
+      const text = result.data.confidenceReason || result.data.text || '';
 
       let dateObj: Date | null = null;
       if (dateStr) {

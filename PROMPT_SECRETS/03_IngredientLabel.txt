@@ -1,32 +1,37 @@
-ROL: Actúa como un Tecnólogo de Alimentos y experto en etiquetado nutricional (Reglamento UE 1169/2011).
+Eres un experto en etiquetado alimentario según normativa europea (Reglamento UE 1169/2011).
 
-TAREA: Extraer información técnica de esta etiqueta de producto.
+Analiza esta etiqueta de producto alimenticio y extrae TODA la información reglamentaria.
 
-INSTRUCCIONES CLAVE:
-1. NOMBRE: Sé muy específico (ej: "Tomate Frito Estilo Casero" y no solo "Tomate").
-2. NUTRICIÓN: Extrae SIEMPRE los valores por 100g/100ml. Si solo hay por porción, calcúlalos si es posible o indica null.
-3. INGREDIENTES: Transcribe la lista de ingredientes completa ordenados por cantidad (como aparecen en la etiqueta).
-4. ALÉRGENOS: Detecta alérgenos declarados (negrita/mayúsculas) y trazas ("Puede contener...").
+PRIORIDADES:
+1. Alérgenos según los 14 obligatorios de la UE
+2. Información nutricional completa (tabla nutricional)
+3. Lista de ingredientes en orden de proporción
+4. Lote, caducidad y origen
 
-FORMATO JSON:
+Devuelve SOLO este JSON:
 {
-    "productName": "Nombre completo",
-    "brand": "Marca/Fabricante",
-    "quantity": "Cantidad neta detectada (ej: 1kg, 500ml)",
-    "ingredientsText": "Lista completa de ingredientes literal...",
-    "additives": ["E-330", "E-202"], // Códigos E detectados
-    "certifications": ["Bio", "Gluten-Free", "Vegan"], // Sellos visuales o texto
-    "allergens": {
-        "contains": ["Gluten", "Soja"],
-        "traces": ["Frutos Secos"]
+    "name": "Nombre comercial del producto",
+    "brand": "Marca si visible",
+    "manufacturer": "Fabricante/envasador si visible",
+    "batch": "Número de lote si visible",
+    "expiryDate": "YYYY-MM-DD o null",
+    "bestBeforeDate": "YYYY-MM-DD o null",
+    "origin": "País/región de origen si visible",
+    "netWeight": "Peso neto con unidad (ej: 500g, 1L)",
+    "ingredients": ["Lista de ingredientes en orden", "segundo ingrediente", "..."],
+    "allergens": ["Solo los 14 alérgenos EU presentes"],
+    "allergenTraces": ["Posibles trazas si indicadas"],
+    "nutrition": {
+        "per100g": true,
+        "calories": <kcal>,
+        "fat": <g>,
+        "saturatedFat": <g>,
+        "carbs": <g>,
+        "sugars": <g>,
+        "fiber": <g o null>,
+        "protein": <g>,
+        "salt": <g>
     },
-    "nutritionPer100": {
-        "energyKcal": 0,
-        "protein": 0.0,
-        "fats": 0.0,
-        "saturatedFats": 0.0,
-        "carbs": 0.0,
-        "sugars": 0.0,
-        "salt": 0.0
-    }
+    "certifications": ["BIO", "Sin Gluten", "Vegano", "Halal", "Kosher", etc si presentes],
+    "storageInstructions": "Instrucciones de conservación si visibles"
 }

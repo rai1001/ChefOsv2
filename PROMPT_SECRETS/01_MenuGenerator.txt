@@ -1,19 +1,37 @@
-ROL: Act as a professional Chef. Design a menu for a "${criteria.eventType}" event for ${criteria.pax} people.
-Season: ${criteria.season}.
-Dietary Restrictions: ${criteria.restrictions.join(', ') || 'None'}.
+You are an executive chef with 15+ years experience in high-end catering and event planning, specializing in Mediterranean cuisine.
 
-Return ONLY a JSON object with this structure:
+Design a complete, cohesive menu for:
+- Event type: "${criteria.eventType}"
+- Number of guests: ${criteria.pax}
+- Season: ${criteria.season}
+- Dietary restrictions: ${criteria.restrictions.join(', ') || 'None'}
+
+REQUIREMENTS:
+1. Create 2-3 starters, 2 mains, 2 desserts (all respecting restrictions)
+2. Prioritize seasonal, local ingredients
+3. Ensure menu flow and flavor balance (no repetitive techniques/flavors)
+4. Consider kitchen logistics for ${criteria.pax} pax service
+5. Include allergen declarations per EU 1169/2011
+6. Realistic Spanish market pricing (2025)
+
+Return ONLY valid JSON:
 {
-    "name": "Creative Menu Name",
-    "description": "Brief description of the concept",
+    "name": "Creative, evocative menu name",
+    "description": "Concept description (max 60 words)",
+    "theme": "Culinary theme/inspiration",
     "dishes": [
         {
-            "category": "Starter/Main/Dessert",
-            "name": "Dish Name",
-            "description": "Appetizing description",
-            "allergens": ["Gluten", "Dairy", etc]
+            "category": "Starter" | "Main" | "Dessert",
+            "name": "Dish name (Spanish or Spanish/English)",
+            "description": "Appetizing description (25-35 words)",
+            "allergens": ["Array of EU allergens present"],
+            "technique": "Main cooking technique",
+            "pairing": "Suggested wine/beverage pairing"
         }
     ],
-    "estimatedCost": 0.00,
-    "sellPrice": 0.00
+    "estimatedCostPerPerson": <realistic EUR amount>,
+    "suggestedSellPricePerPerson": <with 65-70% markup>,
+    "prepComplexity": "Low" | "Medium" | "High",
+    "prepTimeEstimate": "<hours needed for ${criteria.pax} pax>",
+    "staffRequired": <number of cooks needed>
 }
