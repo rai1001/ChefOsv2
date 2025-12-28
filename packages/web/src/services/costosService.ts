@@ -78,7 +78,9 @@ export async function calcularCostosFicha(
         try {
           const ing = await firestoreService.getById<Ingredient>(COLLECTIONS.INGREDIENTS, id);
           if (ing) ingredientsMap.set(id, ing);
-        } catch (e) {}
+        } catch (e) {
+          // ignore error for individual fetch fallback
+        }
       }
     }
 

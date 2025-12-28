@@ -118,7 +118,7 @@ export const ProductionPlanner: React.FC<PlannerProps> = ({
   const tasksInView = new Set<string>();
   weekDays.forEach((day) => {
     ['MORNING', 'AFTERNOON'].forEach((shift) => {
-      // @ts-ignore
+      // @ts-expect-error Intentionally ignoring type mismatch for date format logic
       getTasksForSlot(format(day, 'yyyy-MM-dd'), shift as any).forEach((t) =>
         tasksInView.add(t.id)
       );

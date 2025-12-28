@@ -25,7 +25,7 @@ export const DataView: React.FC = () => {
 
   const renderContent = () => {
     switch (activeTab) {
-      case 'recipes':
+      case 'recipes': {
         const filteredRecipes = recipes.filter((r) =>
           r.name.toLowerCase().includes(searchTerm.toLowerCase())
         );
@@ -39,6 +39,7 @@ export const DataView: React.FC = () => {
             onSort={() => {}}
           />
         );
+      }
 
       case 'ingredients': {
         const filteredIngredients = ingredients.filter((i) =>
@@ -123,11 +124,12 @@ export const DataView: React.FC = () => {
         );
       }
 
-      case 'menus':
+      case 'menus': {
         const filteredMenus = menus.filter((m) =>
           m.name.toLowerCase().includes(searchTerm.toLowerCase())
         );
         return <MenuList menus={filteredMenus} />;
+      }
 
       case 'staff':
         return <StaffList />;
