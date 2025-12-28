@@ -14,6 +14,7 @@ const CACHE_TTL: Record<AIFeature, number> = {
   wasteAnalysis: 4,
   inventoryScanner: 24,
   haccpScanner: 24,
+  ocrScanner: 24,
   menuGenerator: 24,
 };
 
@@ -40,9 +41,14 @@ export async function generateCacheKey(feature: AIFeature, input: any): Promise<
  * Retrieves a cached result if it exists and hasn't expired.
  * Updates the hit count asynchronously.
  * @param key The cache key.
+ * @param forceRefresh If true, ignores cache and returns null (forcing new AI call).
  * @returns The cached result or null.
  */
-export async function getCachedResult<T>(key: string): Promise<T | null> {
+export async function getCachedResult<T>(
+  key: string,
+  forceRefresh: boolean = false
+): Promise<T | null> {
+  if (forceRefresh) return null;
   try {
     const docRef = doc(db, 'aiCache', key);
     const docSnap = await getDoc(docRef);
@@ -111,5 +117,20 @@ export async function setCachedResult(
     });
   } catch (e) {
     console.warn('Cache set failed', e);
+  }
+}
+
+/**
+ * Manually invalidates a cache entry.
+ * @param key The cache key to invalidate.
+ */
+export async function invalidateCache(key: string): Promise<void> {
+  try {
+    const docRef = doc(db, 'aiCache', key);
+    // Instead of deleting, we set expiresAt to the past to keep the audit trail
+    await setDoc(docRef, { expiresAt: new Date(0) }, { merge: true });
+    console.log(`[AI Cache] Invalidated key: ${key}`);
+  } catch (e) {
+    console.error('[AI Cache] Invalidation failed', e);
   }
 }

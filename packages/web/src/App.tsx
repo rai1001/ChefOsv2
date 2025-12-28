@@ -23,6 +23,7 @@ import { IntegrationsPage } from './presentation/pages/IntegrationsPage';
 import { AIFeaturesPage } from './presentation/pages/AIFeaturesPage';
 import { SocialManagerView } from './presentation/pages/social/SocialManagerView';
 import { SettingsPage } from './presentation/pages/SettingsPage';
+import { AITelemetryPage } from './presentation/pages/AITelemetryPage';
 import { ProtectedRoute } from './presentation/components/auth/ProtectedRoute';
 
 // Protected Route Component
@@ -55,6 +56,7 @@ export const App = () => {
             <Route path="kds" element={<KitchenDisplayPage />} />
             <Route path="integrations" element={<IntegrationsPage />} />
             <Route path="ai-features" element={<AIFeaturesPage />} />
+            <Route path="ai-telemetry" element={<AITelemetryPage />} />
             <Route path="social-manager" element={<SocialManagerView />} />
             <Route path="settings" element={<SettingsPage />} />
             <Route path="" element={<Navigate to="/dashboard" replace />} />

@@ -1,16 +1,54 @@
 import { rtdb, db } from '@/config/firebase';
 import { ref, push, set } from 'firebase/database';
-import { collection, addDoc, Timestamp } from 'firebase/firestore';
+import { collection, addDoc, Timestamp, doc, getDoc } from 'firebase/firestore';
 import type { AIFeature, AIMetrics, AICallMetadata } from './types';
 import { checkBudgetBeforeCall, updateUsageAfterCall } from './budgetManager';
 import { getCachedResult, setCachedResult, generateCacheKey } from './intelligentCache';
 import { performanceUtils } from '@/utils/performance';
 
-// Pricing Constants (Gemini 2.0 Flash)
-// Pricing Constants (Gemini 2.0 Flash - Actual rates per 1M tokens as of 2025)
-const COST_PER_1M_INPUT_TOKENS = 0.1; // $0.10 per 1M tokens
-const COST_PER_1M_OUTPUT_TOKENS = 0.4; // $0.40 per 1M tokens
-const COST_PER_TOKEN_INPUT = COST_PER_1M_INPUT_TOKENS / 1_000_000;
+// Pricing Constants (Gemini 2.0 Flash - Fallback rates per 1M tokens)
+const DEFAULT_INPUT_COST_PER_1M = 0.1;
+const DEFAULT_OUTPUT_COST_PER_1M = 0.4;
+const DEFAULT_SPANISH_MULTIPLIER = 3.2; // Updated from 2.0 to 3.2 as per P2 requirements
+
+interface PricingConfig {
+  inputCostPer1M: number;
+  outputCostPer1M: number;
+  spanishMultiplier: number;
+}
+
+let cachedPricing: PricingConfig | null = null;
+let lastFetchTime = 0;
+const PRICING_CACHE_TTL = 1000 * 60 * 60; // 1 hour
+
+async function getPricingConfig(): Promise<PricingConfig> {
+  const now = Date.now();
+  if (cachedPricing && now - lastFetchTime < PRICING_CACHE_TTL) {
+    return cachedPricing;
+  }
+
+  try {
+    const pricingDoc = await getDoc(doc(db, 'aiConfiguration', 'pricing'));
+    if (pricingDoc.exists()) {
+      const data = pricingDoc.data();
+      cachedPricing = {
+        inputCostPer1M: data.inputCostPer1M ?? DEFAULT_INPUT_COST_PER_1M,
+        outputCostPer1M: data.outputCostPer1M ?? DEFAULT_OUTPUT_COST_PER_1M,
+        spanishMultiplier: data.spanishMultiplier ?? DEFAULT_SPANISH_MULTIPLIER,
+      };
+      lastFetchTime = now;
+      return cachedPricing!;
+    }
+  } catch (e) {
+    console.warn('[AI Metrics] Failed to fetch pricing from Firestore, using defaults', e);
+  }
+
+  return {
+    inputCostPer1M: DEFAULT_INPUT_COST_PER_1M,
+    outputCostPer1M: DEFAULT_OUTPUT_COST_PER_1M,
+    spanishMultiplier: DEFAULT_SPANISH_MULTIPLIER,
+  };
+}
 
 /**
  * Estimates the number of tokens for text and image inputs.
@@ -18,9 +56,12 @@ const COST_PER_TOKEN_INPUT = COST_PER_1M_INPUT_TOKENS / 1_000_000;
  * @param imageBytes The size of the image in bytes (default 0).
  * @returns Estimated number of tokens.
  */
-function estimateTokens(text: string, imageBytes: number = 0): number {
-  // Rough estimate: 4 chars = 1 token
-  const textTokens = text.length / 4;
+function estimateTokens(text: string, imageBytes: number = 0, multiplier: number = 3.2): number {
+  // Rough estimate: Spanish to English token ratio is higher
+  // Base estimate: 4 chars = 1 token
+  const baseTokens = text.length / 4;
+  const textTokens = baseTokens * multiplier;
+
   // Prompt formula: (imageBytes / 750)
   const imageTokens = imageBytes / 750;
   return Math.ceil(textTokens + imageTokens);
@@ -35,9 +76,9 @@ function estimateTokens(text: string, imageBytes: number = 0): number {
 /**
  * Calculates the estimated cost based on input and output tokens.
  */
-function calculateCost(inputTokens: number, outputTokens: number): number {
-  const inputCost = inputTokens * COST_PER_TOKEN_INPUT;
-  const outputCost = (outputTokens / 1_000_000) * COST_PER_1M_OUTPUT_TOKENS;
+function calculateCost(inputTokens: number, outputTokens: number, pricing: PricingConfig): number {
+  const inputCost = (inputTokens / 1_000_000) * pricing.inputCostPer1M;
+  const outputCost = (outputTokens / 1_000_000) * pricing.outputCostPer1M;
   return inputCost + outputCost;
 }
 
@@ -83,7 +124,8 @@ export async function trackedGeminiCall<T>(
   feature: AIFeature,
   operation: () => Promise<T>,
   metadata: AICallMetadata,
-  inputPayload?: string | object // Used for Cache Key and Input Token estimation
+  inputPayload?: string | object, // Used for Cache Key and Input Token estimation
+  options?: import('@/domain/interfaces/services/IAIService').AIRequestOptions
 ): Promise<T> {
   const start = performance.now();
   let success = false;
@@ -92,21 +134,28 @@ export async function trackedGeminiCall<T>(
   let cacheHit = false;
   let cacheKey = '';
 
+  // 0. Fetch Pricing Configuration
+  const pricing = await getPricingConfig();
+
   // 1. Calculate Estimated Input Tokens
   let estimatedInputTokens = 0;
   let inputStringForHash = '';
 
   if (typeof inputPayload === 'string') {
     inputStringForHash = inputPayload;
-    estimatedInputTokens = estimateTokens(inputPayload);
+    estimatedInputTokens = estimateTokens(inputPayload, 0, pricing.spanishMultiplier);
   } else if (typeof inputPayload === 'object' && inputPayload !== null) {
     inputStringForHash = JSON.stringify(inputPayload);
     // Specialized estimation for multimodal payloads
     const payload = inputPayload as any;
     if (payload.imageSize) {
-      estimatedInputTokens = estimateTokens(payload.prompt || '', payload.imageSize);
+      estimatedInputTokens = estimateTokens(
+        payload.prompt || '',
+        payload.imageSize,
+        pricing.spanishMultiplier
+      );
     } else {
-      estimatedInputTokens = estimateTokens(inputStringForHash);
+      estimatedInputTokens = estimateTokens(inputStringForHash, 0, pricing.spanishMultiplier);
     }
   }
 
@@ -114,7 +163,8 @@ export async function trackedGeminiCall<T>(
   // 1. Check Budget
   try {
     console.log(`[AI Metrics] Checking budget for ${feature}...`);
-    const estimatedCost = estimatedInputTokens * COST_PER_TOKEN_INPUT;
+    const costPerTokenInput = pricing.inputCostPer1M / 1_000_000;
+    const estimatedCost = estimatedInputTokens * costPerTokenInput;
     const budget = await checkBudgetBeforeCall(metadata.outletId, feature, estimatedCost);
     console.log(`[AI Metrics] Budget check result for ${feature}:`, {
       allowed: budget.allowed,
@@ -138,11 +188,12 @@ export async function trackedGeminiCall<T>(
   if (cacheKey) {
     try {
       console.log(`[AI Metrics] Checking cache for ${feature}...`);
-      const cached = await getCachedResult<T>(cacheKey);
+      const isForceRefresh = (options as any)?.forceRefresh === true;
+      const cached = await getCachedResult<T>(cacheKey, isForceRefresh);
       if (cached) {
         console.log(`[AI Metrics] Cache HIT for ${feature}`);
         cacheHit = true;
-        return cached;
+        return cached as T;
       }
       console.log(`[AI Metrics] Cache MISS for ${feature}`);
     } catch (e) {
@@ -206,8 +257,8 @@ export async function trackedGeminiCall<T>(
         } catch (e) {
           console.warn('[AI Metrics] Failed to stringify result for token estimation', e);
         }
-        const outputTokens = estimateTokens(resultStr);
-        const actualCost = calculateCost(estimatedInputTokens, outputTokens);
+        const outputTokens = estimateTokens(resultStr, 0, pricing.spanishMultiplier);
+        const actualCost = calculateCost(estimatedInputTokens, outputTokens, pricing);
 
         const metric: AIMetrics = {
           timestamp: new Date().toISOString(),

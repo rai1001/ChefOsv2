@@ -9,6 +9,7 @@ export type AIFeature =
   | 'wasteAnalysis'
   | 'inventoryScanner'
   | 'haccpScanner'
+  | 'ocrScanner'
   | 'menuGenerator'; // Added from existing geminiService functionalities
 
 export interface AICallMetadata {

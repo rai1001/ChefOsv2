@@ -70,7 +70,9 @@ export async function scanExpirationDate(
         }
     `;
 
-    const result = await analyzeImage(base64Data, prompt);
+    const result = await analyzeImage(base64Data, prompt, 'ocrScanner', undefined, {
+      jsonMode: true,
+    });
 
     if (result.success && result.data) {
       const dateStr = result.data.primaryDate || result.data.date;

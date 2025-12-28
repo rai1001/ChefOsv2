@@ -38,6 +38,7 @@ const DEFAULT_BUDGET: BudgetConfig = {
     wasteAnalysis: { dailyLimit: 10, currentCount: 0 },
     inventoryScanner: { dailyLimit: 50, currentCount: 0 },
     haccpScanner: { dailyLimit: 50, currentCount: 0 },
+    ocrScanner: { dailyLimit: 100, currentCount: 0 },
     menuGenerator: { dailyLimit: 10, currentCount: 0 },
   },
   rateLimiting: {
@@ -120,59 +121,72 @@ export async function updateUsageAfterCall(
   try {
     await runTransaction(db, async (transaction) => {
       const docSnap = await transaction.get(docRef);
+      const now = new Date();
 
       if (!docSnap.exists()) {
         const newConfig = JSON.parse(JSON.stringify(DEFAULT_BUDGET));
         newConfig.monthly.currentSpend = cost;
+        newConfig.monthly.resetDate = now;
         newConfig.daily.currentSpend = cost;
+        newConfig.daily.resetDate = now;
         if (newConfig.perFeature[feature]) {
           newConfig.perFeature[feature].currentCount = 1;
         }
-        newConfig.daily.resetDate = new Date();
         transaction.set(docRef, newConfig);
         return;
       }
 
       const data = docSnap.data() as BudgetConfig;
 
-      // Reset logic
+      // Identify which resets are needed
       const needsDailyReset = !isToday(data.daily?.resetDate);
       const needsMonthlyReset = !isThisMonth(data.monthly?.resetDate);
 
+      // Full reset of per-feature counts if daily reset is needed
+      let perFeatureUpdates = { ...(data.perFeature || DEFAULT_BUDGET.perFeature) };
+      if (needsDailyReset) {
+        // Create a clean copy with all counts at 0
+        const resetPerFeature: any = {};
+        Object.keys(DEFAULT_BUDGET.perFeature).forEach((k) => {
+          resetPerFeature[k] = {
+            ...DEFAULT_BUDGET.perFeature[k as AIFeature],
+            currentCount: 0,
+          };
+        });
+        perFeatureUpdates = resetPerFeature;
+      }
+
+      // Calculate new values based on whether they were reset
       const dailySpend = needsDailyReset ? 0 : data.daily?.currentSpend || 0;
       const monthlySpend = needsMonthlyReset ? 0 : data.monthly?.currentSpend || 0;
 
       const newMonthlySpend = monthlySpend + cost;
       const newDailySpend = dailySpend + cost;
 
-      const featureLimits = data.perFeature || DEFAULT_BUDGET.perFeature;
-      const currentCountFromDb = featureLimits[feature]?.currentCount || 0;
-      const currentFeatureCount = (needsDailyReset ? 0 : currentCountFromDb) + 1;
+      // Update specifically the current feature
+      if (!perFeatureUpdates[feature]) {
+        perFeatureUpdates[feature] = { dailyLimit: 50, currentCount: 0 };
+      }
+      perFeatureUpdates[feature].currentCount =
+        (needsDailyReset ? 0 : perFeatureUpdates[feature].currentCount || 0) + 1;
 
-      const updates: any = {
+      // Prepare final update object
+      const updateData: any = {
         'monthly.currentSpend': newMonthlySpend,
         'daily.currentSpend': newDailySpend,
-        [`perFeature.${feature}.currentCount`]: currentFeatureCount,
+        perFeature: perFeatureUpdates,
       };
 
       if (needsDailyReset) {
-        updates['daily.resetDate'] = new Date();
-        // Reset ALL feature counts on daily reset
-        const resetPerFeature = { ...featureLimits };
-        Object.keys(resetPerFeature).forEach((k) => {
-          resetPerFeature[k as AIFeature].currentCount = 0;
-        });
-        resetPerFeature[feature].currentCount = 1;
-        updates.perFeature = resetPerFeature;
+        updateData['daily.resetDate'] = now;
       }
-
       if (needsMonthlyReset) {
-        updates['monthly.resetDate'] = new Date();
+        updateData['monthly.resetDate'] = now;
       }
 
-      transaction.update(docRef, updates);
+      transaction.update(docRef, updateData);
     });
   } catch (e) {
-    console.error('Failed to update budget usage', e);
+    console.error('[Budget Manager] CRITICAL: Failed to update budget usage', e);
   }
 }

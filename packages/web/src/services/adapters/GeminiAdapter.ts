@@ -94,10 +94,18 @@ export class GeminiAdapter implements IAIService {
     return this.scanDocument(fileOrBase64, 'SportsMenu');
   }
 
-  async generateText(prompt: string, _options?: AIRequestOptions): Promise<AIResponse> {
+  async generateText(prompt: string, options?: AIRequestOptions): Promise<AIResponse> {
     return this.resiliencer.execute(async () => {
       console.log('[GeminiAdapter] Calling generateContent (Text)...');
-      const result = await this.model.generateContent(prompt);
+
+      const config: any = {};
+      if (options?.temperature !== undefined) config.temperature = options.temperature;
+      if (options?.jsonMode) config.responseMimeType = 'application/json';
+
+      const result = await this.model.generateContent({
+        contents: [{ role: 'user', parts: [{ text: prompt }] }],
+        generationConfig: Object.keys(config).length > 0 ? config : undefined,
+      });
       const response = await result.response;
 
       console.log('[GeminiAdapter] Text response keys:', Object.keys(response));
@@ -124,7 +132,7 @@ export class GeminiAdapter implements IAIService {
   async analyzeImage(
     imageBase64: string,
     prompt: string,
-    _options?: AIRequestOptions
+    options?: AIRequestOptions
   ): Promise<AIResponse> {
     return this.resiliencer.execute(async () => {
       console.log('[GeminiAdapter] Calling generateContent (Multimodal)...');
@@ -136,7 +144,15 @@ export class GeminiAdapter implements IAIService {
         },
       };
 
-      const result = await this.model.generateContent([prompt, imagePart]);
+      const config: any = {};
+      if (options?.temperature !== undefined) config.temperature = options.temperature;
+      if (options?.jsonMode) config.responseMimeType = 'application/json';
+
+      const result = await this.model.generateContent({
+        contents: [{ role: 'user', parts: [{ text: prompt }, imagePart] }],
+        generationConfig: Object.keys(config).length > 0 ? config : undefined,
+      });
+
       console.log('[GeminiAdapter] Multimodal result objects keys:', Object.keys(result));
 
       const response = await result.response;

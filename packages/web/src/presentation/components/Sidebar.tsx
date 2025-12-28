@@ -104,6 +104,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
           <NavItem to="/fichas" icon={<ClipboardList />} label="Fichas Técnicas" />
           <NavItem to="/social-manager" icon={<Sparkles />} label="Social Manager Pro" />
           <NavItem to="/ai-features" icon={<Sparkles />} label="Funciones IA" />
+          <NavItem to="/ai-telemetry" icon={<TrendingUp />} label="IA Telemetría" />
         </NavGroup>
 
         <NavGroup

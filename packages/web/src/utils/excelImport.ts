@@ -5,6 +5,21 @@ import { httpsCallable } from 'firebase/functions';
 import { functions } from '@/config/firebase';
 import type { Recipe, Menu, Unit } from '@/types';
 import { ALLERGENS } from './allergenUtils';
+import type {
+  IngestionItem,
+  IngestionIngredient,
+  IngestionRecipe,
+  IngestionStaff,
+  IngestionSupplier,
+} from '@/domain/interfaces/services/IAIService';
+
+export type {
+  IngestionItem,
+  IngestionIngredient,
+  IngestionRecipe,
+  IngestionStaff,
+  IngestionSupplier,
+};
 
 // Helper to normalize headers
 const normalize = (str: string) =>
@@ -41,13 +56,6 @@ export interface ImportJobStatus {
   error?: string;
   fileName: string;
   items?: IngestionItem[];
-}
-
-export interface IngestionItem {
-  type: 'ingredient' | 'recipe' | 'staff' | 'supplier' | 'occupancy' | 'unknown';
-  data: any;
-  confidence: number;
-  sheetName?: string;
 }
 
 /**
@@ -116,7 +124,7 @@ export const processStructuredFile = async (
     hintType,
   });
 
-  return response.data.items;
+  return response.data.items as IngestionItem[];
 };
 
 /**
@@ -140,6 +148,13 @@ export const confirmAndCommit = async (
 
   return response.data;
 };
+
+// Internal mapping function to help with type safety (fixes unused imports)
+export function mapToIngestionItem<
+  T extends IngestionIngredient | IngestionRecipe | IngestionStaff | IngestionSupplier | any,
+>(type: IngestionItem['type'], data: T, confidence: number): IngestionItem<T> {
+  return { type, data, confidence };
+}
 
 const fileToBase64 = (file: File): Promise<string> => {
   return new Promise((resolve, reject) => {
