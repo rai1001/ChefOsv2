@@ -2,7 +2,28 @@ import { db } from '@/config/firebase';
 import { doc, getDoc, runTransaction } from 'firebase/firestore';
 import type { AIFeature, BudgetCheckResult, BudgetConfig } from './types';
 
-// Default limits
+// Helper to check if a date is today
+function isToday(date: any): boolean {
+  if (!date) return false;
+  const resetDate = date.toDate ? date.toDate() : new Date(date);
+  const today = new Date();
+  return (
+    resetDate.getDate() === today.getDate() &&
+    resetDate.getMonth() === today.getMonth() &&
+    resetDate.getFullYear() === today.getFullYear()
+  );
+}
+
+// Helper to check if a date is in the current month
+function isThisMonth(date: any): boolean {
+  if (!date) return false;
+  const resetDate = date.toDate ? date.toDate() : new Date(date);
+  const today = new Date();
+  return (
+    resetDate.getMonth() === today.getMonth() && resetDate.getFullYear() === today.getFullYear()
+  );
+}
+
 const DEFAULT_BUDGET: BudgetConfig = {
   monthly: { hardCap: 100, softCap: 80, currentSpend: 0, resetDate: null },
   daily: { hardCap: 10, softCap: 8, currentSpend: 0, resetDate: null },
@@ -48,26 +69,37 @@ export async function checkBudgetBeforeCall(
 
     const data = docSnap.data() as BudgetConfig;
 
+    // Daily Reset Check
+    const needsDailyReset = !isToday(data.daily?.resetDate);
+    const dailySpend = needsDailyReset ? 0 : data.daily?.currentSpend || 0;
+
+    // Monthly Reset Check
+    const needsMonthlyReset = !isThisMonth(data.monthly?.resetDate);
+    const monthlySpend = needsMonthlyReset ? 0 : data.monthly?.currentSpend || 0;
+
     // Check Monthly Hard Cap
-    if ((data.monthly?.currentSpend || 0) + estimatedCost > (data.monthly?.hardCap || Infinity)) {
+    if (monthlySpend + estimatedCost > (data.monthly?.hardCap || Infinity)) {
       throw new BudgetExceededError(
-        `Monthly budget exceeded. Current: $${data.monthly.currentSpend.toFixed(2)}, Limit: $${data.monthly.hardCap}`
+        `Monthly budget exceeded. Current: $${monthlySpend.toFixed(2)}, Limit: $${data.monthly.hardCap}`
       );
     }
 
     // Check Daily Hard Cap
-    if ((data.daily?.currentSpend || 0) + estimatedCost > (data.daily?.hardCap || Infinity)) {
+    if (dailySpend + estimatedCost > (data.daily?.hardCap || Infinity)) {
       throw new BudgetExceededError(
-        `Daily budget exceeded. Current: $${data.daily.currentSpend.toFixed(2)}, Limit: $${data.daily.hardCap}`
+        `Daily budget exceeded. Current: $${dailySpend.toFixed(2)}, Limit: $${data.daily.hardCap}`
       );
     }
 
     // Check Feature Limit
     const featureRef = data.perFeature?.[feature];
-    if (featureRef && featureRef.currentCount >= featureRef.dailyLimit) {
-      throw new BudgetExceededError(
-        `Daily limit for ${feature} exceeded (${featureRef.dailyLimit} calls)`
-      );
+    if (featureRef) {
+      const currentCount = needsDailyReset ? 0 : featureRef.currentCount;
+      if (currentCount >= featureRef.dailyLimit) {
+        throw new BudgetExceededError(
+          `Daily limit for ${feature} exceeded (${featureRef.dailyLimit} calls)`
+        );
+      }
     }
 
     return { allowed: true };
@@ -103,18 +135,42 @@ export async function updateUsageAfterCall(
 
       const data = docSnap.data() as BudgetConfig;
 
-      const newMonthlySpend = (data.monthly?.currentSpend || 0) + cost;
-      const newDailySpend = (data.daily?.currentSpend || 0) + cost;
+      // Reset logic
+      const needsDailyReset = !isToday(data.daily?.resetDate);
+      const needsMonthlyReset = !isThisMonth(data.monthly?.resetDate);
+
+      const dailySpend = needsDailyReset ? 0 : data.daily?.currentSpend || 0;
+      const monthlySpend = needsMonthlyReset ? 0 : data.monthly?.currentSpend || 0;
+
+      const newMonthlySpend = monthlySpend + cost;
+      const newDailySpend = dailySpend + cost;
 
       const featureLimits = data.perFeature || DEFAULT_BUDGET.perFeature;
-      // Ensure feature exists in config
-      const currentFeatureCount = (featureLimits[feature]?.currentCount || 0) + 1;
+      const currentCountFromDb = featureLimits[feature]?.currentCount || 0;
+      const currentFeatureCount = (needsDailyReset ? 0 : currentCountFromDb) + 1;
 
-      transaction.update(docRef, {
+      const updates: any = {
         'monthly.currentSpend': newMonthlySpend,
         'daily.currentSpend': newDailySpend,
         [`perFeature.${feature}.currentCount`]: currentFeatureCount,
-      });
+      };
+
+      if (needsDailyReset) {
+        updates['daily.resetDate'] = new Date();
+        // Reset ALL feature counts on daily reset
+        const resetPerFeature = { ...featureLimits };
+        Object.keys(resetPerFeature).forEach((k) => {
+          resetPerFeature[k as AIFeature].currentCount = 0;
+        });
+        resetPerFeature[feature].currentCount = 1;
+        updates.perFeature = resetPerFeature;
+      }
+
+      if (needsMonthlyReset) {
+        updates['monthly.resetDate'] = new Date();
+      }
+
+      transaction.update(docRef, updates);
     });
   } catch (e) {
     console.error('Failed to update budget usage', e);
