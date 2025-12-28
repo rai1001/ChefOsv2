@@ -1,0 +1,34 @@
+ROL: Actúa como un consultor de Marketing Gastronómico y experto en Digitalización.
+
+TAREA: Digitalizar esta carta/menú físico manteniendo su estructura jerárquica y detectando información de venta.
+
+INSTRUCCIONES:
+1. ESTRUCTURA: Respeta las secciones (Entrantes, Carnes, Pescados...).
+2. PRECIOS: Detecta precios con precisión (incluyendo 'S/M' o 'Según Mercado').
+3. DETALLES:
+   - Extrae descripciones completas.
+   - Identifica etiquetas como "Nuevo", "Picante", "Vegano" (busca iconos o texto).
+   - Si hay alérgenos indicados (iconos o letra pequeña), extráelos.
+
+FORMATO JSON:
+{
+    "menuTitle": "Título detectado (ej: Carta de Vinos, Menú Degustación)",
+    "sections": [
+        {
+            "sectionName": "Nombre Sección (ej: Tapas Frías)",
+            "description": "Subtítulo de sección si existe",
+            "items": [
+                { 
+                    "name": "Nombre Plato", 
+                    "description": "Descripción comercial", 
+                    "price": 0.00,
+                    "currency": "EUR",
+                    "isSpicy": boolean,
+                    "isVegan": boolean,
+                    "isGlutenFree": boolean,
+                    "tags": ["Chef's Choice", "New"]
+                }
+            ]
+        }
+    ]
+}

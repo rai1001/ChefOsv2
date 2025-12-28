@@ -29,6 +29,7 @@ import { NavGroup } from './molecules/NavGroup';
 import { useAtomValue } from 'jotai';
 import { userAtom } from '@/presentation/store/authAtoms';
 import { getAuth } from 'firebase/auth';
+import { useStore } from '@/presentation/store/useStore';
 
 interface SidebarProps {
   isOpen: boolean;
@@ -37,6 +38,8 @@ interface SidebarProps {
 
 export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
   const user = useAtomValue(userAtom);
+  const { settings } = useStore();
+  const isHotel = settings.businessType === 'HOTEL';
 
   return (
     <aside
@@ -78,8 +81,14 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
         >
           <NavItem to="/dashboard" icon={<LayoutDashboard />} label="Inicio" />
           <NavItem to="/schedule" icon={<Calendar />} label="Horario" />
-          <NavItem to="/events" icon={<CalendarDays />} label="Eventos" />
-          <NavItem to="/logistics" icon={<Coffee />} label="Logística Hotel" />
+          <NavItem
+            to="/events"
+            icon={<CalendarDays />}
+            label={isHotel ? 'Eventos (BEO)' : 'Reservas & Grupos'}
+          />
+
+          {isHotel && <NavItem to="/logistics" icon={<Coffee />} label="Logística Hotel" />}
+
           <NavItem to="/purchasing" icon={<ShoppingBag />} label="Compras Auto" />
           <NavItem to="/waste" icon={<Trash2 />} label="Mermas" />
           <NavItem to="/haccp" icon={<ShieldCheck />} label="HACCP Digital" />
@@ -93,6 +102,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
         >
           <NavItem to="/menu" icon={<BookOpen />} label="Mis Menús" />
           <NavItem to="/fichas" icon={<ClipboardList />} label="Fichas Técnicas" />
+          <NavItem to="/social-manager" icon={<Sparkles />} label="Social Manager Pro" />
           <NavItem to="/ai-features" icon={<Sparkles />} label="Funciones IA" />
         </NavGroup>
 
@@ -118,7 +128,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
         </NavGroup>
 
         <div className="pt-4 border-t border-white/5">
-          <NavItem to="/integrations" icon={<Settings />} label="Integraciones" />
+          <NavItem to="/integrations" icon={<Zap />} label="Integraciones" />
+          <NavItem to="/settings" icon={<Settings />} label="Configuración" />
         </div>
       </nav>
 

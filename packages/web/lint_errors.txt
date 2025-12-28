@@ -1,0 +1,21 @@
+
+C:\Users\trabajo\Documents\claude\chefosv2\ChefOs-claude-start-here-c2JxH\packages\web\src\domain\entities\Ingredient.ts
+  117:14  error  'Ingredient' is already defined  no-redeclare
+
+C:\Users\trabajo\Documents\claude\chefosv2\ChefOs-claude-start-here-c2JxH\packages\web\src\infrastructure\repositories\FirebaseIngredientRepository.ts
+   99:9  error  Use "@ts-expect-error" instead of "@ts-ignore", as "@ts-ignore" will do nothing if the following line is error-free  @typescript-eslint/ban-ts-comment
+  101:9  error  Use "@ts-expect-error" instead of "@ts-ignore", as "@ts-ignore" will do nothing if the following line is error-free  @typescript-eslint/ban-ts-comment
+
+C:\Users\trabajo\Documents\claude\chefosv2\ChefOs-claude-start-here-c2JxH\packages\web\src\presentation\components\common\DataView.tsx
+   29:9  error  Unexpected lexical declaration in case block  no-case-declarations
+  127:9  error  Unexpected lexical declaration in case block  no-case-declarations
+
+C:\Users\trabajo\Documents\claude\chefosv2\ChefOs-claude-start-here-c2JxH\packages\web\src\presentation\components\events\EventImportModal.tsx
+   28:5   error  Use "@ts-expect-error" instead of "@ts-ignore", as "@ts-ignore" will do nothing if the following line is error-free  @typescript-eslint/ban-ts-comment
+  563:37  error  Use "@ts-expect-error" instead of "@ts-ignore", as "@ts-ignore" will do nothing if the following line is error-free  @typescript-eslint/ban-ts-comment
+
+C:\Users\trabajo\Documents\claude\chefosv2\ChefOs-claude-start-here-c2JxH\packages\web\src\presentation\components\events\EventInbox.tsx
+  46:9  error  Use "@ts-expect-error" instead of "@ts-ignore", as "@ts-ignore" will do nothing if the following line is error-free  @typescript-eslint/ban-ts-comment
+
+Ô£û 8 problems (8 errors, 0 warnings)
+

@@ -22,57 +22,68 @@ import type { AppState } from './types';
 export type { AppState };
 
 export const useStore = create<AppState>()(
-    persist(
-        (set, get, store) => ({
-            ...createIngredientSlice(set, get, store),
-            ...createEventSlice(set, get, store),
-            ...createProductionSlice(set, get, store),
-            ...createStaffSlice(set, get, store),
-            ...createRecipeSlice(set, get, store),
-            ...createMenuSlice(set, get, store),
-            ...createPurchaseSlice(set, get, store),
-            ...createWasteSlice(set, get, store),
-            ...createHACCPSlice(set, get, store),
-            ...createAnalyticsSlice(set, get, store),
-            ...createOutletSlice(set, get, store),
-            ...createNotificationSlice(set, get, store),
-            ...createHospitalitySlice(set, get, store),
-            ...createAuthSlice(set, get, store),
-            ...createIntegrationSlice(set, get, store),
-            ...createInventorySlice(set, get, store),
+  persist(
+    (set, get, store) => ({
+      ...createIngredientSlice(set, get, store),
+      ...createEventSlice(set, get, store),
+      ...createProductionSlice(set, get, store),
+      ...createStaffSlice(set, get, store),
+      ...createRecipeSlice(set, get, store),
+      ...createMenuSlice(set, get, store),
+      ...createPurchaseSlice(set, get, store),
+      ...createWasteSlice(set, get, store),
+      ...createHACCPSlice(set, get, store),
+      ...createAnalyticsSlice(set, get, store),
+      ...createOutletSlice(set, get, store),
+      ...createNotificationSlice(set, get, store),
+      ...createHospitalitySlice(set, get, store),
+      ...createAuthSlice(set, get, store),
+      ...createIntegrationSlice(set, get, store),
+      ...createInventorySlice(set, get, store),
 
-            // UI State
-            activeOutletId: null,
-            setActiveOutletId: (id) => {
-                const currentId = get().activeOutletId;
-                if (currentId === id) return;
+      // UI State
+      activeOutletId: null,
+      settings: {
+        theme: 'dark',
+        language: 'es',
+        currency: 'EUR',
+        businessType: 'HOTEL', // Default to HOTEL
+      },
+      setSettings: (newSettings) =>
+        set((state) => ({
+          settings: { ...state.settings, ...newSettings },
+        })),
+      setActiveOutletId: (id) => {
+        const currentId = get().activeOutletId;
+        if (currentId === id) return;
 
-                set({
-                    activeOutletId: id,
-                    // Clear data on switch to prevent leakage
-                    ingredients: [],
-                    recipes: [],
-                    menus: [],
-                    events: [],
-                    inventory: [],
-                    staff: [],
-                    suppliers: [],
-                    purchaseOrders: [],
-                    wasteRecords: [],
-                    productionTasks: {},
-                    pccs: [],
-                    haccpLogs: [],
-                    haccpTasks: [],
-                    haccpTaskCompletions: []
-                });
-            },
-        }),
-        {
-            name: 'kitchen-manager-storage',
-            storage: createJSONStorage(() => localStorage),
-            partialize: (state) => ({
-                activeOutletId: state.activeOutletId,
-            }),
-        }
-    )
+        set({
+          activeOutletId: id,
+          // Clear data on switch to prevent leakage
+          ingredients: [],
+          recipes: [],
+          menus: [],
+          events: [],
+          inventory: [],
+          staff: [],
+          suppliers: [],
+          purchaseOrders: [],
+          wasteRecords: [],
+          productionTasks: {},
+          pccs: [],
+          haccpLogs: [],
+          haccpTasks: [],
+          haccpTaskCompletions: [],
+        });
+      },
+    }),
+    {
+      name: 'kitchen-manager-storage',
+      storage: createJSONStorage(() => localStorage),
+      partialize: (state) => ({
+        activeOutletId: state.activeOutletId,
+        settings: state.settings,
+      }),
+    }
+  )
 );

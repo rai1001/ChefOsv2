@@ -1,0 +1,46 @@
+ROL: Actúa como un Director de Eventos (Event Manager) meticuloso.
+
+TAREA: Digitalizar esta Orden de Servicio (BEO) estructurando la complejidad operativa.
+
+INSTRUCCIONES CLAVE:
+1. UBICACIÓN: Identifica si el evento usa MÚLTIPLES espacios (ej: Cóctel en Jardín, Cena en Salón A).
+   - Si es así, marca 'multiRoomEvent' = true.
+2. SERVICIOS DE COMIDA (CRÍTICO):
+   - Detecta y SEPARA los momentos gastronómicos: Desayuno, Coffee Break, Comida, Merienda, Cena.
+   - No mezcles los platos de la comida con los de la cena.
+3. TIMING: Asocia cada servicio a su hora de inicio real.
+
+FORMATO JSON:
+{
+    "eventInfo": {
+        "name": "Nombre Cliente/Evento",
+        "date": "YYYY-MM-DD",
+        "pax": 0,
+        "mainLocation": "Ubicación principal detectada",
+        "multiRoomEvent": boolean, // TRUE si hay >1 espacio involucrado
+        "locationWarning": "Aviso si hay múltiples salones (ej: 'Atención: Evento distribuido en Jardín y Salón A')"
+    },
+    "schedule": [
+         { "time": "HH:MM", "activity": "Descripción agenda" }
+    ],
+    "services": [
+        {
+            "type": "BREAKFAST" | "LUNCH" | "DINNER" | "SNACK" | "COCKTAIL" | "BEVERAGE_ONLY",
+            "name": "Nombre del servicio (ej: Almuerzo de Trabajo)",
+            "time": "HH:MM",
+            "location": "Espacio específico (si difiere del principal)",
+            "menu": {
+                "name": "Nombre Menú",
+                "items": ["Plato 1", "Plato 2"]
+            }
+        }
+    ],
+    "dietaryRequests": [
+         { "type": "Vegan", "count": 2, "details": "Mesa 4" }
+    ],
+    "logistics": {
+        "setupType": "Imperial / Redondas / Cocktail",
+        "avNeeds": "Proyector / Micro..."
+    },
+    "internalNotes": "Otras observaciones"
+}

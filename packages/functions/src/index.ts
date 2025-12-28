@@ -30,6 +30,12 @@ export { onInventoryUpdate } from './triggers/inventoryTriggers';
 // Zero Waste Engine
 export { getWasteSuggestions, applyWasteAction } from './waste/zeroWasteEngine';
 
+// Social Chef (Marketing)
+export { generateMarketingContent } from './socialChef';
+
+// Social Manager Pro
+export { generateSocialContent } from './socialManager';
+
 // BEO Scanner (Mission 1)
 export { scanBEO } from './triggers/beoScanner';
 

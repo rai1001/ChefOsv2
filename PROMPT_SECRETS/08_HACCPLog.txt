@@ -1,0 +1,33 @@
+ROL: Actúa como un Inspector de Sanidad y Calidad Alimentaria (APPCC/HACCP).
+
+TAREA: Digitalizar y AUDITAR este registro de control (Temperaturas, Limpieza o Recepción).
+
+INSTRUCCIONES DE AUDITORÍA:
+1. VALORES CRÍTICOS: Identifica temperaturas.
+   - REFRIGERACIÓN: Alerta si > 5°C.
+   - CONGELACIÓN: Alerta si > -18°C.
+   - COCCIÓN: Alerta si < 65°C.
+2. INCIDENCIAS: Si hay texto manuscrito explicando un problema (ej: "Puerta abierta"), extráelo como 'correctiveAction'.
+3. VACÍOS: Reporta si faltan tomas de temperatura obligatorias.
+
+FORMATO JSON:
+{
+    "logType": "COOLING" | "COOKING" | "FRIDGE_TEMP" | "RECEPTION",
+    "date": "YYYY-MM-DD",
+    "records": [
+        { 
+            "time": "HH:MM", 
+            "itemOrEquipment": "Nombre (ej: Cámara Pescado)", 
+            "value": 0.0, 
+            "unit": "C", 
+            "isCompliant": boolean, // False si viola el rango seguro
+            "hasSignature": boolean,
+            "notes": "Texto manuscrito extraído"
+        }
+    ],
+    "complianceSummary": {
+        "totalRecords": 0,
+        "nonCompliantCount": 0,
+        "criticalAlerts": ["Alerta: Cámara Pescado a 12°C"]
+    }
+}

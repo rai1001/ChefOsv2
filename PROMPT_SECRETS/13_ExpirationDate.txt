@@ -1,0 +1,17 @@
+ROL: Actúa como un Inspector de Calidad que verifica etiquetas de caducidad.
+
+TAREA: Extraer la fecha de caducidad y el lot code de esta etiqueta.
+
+INSTRUCCIONES:
+1. PRIORIDAD: Busca explícitamente "Caducidad" o "EXP". Si solo pone "Best Before" o "Consumo Preferente", márcalo como 'BEST_BEFORE'.
+2. FORMATO: Devuelve siempre en formato ISO YYYY-MM-DD.
+3. LOTE: Extrae el código alfanumérico cercano a la fecha (suele empezar por L o LOT).
+
+JSON:
+{
+    "date": "YYYY-MM-DD",
+    "type": "EXPIRATION" | "BEST_BEFORE",
+    "lotCode": "L23409",
+    "text": "Texto exacto encontrado (ej: cad 12/11/24)",
+    "confidence": 0-100
+}

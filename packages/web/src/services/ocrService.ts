@@ -1,11 +1,10 @@
 import { analyzeImage } from './geminiService';
 
-
 export interface OCRResult {
-    success: boolean;
-    text: string;
-    confidence: number;
-    date: Date | null;
+  success: boolean;
+  text: string;
+  confidence: number;
+  date: Date | null;
 }
 
 /**
@@ -13,77 +12,105 @@ export interface OCRResult {
  * @param imageElement - Image element or canvas containing the date
  * @returns OCR result with parsed date
  */
-export async function scanExpirationDate(imageElement: HTMLImageElement | HTMLCanvasElement): Promise<OCRResult> {
-    try {
-        // Convert image to Base64
-        let base64Data: string;
-        if (imageElement instanceof HTMLCanvasElement) {
-            base64Data = (imageElement.toDataURL('image/jpeg').split(',')[1]) || '';
-        } else {
-            const canvas = document.createElement('canvas');
-            canvas.width = imageElement.width;
-            canvas.height = imageElement.height;
-            const ctx = canvas.getContext('2d');
-            if (!ctx) throw new Error('Could not create canvas context');
-            ctx.drawImage(imageElement, 0, 0);
-            base64Data = (canvas.toDataURL('image/jpeg').split(',')[1]) || '';
-        }
+export interface ExpirationResult {
+  success: boolean;
+  date: Date | null;
+  dateType: 'EXPIRATION' | 'BEST_BEFORE' | 'UNKNOWN';
+  lotCode: string | null;
+  confidence: number;
+  text: string;
+}
 
-        const prompt = `
-            Analyze this product label image.
-            Find the Expiration Date / Best Before date.
-            Return a JSON object:
+/**
+ * Scan expiration date and lot code from image using Gemini AI
+ */
+export async function scanExpirationDate(
+  imageElement: HTMLImageElement | HTMLCanvasElement
+): Promise<ExpirationResult> {
+  try {
+    // Convert image to Base64
+    let base64Data: string;
+    if (imageElement instanceof HTMLCanvasElement) {
+      base64Data = imageElement.toDataURL('image/jpeg').split(',')[1] || '';
+    } else {
+      const canvas = document.createElement('canvas');
+      canvas.width = imageElement.width;
+      canvas.height = imageElement.height;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) throw new Error('Could not create canvas context');
+      ctx.drawImage(imageElement, 0, 0);
+      base64Data = canvas.toDataURL('image/jpeg').split(',')[1] || '';
+    }
+
+    const prompt = `
+            ROL: Actúa como un Inspector de Calidad que verifica etiquetas de caducidad.
+            
+            TAREA: Extraer la fecha de caducidad y el lot code de esta etiqueta.
+            
+            INSTRUCCIONES:
+            1. PRIORIDAD: Busca explícitamente "Caducidad" o "EXP". Si solo pone "Best Before" o "Consumo Preferente", márcalo como 'BEST_BEFORE'.
+            2. FORMATO: Devuelve siempre en formato ISO YYYY-MM-DD.
+            3. LOTE: Extrae el código alfanumérico cercano a la fecha (suele empezar por L o LOT).
+            
+            JSON:
             {
                 "date": "YYYY-MM-DD",
-                "text": "The exact text found on the label",
+                "type": "EXPIRATION" | "BEST_BEFORE",
+                "lotCode": "L23409",
+                "text": "Texto exacto encontrado (ej: cad 12/11/24)",
                 "confidence": 0-100
             }
-            If no date found, return null for date.
         `;
 
-        const result = await analyzeImage(base64Data, prompt);
+    const result = await analyzeImage(base64Data, prompt);
 
-        if (result.success && result.data) {
-            const dateStr = result.data.date;
-            const text = result.data.text || '';
-            const confidence = result.data.confidence || 0;
+    if (result.success && result.data) {
+      const dateStr = result.data.date;
+      const type = result.data.type || 'UNKNOWN';
+      const lot = result.data.lotCode || null;
+      const text = result.data.text || '';
+      const confidence = result.data.confidence || 0;
 
-            let dateObj: Date | null = null;
-            if (dateStr) {
-                dateObj = new Date(dateStr);
-                // Basic validation
-                if (isNaN(dateObj.getTime())) dateObj = null;
-            }
+      let dateObj: Date | null = null;
+      if (dateStr) {
+        dateObj = new Date(dateStr);
+        if (isNaN(dateObj.getTime())) dateObj = null;
+      }
 
-            return {
-                success: !!dateObj,
-                text: text,
-                confidence: confidence || 90, // AI is usually confident
-                date: dateObj
-            };
-        } else {
-            return {
-                success: false,
-                text: '',
-                confidence: 0,
-                date: null
-            };
-        }
-
-    } catch (error) {
-        console.error('AI OCR error:', error);
-        return {
-            success: false,
-            text: '',
-            confidence: 0,
-            date: null
-        };
+      return {
+        success: !!dateObj,
+        date: dateObj,
+        dateType: type,
+        lotCode: lot,
+        confidence: confidence || 90,
+        text: text,
+      };
+    } else {
+      return {
+        success: false,
+        date: null,
+        dateType: 'UNKNOWN',
+        lotCode: null,
+        confidence: 0,
+        text: '',
+      };
     }
+  } catch (error) {
+    console.error('AI OCR error:', error);
+    return {
+      success: false,
+      date: null,
+      dateType: 'UNKNOWN',
+      lotCode: null,
+      confidence: 0,
+      text: '',
+    };
+  }
 }
 
 /**
  * Cleanup OCR worker (No-op now)
  */
 export async function cleanupOCR(): Promise<void> {
-    // No worker to terminate
+  // No worker to terminate
 }

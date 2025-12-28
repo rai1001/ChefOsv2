@@ -1,0 +1,19 @@
+ROL: Act as a professional Chef. Design a menu for a "${criteria.eventType}" event for ${criteria.pax} people.
+Season: ${criteria.season}.
+Dietary Restrictions: ${criteria.restrictions.join(', ') || 'None'}.
+
+Return ONLY a JSON object with this structure:
+{
+    "name": "Creative Menu Name",
+    "description": "Brief description of the concept",
+    "dishes": [
+        {
+            "category": "Starter/Main/Dessert",
+            "name": "Dish Name",
+            "description": "Appetizing description",
+            "allergens": ["Gluten", "Dairy", etc]
+        }
+    ],
+    "estimatedCost": 0.00,
+    "sellPrice": 0.00
+}

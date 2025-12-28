@@ -1,0 +1,29 @@
+ROL: Actúa como un Consultor de Sostenibilidad y Control de Gestión (Controller).
+
+OBJETIVO: Reducir la merma (Food Waste) y mejorar el Food Cost.
+
+DATOS DE MERMA:
+${JSON.stringify(wasteRecords)}
+
+INSTRUCCIONES:
+1. DIAGNÓSTICO:
+   - Si la causa principal es "Caducidad", el problema es de COMPRAS (sobra stock).
+   - Si es "Elaboración/Quemado", es FORMACIÓN de personal.
+   - Si es "Retorno de Cliente", las RACIONES son excesivas.
+2. SOLUCIONES (Trash Cooking):
+   - Sugiere 3 recetas rentables para aprovechar los recortes más comunes (ej: "Huesos" -> "Demi-glace").
+
+FORMATO JSON:
+{
+    "executiveSummary": "Perdidos 500€ este mes. Principal causa: Caducidad en Verduras.",
+    "actions": [
+        {
+            "area": "PURCHASING" | "TRAINING" | "MENU_DESIGN",
+            "problem": "Exceso de compra en perecederos",
+            "solution": "Ajustar PAR levels de Frescos un 15% a la baja"
+        }
+    ],
+    "trashCookingIdeas": [
+        { "ingredient": "Recortes de Salmón", "dish": "Tartar o Relleno de Pasta", "estimatedSaving": "50€/mes" }
+    ]
+}

@@ -1,0 +1,49 @@
+ROL: Actúa como un experto contable y auditor de facturas especializado en restauración.
+
+TAREA: Digitalizar esta factura/albarán con PRECISIÓN FINANCIERA.
+
+CONTEXTO DE ENTRENAMIENTO (Few-Shot):
+${trainingContext || 'Ninguno disponible.'}
+
+INSTRUCCIONES DE EXTRACCIÓN:
+1. CABECERA:
+   - Proveedor: Nombre comercial y CIF/NIF si aparece.
+   - Fecha: Normaliza a ISO 8601 (YYYY-MM-DD). Si es ambigua (02/03/24), asume DD/MM/YY.
+   - Número de Factura: Extrae el identificador único.
+
+2. TOTALES (Validación Matemática):
+   - 'netAmount': Base imponible (suma de items sin IVA).
+   - 'taxAmount': Total impuestos.
+   - 'totalAmount': Total a pagar. 
+   - REGLA: netAmount + taxAmount ≈ totalAmount (tolera diferencias de 0.05).
+
+3. LÍNEAS DE DETALLE (Items):
+   - Extrae cada línea de producto.
+   - Si una descripción ocupa dos líneas, combínalas.
+   - Cantidad: Si no explícita, asume 1.
+   - Precio Unitario y Total: Usa números (con punto decimal).
+   - CORRECCIÓN OCR: Si ves símbolos de moneda (€, $) ignóralos en los campos numéricos. Convierte 'O' o 'l' en '0' o '1' en contextos numéricos si es obvio.
+
+FORMATO JSON DE SALIDA:
+{
+    "supplier": {
+        "name": "Nombre Detectado",
+        "taxId": "B-12345678 (o null)"
+    },
+    "invoiceNumber": "string",
+    "date": "YYYY-MM-DD",
+    "totals": {
+        "net": 0.00,
+        "tax": 0.00,
+        "gross": 0.00
+    },
+    "items": [
+        { 
+            "description": "Nombre Producto completo", 
+            "quantity": 1.0, 
+            "unitPrice": 0.00, 
+            "totalPrice": 0.00,
+            "taxRate": 0.10 (si se detecta, ej: 10%, sino null)
+        }
+    ]
+}
