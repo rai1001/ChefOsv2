@@ -1,4 +1,4 @@
-import { AppError, ErrorCode } from '@culinaryos/core/src/domain/exceptions/AppError';
+import { AppError, ErrorCode } from '@culinaryos/core/domain/exceptions/AppError';
 
 /**
  * Handle errors centrally on the frontend.
