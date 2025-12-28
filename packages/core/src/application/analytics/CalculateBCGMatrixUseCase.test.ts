@@ -63,7 +63,14 @@ describe('CalculateBCGMatrixUseCase', () => {
 
     vi.mocked(mockRecipeRepo.findByOutletId).mockResolvedValue(mockRecipes as any);
 
-    const result = await useCase.execute('outlet-1');
+    const salesData = {
+      '1': 80,
+      '2': 100,
+      '3': 20,
+      '4': 10,
+    };
+
+    const result = await useCase.execute('outlet-1', salesData);
 
     // Totals check
     expect(result.totals.volume).toBe(210);
