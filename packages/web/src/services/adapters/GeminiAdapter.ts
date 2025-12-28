@@ -50,31 +50,22 @@ export class GeminiAdapter implements IAIService {
             5. All numbers must be numeric types.
         `;
 
-    // Use JSON mode for reliable output
     const result = await this.generateText(prompt, { jsonMode: true });
 
     try {
-      // With jsonMode, text should be valid JSON.
-      // We still handle potential Markdown wrapping just in case.
       const text = result.text.trim();
       const cleanJson = text.replace(/^```json\s*|\s*```$/g, '');
       return JSON.parse(cleanJson);
     } catch (e) {
-      console.error('Failed to enrich ingredient via Gemini', e);
       return { nutritionalInfo: { calories: 0, protein: 0, carbs: 0, fat: 0 }, allergens: [] };
     }
   }
 
   async scanDocument(fileOrBase64: File | string, type?: string): Promise<ScannedDocumentResult> {
-    // reuse generic analyze logic or specific prompts?
-    // For simplicity, we assume the caller (geminiService usually) handles the sophisticated prompts via analyzeImage,
-    // BUT if this is called directly (legacy mode), we need a prompt.
-
     let base64 = '';
     if (typeof fileOrBase64 === 'string') {
       base64 = fileOrBase64.includes(',') ? fileOrBase64.split(',')[1]! : fileOrBase64;
     } else {
-      // File to base64 not implemented here synchronously easily without await.
       throw new Error('GeminiAdapter.scanDocument requires Base64 string for now');
     }
 
@@ -87,7 +78,6 @@ export class GeminiAdapter implements IAIService {
       const json = JSON.parse(cleanJson);
       return { items: json.items || [], rawText: response.text };
     } catch {
-      console.warn('Failed to parse JSON from scanDocument, returning raw text only');
       return { items: [], rawText: response.text };
     }
   }
@@ -98,8 +88,6 @@ export class GeminiAdapter implements IAIService {
 
   async generateText(prompt: string, options?: AIRequestOptions): Promise<AIResponse> {
     return this.resiliencer.execute(async () => {
-      console.log('[GeminiAdapter] Calling generateContent (Text)...');
-
       const config: any = {};
       if (options?.temperature !== undefined) config.temperature = options.temperature;
       if (options?.jsonMode) config.responseMimeType = 'application/json';
@@ -109,8 +97,6 @@ export class GeminiAdapter implements IAIService {
         generationConfig: Object.keys(config).length > 0 ? config : undefined,
       });
       const response = await result.response;
-
-      console.log('[GeminiAdapter] Text response keys:', Object.keys(response));
 
       const usage = response.usageMetadata
         ? {
@@ -137,7 +123,6 @@ export class GeminiAdapter implements IAIService {
     options?: AIRequestOptions
   ): Promise<AIResponse> {
     return this.resiliencer.execute(async () => {
-      console.log('[GeminiAdapter] Calling generateContent (Multimodal)...');
       const isPdf = imageBase64.startsWith('JVBERi');
       const imagePart = {
         inlineData: {
@@ -155,17 +140,7 @@ export class GeminiAdapter implements IAIService {
         generationConfig: Object.keys(config).length > 0 ? config : undefined,
       });
 
-      console.log('[GeminiAdapter] Multimodal result objects keys:', Object.keys(result));
-
       const response = await result.response;
-      console.log('[GeminiAdapter] Multimodal response keys:', Object.keys(response));
-
-      // EXTREME USAGE LOGGING
-      if (response.usageMetadata) {
-        console.log('[GeminiAdapter] usageMetadata found:', JSON.stringify(response.usageMetadata));
-      } else {
-        console.warn('[GeminiAdapter] usageMetadata MISSING from response');
-      }
 
       const usage = response.usageMetadata
         ? {
@@ -179,20 +154,13 @@ export class GeminiAdapter implements IAIService {
         CostTracker.logUsage(usage, { feature: 'analyzeImage' });
       }
 
-      // DEFENSIVE TEXT EXTRACTION
       let text = '';
       try {
         text = response.text();
-        console.log('[GeminiAdapter] Extracted text length:', text.length);
       } catch (textError) {
-        console.error('[GeminiAdapter] CRITICAL: response.text() failed', textError);
-        // Fallback to candidates structure
         const candidates = (response as any).candidates;
         if (candidates?.[0]?.content?.parts?.[0]?.text) {
           text = candidates[0].content.parts[0].text;
-          console.log('[GeminiAdapter] Recovered text from candidates fallback.');
-        } else {
-          console.error('[GeminiAdapter] Could not recover text from candidates.');
         }
       }
 
@@ -201,7 +169,6 @@ export class GeminiAdapter implements IAIService {
         usage,
       };
 
-      console.log('[GeminiAdapter] Returning finalResponse with keys:', Object.keys(finalResponse));
       return finalResponse;
     });
   }

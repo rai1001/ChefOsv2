@@ -3,19 +3,17 @@ import * as admin from 'firebase-admin';
 import { VertexAI } from '@google-cloud/vertexai';
 import * as XLSX from 'xlsx';
 import { v4 as uuidv4 } from 'uuid';
+import { logError } from './utils/logger';
+import { checkRateLimit } from './utils/rateLimiter';
 
-/**
- * AI Smart Analysis (HTTPS Callable)
- * Receives base64 data and returns structured JSON with confidence scores.
- */
 export const analyzeDocument = onCall(
   {
     memory: '1GiB',
     timeoutSeconds: 300,
   },
   async (request) => {
-    // Check auth
-    if (!request.auth) {
+    const uid = request.auth?.uid;
+    if (!uid) {
       throw new HttpsError('unauthenticated', 'User must be authenticated.');
     }
 
@@ -23,6 +21,8 @@ export const analyzeDocument = onCall(
     if (!base64Data || !mimeType) {
       throw new HttpsError('invalid-argument', 'Missing base64Data or mimeType.');
     }
+
+    await checkRateLimit(uid, 'analyze_document');
 
     try {
       const vertexAI = new VertexAI({
@@ -84,18 +84,15 @@ export const analyzeDocument = onCall(
 
       return JSON.parse(responseText);
     } catch (error: any) {
-      console.error('AI Analysis Error:', error);
+      logError('AI Analysis Error:', error, { uid, targetCollection });
       throw new HttpsError('internal', error.message);
     }
   }
 );
 
-/**
- * Structured File Parser (HTTPS Callable)
- * Parses Excel, CSV, or JSON and returns a common intermediate format.
- */
 export const parseStructuredFile = onCall(async (request) => {
-  if (!request.auth) {
+  const uid = request.auth?.uid;
+  if (!uid) {
     throw new HttpsError('unauthenticated', 'User must be authenticated.');
   }
 
@@ -103,6 +100,8 @@ export const parseStructuredFile = onCall(async (request) => {
   if (!base64Data) {
     throw new HttpsError('invalid-argument', 'Missing base64Data.');
   }
+
+  await checkRateLimit(uid, 'parse_structured_file');
 
   try {
     const buffer = Buffer.from(base64Data, 'base64');
@@ -114,7 +113,6 @@ export const parseStructuredFile = onCall(async (request) => {
       if (!sheet) return;
       const json = XLSX.utils.sheet_to_json(sheet);
 
-      // Heuristic detection of sheet type
       let type = hintType || 'unknown';
       const sn = sheetName.toUpperCase();
       const firstRow = json.length > 0 ? JSON.stringify(json[0]).toUpperCase() : '';
@@ -138,7 +136,6 @@ export const parseStructuredFile = onCall(async (request) => {
       ) {
         type = 'ingredient';
       } else if (json.length > 0 && type === 'unknown') {
-        // Generic fallback if no hint and no heuristic match
         type = 'recipe';
       }
 
@@ -147,24 +144,21 @@ export const parseStructuredFile = onCall(async (request) => {
           data: row,
           type,
           sheetName,
-          confidence: 100, // Structured data is assumed 100% accurate extraction
+          confidence: 100,
         });
       });
     });
 
     return { items: results };
   } catch (error: any) {
-    console.error('File Parsing Error:', error);
+    logError('File Parsing Error:', error, { uid });
     throw new HttpsError('internal', error.message);
   }
 });
 
-/**
- * Commit Import (HTTPS Callable)
- * Finalizes the import by writing validated data to Firestore.
- */
 export const commitImport = onCall(async (request) => {
-  if (!request.auth) {
+  const uid = request.auth?.uid;
+  if (!uid) {
     throw new HttpsError('unauthenticated', 'User must be authenticated.');
   }
 
@@ -173,12 +167,13 @@ export const commitImport = onCall(async (request) => {
     throw new HttpsError('invalid-argument', 'Items must be an array.');
   }
 
+  await checkRateLimit(uid, 'commit_import');
+
   const db = admin.firestore();
   const batchSize = 500;
   let count = 0;
 
   try {
-    // We'll process in chunks
     for (let i = 0; i < items.length; i += batchSize) {
       const batch = db.batch();
       const chunk = items.slice(i, i + batchSize);
@@ -205,7 +200,6 @@ export const commitImport = onCall(async (request) => {
             collection = 'occupancy';
             break;
           default:
-            // If it's still unknown, fallback to ingredients if it looks like one
             if (data.name && (data.price || data.unit)) collection = 'ingredients';
             else return;
             break;
@@ -231,7 +225,7 @@ export const commitImport = onCall(async (request) => {
 
     return { success: true, count };
   } catch (error: any) {
-    console.error('Commit Import Error:', error);
+    logError('Commit Import Error:', error, { uid, outletId });
     throw new HttpsError('internal', error.message);
   }
 });

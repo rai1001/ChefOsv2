@@ -1,5 +1,7 @@
-import { onCall, HttpsError, CallableRequest } from "firebase-functions/v2/https";
-import { VertexAI } from "@google-cloud/vertexai";
+import { onCall, HttpsError, CallableRequest } from 'firebase-functions/v2/https';
+import { VertexAI } from '@google-cloud/vertexai';
+import { logError } from '../utils/logger';
+import { checkRateLimit } from '../utils/rateLimiter';
 
 interface MenuGeneratorData {
   eventType: string;
@@ -9,18 +11,22 @@ interface MenuGeneratorData {
 }
 
 export const generateMenu = onCall(async (request: CallableRequest<MenuGeneratorData>) => {
-  if (!request.auth) {
-    throw new HttpsError("unauthenticated", "Must be authenticated.");
+  const uid = request.auth?.uid;
+  if (!uid) {
+    throw new HttpsError('unauthenticated', 'Must be authenticated.');
   }
+
+  await checkRateLimit(uid, 'generate_menu');
 
   const data = request.data;
   const projectId = process.env.GCLOUD_PROJECT;
   if (!projectId) {
-    throw new HttpsError("failed-precondition", "Missing PROJECT_ID.");
+    logError('GCLOUD_PROJECT not set.');
+    throw new HttpsError('internal', 'Server configuration error.');
   }
 
-  const vertexAI = new VertexAI({ project: projectId, location: "europe-west1" });
-  const model = vertexAI.getGenerativeModel({ model: "gemini-2.0-flash" });
+  const vertexAI = new VertexAI({ project: projectId, location: 'europe-west1' });
+  const model = vertexAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
 
   const prompt = `
     Create a professional menu for a catering event.
@@ -28,8 +34,8 @@ export const generateMenu = onCall(async (request: CallableRequest<MenuGenerator
     Event Details:
     - Type: ${data.eventType}
     - Guests: ${data.pax}
-    - Season: ${data.season || "Current"}
-    - Dietary Restrictions: ${data.restrictions?.join(", ") || "None"}
+    - Season: ${data.season || 'Current'}
+    - Dietary Restrictions: ${data.restrictions?.join(', ') || 'None'}
     
     Structure the response as a JSON object representing a Menu.
     Format:
@@ -40,20 +46,21 @@ export const generateMenu = onCall(async (request: CallableRequest<MenuGenerator
         { "name": "Dish Name", "description": "Appealing description", "category": "Starter/Main/Dessert", "allergens": ["Gluten", "Dairy"] }
       ]
     }
-    Ensure the dishes are sophisticated and suitable for the event type.
   `;
 
   try {
     const result = await model.generateContent(prompt);
-    const response = result.response;
-    let text = response.candidates?.[0]?.content?.parts?.[0]?.text;
+    let text = result.response.candidates?.[0]?.content?.parts?.[0]?.text;
 
-    if (!text) throw new Error("No response from AI");
+    if (!text) throw new Error('No response from AI');
 
-    text = text.replace(/```json/g, '').replace(/```/g, '').trim();
+    text = text
+      .replace(/```json/g, '')
+      .replace(/```/g, '')
+      .trim();
     return JSON.parse(text);
-  } catch (error) {
-    console.error("Menu Gen Error:", error);
-    throw new HttpsError("internal", "Menu generation failed", error);
+  } catch (error: any) {
+    logError('Menu Gen Error:', error, { uid, eventType: data.eventType });
+    throw new HttpsError('internal', 'Menu generation failed');
   }
 });

@@ -39,9 +39,13 @@ export const AuthWrapper: React.FC<AuthWrapperProps> = ({ children }) => {
   const { setActiveOutletId, setCurrentUser } = useStore();
 
   useEffect(() => {
-    // E2E Bypass for Testing
+    // E2E Bypass for Testing - Only allowed if environment variable is set
+    // VITE_ALLOW_E2E_BYPASS must be 'true' in .env or CI environment to enable this logic.
+    // If not set or false, localStorage variable is ignored for security.
     const e2eUserStr = localStorage.getItem('E2E_TEST_USER');
-    if (e2eUserStr) {
+    const isE2EAllowed = import.meta.env.VITE_ALLOW_E2E_BYPASS === 'true';
+
+    if (e2eUserStr && isE2EAllowed) {
       try {
         const userData = JSON.parse(e2eUserStr);
         // Mock Firebase User

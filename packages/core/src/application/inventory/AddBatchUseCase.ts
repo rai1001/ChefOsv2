@@ -3,7 +3,11 @@ import { IBatchRepository } from '../../infrastructure/repositories/IBatchReposi
 import { IIngredientRepository } from '../../infrastructure/repositories/IIngredientRepository';
 import { IStockTransactionRepository } from '../../infrastructure/repositories/IStockTransactionRepository';
 import { ITransactionManager } from '../../infrastructure/ITransactionManager';
+import { NotFoundError } from '../../domain/exceptions/AppError';
 
+/**
+ * Use case to add a new batch of an ingredient and update stock.
+ */
 export class AddBatchUseCase {
   constructor(
     private readonly batchRepository: IBatchRepository,
@@ -12,6 +16,12 @@ export class AddBatchUseCase {
     private readonly transactionManager: ITransactionManager
   ) {}
 
+  /**
+   * Executes the addition of a batch within a transaction.
+   * @param dto - Data for the new batch.
+   * @returns The created Batch entity.
+   * @throws {NotFoundError} If the ingredient does not exist.
+   */
   async execute(dto: CreateBatchDTO): Promise<Batch> {
     return this.transactionManager.runTransaction(async (transaction) => {
       // 1. Validar que el ingrediente existe
@@ -19,7 +29,7 @@ export class AddBatchUseCase {
         transaction,
       });
       if (!ingredient) {
-        throw new Error(`Ingredient with ID ${dto.ingredientId} not found`);
+        throw new NotFoundError(`Ingredient with ID ${dto.ingredientId} not found`);
       }
 
       // 2. Crear el lote (Batch)

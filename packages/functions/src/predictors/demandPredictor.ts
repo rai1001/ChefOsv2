@@ -1,133 +1,131 @@
-import { onCall, CallableRequest, HttpsError } from "firebase-functions/v2/https";
-import * as admin from "firebase-admin";
-import { VertexAI } from "@google-cloud/vertexai";
-import { addDays, isBefore, parseISO } from "date-fns";
+import { onCall, CallableRequest, HttpsError } from 'firebase-functions/v2/https';
+import * as admin from 'firebase-admin';
+import { VertexAI } from '@google-cloud/vertexai';
+import { addDays, isBefore, parseISO } from 'date-fns';
+import { logError } from '../utils/logger';
+import { checkRateLimit } from '../utils/rateLimiter';
 
 interface DemandPredictionData {
-    outletId?: string;
-    windowDays?: number;
-    events?: any[];
-    currentStock?: any[];
+  outletId?: string;
+  windowDays?: number;
+  events?: any[];
+  currentStock?: any[];
 }
-// ... (lines 13-93 unchanged logic, but keeping imports clean)
 
-// (We need to keep the helper function, so I'll wrap the replacement carefully or use multi_replace.
-// Actually, I can replace the whole file content to be safe and clean, or just the top and bottom.)
-// I'll replace the top imports and the export function at the bottom.
-// Wait, REPLACE_FILE_CONTENT replaces a contiguous block.
-// I will split this into two replacements if I can't overwrite easily.
-// But I can view line 1 to 155.
-// I'll just replace the whole file to ensure consistency.
-
-// COPIED HELPER FUNCTION aggregateForecastContext
 async function aggregateForecastContext(outletId: string, windowDays: number = 14) {
-    const db = admin.firestore();
-    const now = new Date();
-    const windowEnd = addDays(now, windowDays);
-    const windowStart = addDays(now, -30); // 30 days history
+  const db = admin.firestore();
+  const now = new Date();
+  const windowEnd = addDays(now, windowDays);
+  const windowStart = addDays(now, -30);
 
-    // Fetch data
-    const [ingredientsSnap, eventsSnap, recipesSnap, menusSnap, wasteSnap] = await Promise.all([
-        db.collection("ingredients").where("outletId", "==", outletId).get(),
-        db.collection("events").where("outletId", "==", outletId).get(),
-        db.collection("recipes").where("outletId", "==", outletId).get(),
-        db.collection("menus").where("outletId", "==", outletId).get(),
-        db.collection("waste_records").where("outletId", "==", outletId).get()
-    ]);
+  const [ingredientsSnap, eventsSnap, recipesSnap, menusSnap, wasteSnap] = await Promise.all([
+    db.collection('ingredients').where('outletId', '==', outletId).get(),
+    db.collection('events').where('outletId', '==', outletId).get(),
+    db.collection('recipes').where('outletId', '==', outletId).get(),
+    db.collection('menus').where('outletId', '==', outletId).get(),
+    db.collection('waste_records').where('outletId', '==', outletId).get(),
+  ]);
 
-    const recipes = recipesSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-    const menus = menusSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-    const recipeMap = new Map<string, any>(recipes.map(r => [r.id, r]));
-    const menuMap = new Map<string, any>(menus.map(m => [m.id, m]));
+  const recipes = recipesSnap.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+  const menus = menusSnap.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+  const recipeMap = new Map<string, any>(recipes.map((r) => [r.id, r]));
+  const menuMap = new Map<string, any>(menus.map((m) => [m.id, m]));
 
-    const demand: Record<string, { neededQuantity: number; eventCount: number }> = {};
-    const consumption: Record<string, { totalWaste: number; avgDaily: number }> = {};
+  const demand: Record<string, { neededQuantity: number; eventCount: number }> = {};
+  const consumption: Record<string, { totalWaste: number; avgDaily: number }> = {};
 
-    // Future Demand
-    eventsSnap.docs.forEach(doc => {
-        const event = doc.data();
-        const eventDate = typeof event.date === 'string' ? parseISO(event.date) : event.date.toDate();
-        if (isBefore(eventDate, now)) return;
-        if (!isBefore(eventDate, windowEnd)) return;
+  eventsSnap.docs.forEach((doc) => {
+    const event = doc.data();
+    const eventDate = typeof event.date === 'string' ? parseISO(event.date) : event.date.toDate();
+    if (isBefore(eventDate, now)) return;
+    if (!isBefore(eventDate, windowEnd)) return;
 
-        if (!event.menuId) return;
-        const menu = menuMap.get(event.menuId);
-        if (!menu || !menu.recipeIds) return;
+    if (!event.menuId) return;
+    const menu = menuMap.get(event.menuId);
+    if (!menu || !menu.recipeIds) return;
 
-        menu.recipeIds.forEach((recipeId: string) => {
-            const recipe = recipeMap.get(recipeId);
-            if (!recipe) return;
+    menu.recipeIds.forEach((recipeId: string) => {
+      const recipe = recipeMap.get(recipeId);
+      if (!recipe) return;
 
-            recipe.ingredients.forEach((ri: any) => {
-                let demandEntry = demand[ri.ingredientId];
-                if (!demandEntry) {
-                    demandEntry = { neededQuantity: 0, eventCount: 0 };
-                    demand[ri.ingredientId] = demandEntry;
-                }
-                demandEntry.neededQuantity += (ri.quantity * (event.pax || 0));
-                demandEntry.eventCount += 1;
-            });
-        });
-    });
-
-    // History
-    wasteSnap.docs.forEach(doc => {
-        const record = doc.data();
-        const recordDate = typeof record.date === 'string' ? parseISO(record.date) : record.date.toDate();
-        if (!isBefore(windowStart, recordDate)) return;
-
-        if (!consumption[record.ingredientId]) {
-            consumption[record.ingredientId] = { totalWaste: 0, avgDaily: 0 };
+      recipe.ingredients.forEach((ri: any) => {
+        let demandEntry = demand[ri.ingredientId];
+        if (!demandEntry) {
+          demandEntry = { neededQuantity: 0, eventCount: 0 };
+          demand[ri.ingredientId] = demandEntry;
         }
-        // Use non-null assertion or variable reference since we just initialized it
-        const entry = consumption[record.ingredientId];
-        if (entry) {
-            entry.totalWaste += (record.quantity || 0);
-        }
+        demandEntry.neededQuantity += ri.quantity * (event.pax || 0);
+        demandEntry.eventCount += 1;
+      });
     });
+  });
 
-    // Consolidate
-    return ingredientsSnap.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-    })).map((ing: any) => {
-        const d = demand[ing.id] || { neededQuantity: 0, eventCount: 0 };
-        const h = consumption[ing.id] || { totalWaste: 0, avgDaily: 0 };
-        return {
-            ingredientId: ing.id,
-            ingredientName: ing.name,
-            currentStock: ing.stock || 0,
-            unit: ing.unit,
-            futureDemand: d,
-            historicalUsage: h
-        };
-    }).filter(item => item.futureDemand.neededQuantity > 0 || item.historicalUsage.totalWaste > 0);
+  wasteSnap.docs.forEach((doc) => {
+    const record = doc.data();
+    const recordDate =
+      typeof record.date === 'string' ? parseISO(record.date) : record.date.toDate();
+    if (!isBefore(windowStart, recordDate)) return;
+
+    if (!consumption[record.ingredientId]) {
+      consumption[record.ingredientId] = { totalWaste: 0, avgDaily: 0 };
+    }
+    const entry = consumption[record.ingredientId];
+    if (entry) {
+      entry.totalWaste += record.quantity || 0;
+    }
+  });
+
+  return ingredientsSnap.docs
+    .map((doc) => ({
+      id: doc.id,
+      ...doc.data(),
+    }))
+    .map((ing: any) => {
+      const d = demand[ing.id] || { neededQuantity: 0, eventCount: 0 };
+      const h = consumption[ing.id] || { totalWaste: 0, avgDaily: 0 };
+      return {
+        ingredientId: ing.id,
+        ingredientName: ing.name,
+        currentStock: ing.stock || 0,
+        unit: ing.unit,
+        futureDemand: d,
+        historicalUsage: h,
+      };
+    })
+    .filter((item) => item.futureDemand.neededQuantity > 0 || item.historicalUsage.totalWaste > 0);
 }
 
 export const predictDemand = onCall(async (request: CallableRequest<DemandPredictionData>) => {
-    if (!request.auth) {
-        throw new HttpsError("unauthenticated", "Must be authenticated.");
-    }
-    const data = request.data;
-    const projectId = process.env.GCLOUD_PROJECT;
-    if (!projectId) {
-        throw new HttpsError("failed-precondition", "Missing PROJECT_ID.");
-    }
+  const uid = request.auth?.uid;
+  if (!uid) {
+    throw new HttpsError('unauthenticated', 'Must be authenticated.');
+  }
 
-    let forecastContext: any = data.events && data.currentStock ? { events: data.events, currentStock: data.currentStock } : null;
+  await checkRateLimit(uid, 'predict_demand');
 
-    if (!forecastContext && data.outletId) {
-        forecastContext = await aggregateForecastContext(data.outletId, data.windowDays);
-    }
+  const data = request.data;
+  const projectId = process.env.GCLOUD_PROJECT;
+  if (!projectId) {
+    throw new HttpsError('failed-precondition', 'Missing PROJECT_ID.');
+  }
 
-    if (!forecastContext) {
-        throw new HttpsError("invalid-argument", "Must provide either data or outletId.");
-    }
+  let forecastContext: any =
+    data.events && data.currentStock
+      ? { events: data.events, currentStock: data.currentStock }
+      : null;
 
-    const vertexAI = new VertexAI({ project: projectId, location: "us-central1" });
-    const model = vertexAI.getGenerativeModel({ model: "gemini-2.0-flash" });
+  if (!forecastContext && data.outletId) {
+    forecastContext = await aggregateForecastContext(data.outletId, data.windowDays);
+  }
 
-    const prompt = `
+  if (!forecastContext) {
+    throw new HttpsError('invalid-argument', 'Must provide either data or outletId.');
+  }
+
+  const vertexAI = new VertexAI({ project: projectId, location: 'us-central1' });
+  const model = vertexAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
+
+  const prompt = `
     Actúa como un Jefe de Compras experto. 
     Analiza el siguiente contexto de previsión (demanda futura y mermas históricas) para generar una lista de compra sugerida.
     
@@ -154,16 +152,18 @@ export const predictDemand = onCall(async (request: CallableRequest<DemandPredic
     }
   `;
 
-    try {
-        const result = await model.generateContent(prompt);
-        // Corrected null checks
-        const text = result.response.candidates?.[0]?.content?.parts?.[0]?.text;
-        if (!text) throw new Error("No response from AI");
+  try {
+    const result = await model.generateContent(prompt);
+    const text = result.response.candidates?.[0]?.content?.parts?.[0]?.text;
+    if (!text) throw new Error('No response from AI');
 
-        const cleanJson = text.replace(/```json/g, '').replace(/```/g, '').trim();
-        return JSON.parse(cleanJson);
-    } catch (error) {
-        console.error("Prediction Error:", error);
-        throw new HttpsError("internal", "Prediction failed");
-    }
+    const cleanJson = text
+      .replace(/```json/g, '')
+      .replace(/```/g, '')
+      .trim();
+    return JSON.parse(cleanJson);
+  } catch (error: any) {
+    logError('Prediction Error:', error, { uid, outletId: data.outletId });
+    throw new HttpsError('internal', 'Prediction failed: ' + error.message);
+  }
 });
