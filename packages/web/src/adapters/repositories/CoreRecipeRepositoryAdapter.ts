@@ -10,12 +10,13 @@ import { IRecipeRepository as ILegacyRecipeRepository } from '@/domain/interface
 import { TYPES } from '@/application/di/types';
 import { RecipeAdapter } from '../RecipeAdapter';
 import { v4 as uuidv4 } from 'uuid';
+import { RepositoryOptions } from '@culinaryos/core/infrastructure/repositories/RepositoryOptions';
 
 @injectable()
 export class CoreRecipeRepositoryAdapter implements IFichaTecnicaRepository {
   constructor(@inject(TYPES.RecipeRepository) private legacyRepo: ILegacyRecipeRepository) {}
 
-  async create(dto: CreateFichaTecnicaDTO): Promise<FichaTecnica> {
+  async create(dto: CreateFichaTecnicaDTO, _options?: RepositoryOptions): Promise<FichaTecnica> {
     const id = uuidv4();
     const ficha: FichaTecnica = {
       id,
@@ -49,7 +50,11 @@ export class CoreRecipeRepositoryAdapter implements IFichaTecnicaRepository {
     return all.filter((f) => f.category === category);
   }
 
-  async update(id: string, dto: UpdateFichaTecnicaDTO): Promise<FichaTecnica> {
+  async update(
+    id: string,
+    dto: UpdateFichaTecnicaDTO,
+    _options?: RepositoryOptions
+  ): Promise<FichaTecnica> {
     const existing = await this.findById(id);
     if (!existing) throw new Error('Ficha not found');
 
@@ -59,15 +64,24 @@ export class CoreRecipeRepositoryAdapter implements IFichaTecnicaRepository {
     return updated as any;
   }
 
-  async delete(id: string): Promise<void> {
+  async delete(id: string, _options?: RepositoryOptions): Promise<void> {
     await this.legacyRepo.deleteRecipe(id);
   }
 
-  async createVersion(_fichaId: string, _reason?: string): Promise<FichaTecnicaVersion> {
+  async createVersion(
+    _version: Omit<FichaTecnicaVersion, 'id' | 'createdAt'>
+  ): Promise<FichaTecnicaVersion> {
     throw new Error('Versioning not supported in legacy adapter');
   }
 
   async getVersions(_fichaId: string): Promise<FichaTecnicaVersion[]> {
+    return [];
+  }
+
+  async findVersionsByIngredient(
+    _ingredientId: string,
+    _outletId?: string
+  ): Promise<FichaTecnicaVersion[]> {
     return [];
   }
 

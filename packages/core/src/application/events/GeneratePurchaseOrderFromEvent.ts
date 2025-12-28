@@ -133,6 +133,7 @@ export class GeneratePurchaseOrderFromEvent {
         supplier: input.supplier || 'TBD',
         lines: purchaseOrderLines.map((line) => ({
           ingredientId: line.ingredientId,
+          ingredientName: line.ingredientName,
           quantity: line.quantity,
           unitCost: line.unitCost,
         })),

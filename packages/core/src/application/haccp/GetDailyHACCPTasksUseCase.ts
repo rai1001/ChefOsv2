@@ -4,7 +4,7 @@ import { IHACCPRepository } from '../../infrastructure/repositories/IHACCPReposi
 export class GetDailyHACCPTasksUseCase {
   constructor(private readonly repository: IHACCPRepository) {}
 
-  async execute(outletId: string, date: Date = new Date()): Promise<HACCPTask[]> {
+  async execute(outletId: string, _date: Date = new Date()): Promise<HACCPTask[]> {
     const allTasks = await this.repository.getTasks(outletId);
 
     // Filter tasks relevant for "Today" based on frequency

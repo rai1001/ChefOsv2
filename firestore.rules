@@ -11,78 +11,175 @@ service cloud.firestore {
       return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
     }
 
-    function hasOutletAccess(outletId) {
-      return isAuthenticated() &&
-             getUserData().outletIds != null &&
-             outletId in getUserData().outletIds;
+    function isAdmin() {
+      return isAuthenticated() && getUserData().role == 'admin';
     }
 
-    function isOutletAdmin(outletId) {
-      return isAuthenticated() &&
-             getUserData().adminOutletIds != null &&
-             outletId in getUserData().adminOutletIds;
+    function isActive() {
+      return isAuthenticated() && getUserData().active == true;
+    }
+
+    function canAccessOutlet(outletId) {
+      return isAuthenticated() && isActive() && (
+        isAdmin() || 
+        (getUserData().allowedOutlets != null && outletId in getUserData().allowedOutlets)
+      );
+    }
+
+    function canManageOutlet(outletId) {
+      return isAuthenticated() && isActive() && (
+        isAdmin() ||
+        (getUserData().adminOutletIds != null && outletId in getUserData().adminOutletIds)
+      );
     }
 
     // Users collection
     match /users/{userId} {
-      allow read: if isAuthenticated() && request.auth.uid == userId;
-      allow write: if isAuthenticated() && request.auth.uid == userId;
+      allow read: if isAuthenticated() && (request.auth.uid == userId || isAdmin());
+      allow write: if isAuthenticated() && (request.auth.uid == userId || isAdmin());
     }
 
-    // Outlets collection
+    // Outlets collection (Root)
     match /outlets/{outletId} {
-      allow read: if hasOutletAccess(outletId);
-      allow write: if isOutletAdmin(outletId);
-
-      // Ingredients subcollection
-      match /ingredients/{ingredientId} {
-        allow read: if hasOutletAccess(outletId);
-        allow write: if hasOutletAccess(outletId);
-
-        // Batches subcollection (FIFO)
-        match /batches/{batchId} {
-          allow read: if hasOutletAccess(outletId);
-          allow write: if hasOutletAccess(outletId);
-        }
-      }
-
-      // Recipes/Fichas Técnicas subcollection
-      match /fichasTecnicas/{fichaId} {
-        allow read: if hasOutletAccess(outletId);
-        allow write: if hasOutletAccess(outletId);
-
-        // Versions subcollection
-        match /versions/{versionId} {
-          allow read: if hasOutletAccess(outletId);
-          allow create: if hasOutletAccess(outletId);
-          allow update, delete: if false; // Versions are immutable
-        }
-      }
-
-      // Purchase Orders subcollection
-      match /purchaseOrders/{orderId} {
-        allow read: if hasOutletAccess(outletId);
-        allow write: if hasOutletAccess(outletId);
-      }
-
-      // Events/BEO subcollection
-      match /events/{eventId} {
-        allow read: if hasOutletAccess(outletId);
-        allow write: if hasOutletAccess(outletId);
-      }
-
-      // HACCP Records subcollection
-      match /haccpRecords/{recordId} {
-        allow read: if hasOutletAccess(outletId);
-        allow create: if hasOutletAccess(outletId);
-        allow update, delete: if false; // HACCP records are immutable
-      }
+      allow list: if isAuthenticated() && isActive();
+      allow get: if canAccessOutlet(outletId);
+      allow create: if isAuthenticated() && isActive();
+      allow update, delete: if canManageOutlet(outletId);
     }
 
-    // AI Usage Metrics (admin only)
-    match /aiUsageMetrics/{metricId} {
-      allow read: if isAuthenticated();
-      allow write: if false; // Only Cloud Functions can write
+    // Root level data collections (Flat structure)
+    // For read operations
+    function canReadDocument(data) {
+        return isAuthenticated() && isActive() && (
+            isAdmin() || (data.outletId != null && canAccessOutlet(data.outletId))
+        );
+    }
+
+    // For write operations
+    function canWriteDocument(data) {
+        return isAuthenticated() && isActive() && (
+            isAdmin() || (data.outletId != null && canManageOutlet(data.outletId))
+        );
+    }
+    
+    match /ingredients/{id} {
+        allow read: if canReadDocument(resource.data);
+        allow create: if canWriteDocument(request.resource.data);
+        allow update: if canWriteDocument(resource.data) && canWriteDocument(request.resource.data);
+        allow delete: if canWriteDocument(resource.data);
+    }
+
+    match /inventory/{id} {
+        allow read: if canReadDocument(resource.data);
+        allow create: if canWriteDocument(request.resource.data);
+        allow update: if canWriteDocument(resource.data) && canWriteDocument(request.resource.data);
+        allow delete: if canWriteDocument(resource.data);
+    }
+
+    match /recipes/{id} {
+        allow read: if canReadDocument(resource.data);
+        allow create: if canWriteDocument(request.resource.data);
+        allow update: if canWriteDocument(resource.data) && canWriteDocument(request.resource.data);
+        allow delete: if canWriteDocument(resource.data);
+    }
+
+    match /fichasTecnicas/{id} {
+        allow read: if canReadDocument(resource.data);
+        allow create: if canWriteDocument(request.resource.data);
+        allow update: if canWriteDocument(resource.data) && canWriteDocument(request.resource.data);
+        allow delete: if canWriteDocument(resource.data);
+    }
+
+    match /events/{id} {
+        allow read: if canReadDocument(resource.data);
+        allow create: if canWriteDocument(request.resource.data);
+        allow update: if canWriteDocument(resource.data) && canWriteDocument(request.resource.data);
+        allow delete: if canWriteDocument(resource.data);
+    }
+
+    match /purchaseOrders/{id} {
+        allow read: if canReadDocument(resource.data);
+        allow create: if canWriteDocument(request.resource.data);
+        allow update: if canWriteDocument(resource.data) && canWriteDocument(request.resource.data);
+        allow delete: if canWriteDocument(resource.data);
+    }
+
+    match /wasteRecords/{id} {
+        allow read: if canReadDocument(resource.data);
+        allow create: if canWriteDocument(request.resource.data);
+        allow update: if canWriteDocument(resource.data) && canWriteDocument(request.resource.data);
+        allow delete: if canWriteDocument(resource.data);
+    }
+
+    match /haccpLogs/{id} {
+        allow read: if canReadDocument(resource.data);
+        allow create: if canWriteDocument(request.resource.data);
+        allow update: if canWriteDocument(resource.data) && canWriteDocument(request.resource.data);
+        allow delete: if canWriteDocument(resource.data);
+    }
+
+    match /haccpTasks/{id} {
+        allow read: if canReadDocument(resource.data);
+        allow create: if canWriteDocument(request.resource.data);
+        allow update: if canWriteDocument(resource.data) && canWriteDocument(request.resource.data);
+        allow delete: if canWriteDocument(resource.data);
+    }
+
+    match /haccpTaskCompletions/{id} {
+        allow read: if canReadDocument(resource.data);
+        allow create: if canWriteDocument(request.resource.data);
+        allow update: if canWriteDocument(resource.data) && canWriteDocument(request.resource.data);
+        allow delete: if canWriteDocument(resource.data);
+    }
+
+    match /productionTasks/{id} {
+        allow read: if canReadDocument(resource.data);
+        allow create: if canWriteDocument(request.resource.data);
+        allow update: if canWriteDocument(resource.data) && canWriteDocument(request.resource.data);
+        allow delete: if canWriteDocument(resource.data);
+    }
+
+    match /staff/{id} {
+        allow read: if canReadDocument(resource.data);
+        allow create: if canWriteDocument(request.resource.data);
+        allow update: if canWriteDocument(resource.data) && canWriteDocument(request.resource.data);
+        allow delete: if canWriteDocument(resource.data);
+    }
+
+    match /suppliers/{id} {
+        allow read: if canReadDocument(resource.data);
+        allow create: if canWriteDocument(request.resource.data);
+        allow update: if canWriteDocument(resource.data) && canWriteDocument(request.resource.data);
+        allow delete: if canWriteDocument(resource.data);
+    }
+
+    match /pccs/{id} {
+        allow read: if canReadDocument(resource.data);
+        allow create: if canWriteDocument(request.resource.data);
+        allow update: if canWriteDocument(resource.data) && canWriteDocument(request.resource.data);
+        allow delete: if canWriteDocument(resource.data);
+    }
+
+    match /menus/{id} {
+        allow read: if canReadDocument(resource.data);
+        allow create: if canWriteDocument(request.resource.data);
+        allow update: if canWriteDocument(resource.data) && canWriteDocument(request.resource.data);
+        allow delete: if canWriteDocument(resource.data);
+    }
+
+    // AI Usage Metrics
+    match /aiUsageMetrics/{id} {
+        allow read: if canReadDocument(resource.data);
+        allow create: if isAuthenticated() && isActive();
+    }
+
+    match /aiBudgets/{id} {
+        // id is outletId
+        allow read, write: if canAccessOutlet(id);
+    }
+
+    match /aiCache/{id} {
+        allow read, write: if isAuthenticated() && isActive();
     }
   }
 }

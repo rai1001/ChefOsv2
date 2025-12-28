@@ -53,7 +53,10 @@ export class CoreProductionRepositoryAdapter implements IProductionTaskRepositor
     } as ProductionTask;
   }
 
-  async create(dto: CreateProductionTaskDTO, options?: RepositoryOptions): Promise<ProductionTask> {
+  async create(
+    dto: CreateProductionTaskDTO,
+    _options?: RepositoryOptions
+  ): Promise<ProductionTask> {
     const id = doc(collection(db, this.collectionName)).id;
     const now = new Date();
 
@@ -157,7 +160,7 @@ export class CoreProductionRepositoryAdapter implements IProductionTaskRepositor
   async update(
     id: string,
     dto: UpdateProductionTaskDTO,
-    options?: RepositoryOptions
+    _options?: RepositoryOptions
   ): Promise<ProductionTask> {
     const docRef = doc(db, this.collectionName, id);
     const currentDoc = await getDoc(docRef);
@@ -177,7 +180,7 @@ export class CoreProductionRepositoryAdapter implements IProductionTaskRepositor
   async updateStatus(
     id: string,
     status: ProductionTaskStatus,
-    options?: RepositoryOptions
+    _options?: RepositoryOptions
   ): Promise<ProductionTask> {
     const docRef = doc(db, this.collectionName, id);
     const updates: any = {
@@ -206,7 +209,7 @@ export class CoreProductionRepositoryAdapter implements IProductionTaskRepositor
     return this.mapDocToEntity(updatedDoc.id, updatedDoc.data());
   }
 
-  async delete(id: string, options?: RepositoryOptions): Promise<void> {
+  async delete(id: string, _options?: RepositoryOptions): Promise<void> {
     await deleteDoc(doc(db, this.collectionName, id));
   }
 }

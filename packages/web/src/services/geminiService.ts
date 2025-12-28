@@ -1,27 +1,28 @@
-import { container, SERVICE_KEYS } from "./ioc/Container";
-import type { IAIService } from "@/domain/interfaces/services/IAIService";
-import { trackedGeminiCall } from "./ai/geminiMetrics";
+import { container } from '@/application/di/Container';
+import { TYPES } from '@/application/di/types';
+import type { IAIService } from '@/domain/interfaces/services/IAIService';
+import { trackedGeminiCall } from './ai/geminiMetrics';
 import type { AIFeature, AICallMetadata } from './ai/types';
-import { useStore } from "@/presentation/store/useStore";
-import type { Ingredient } from "@/types";
+import { useStore } from '@/presentation/store/useStore';
+import type { Ingredient } from '@/types';
 
-const getAIService = () => container.resolve<IAIService>(SERVICE_KEYS.AI);
+const getAIService = () => container.get<IAIService>(TYPES.AIService);
 
 const getMetadata = (overrides?: Partial<AICallMetadata>): AICallMetadata => {
-    const state = useStore.getState();
-    return {
-        outletId: state.activeOutletId || 'unknown',
-        userId: state.currentUser?.id || 'unknown',
-        ...overrides
-    };
+  const state = useStore.getState();
+  return {
+    outletId: state.activeOutletId || 'unknown',
+    userId: state.currentUser?.id || 'unknown',
+    ...overrides,
+  };
 };
 
-console.log("CulinaryOS AI Service initialized via Hexagonal Architecture");
+console.log('CulinaryOS AI Service initialized via Hexagonal Architecture');
 
 export interface AIAnalysisResult {
-    success: boolean;
-    data?: any;
-    error?: string;
+  success: boolean;
+  data?: any;
+  error?: string;
 }
 
 /**
@@ -31,84 +32,86 @@ export interface AIAnalysisResult {
  * @returns Parsed JSON result or error
  */
 export async function analyzeImage(
-    imageBase64: string,
-    prompt: string,
-    feature: AIFeature = 'universalImporter',
-    metadataOverride?: AICallMetadata
+  imageBase64: string,
+  prompt: string,
+  feature: AIFeature = 'universalImporter',
+  metadataOverride?: AICallMetadata
 ): Promise<AIAnalysisResult> {
-    const metadata = metadataOverride || getMetadata();
+  const metadata = metadataOverride || getMetadata();
 
-    try {
-        console.log(`[AI Service] Starting trackedGeminiCall for ${feature}`);
-        return await trackedGeminiCall(
-            feature,
-            async () => {
-                const aiService = getAIService();
-                console.log(`[AI Service] Calling aiService.analyzeImage for ${feature}...`);
-                const response = await aiService.analyzeImage(imageBase64, prompt);
+  try {
+    console.log(`[AI Service] Starting trackedGeminiCall for ${feature}`);
+    return await trackedGeminiCall(
+      feature,
+      async () => {
+        const aiService = getAIService();
+        console.log(`[AI Service] Calling aiService.analyzeImage for ${feature}...`);
+        const response = await aiService.analyzeImage(imageBase64, prompt);
 
-                if (!response) {
-                    console.error(`[AI Service] AI Service returned NULL/UNDEFINED response for ${feature}`);
-                    throw new Error("AI Service returned no response");
-                }
+        if (!response) {
+          console.error(`[AI Service] AI Service returned NULL/UNDEFINED response for ${feature}`);
+          throw new Error('AI Service returned no response');
+        }
 
-                console.log(`[AI Service] AI Service response keys:`, Object.keys(response));
-                const text = response.text;
+        console.log(`[AI Service] AI Service response keys:`, Object.keys(response));
+        const text = response.text;
 
-                if (text === undefined) {
-                    console.error(`[AI Service] AI response.text is undefined!`);
-                    throw new Error("AI response.text is undefined");
-                }
+        if (text === undefined) {
+          console.error(`[AI Service] AI response.text is undefined!`);
+          throw new Error('AI response.text is undefined');
+        }
 
-                // Try to parse JSON from the response
-                try {
-                    console.log(`[AI Service] Parsing JSON from text (length: ${text.length})...`);
-                    // Find JSON block if wrapped in markdown
-                    const jsonMatch = (/```json\n([\s\S]*?)\n```/.exec(text)) || (/\{[\s\S]*\}/.exec(text));
-                    const jsonStr = jsonMatch ? jsonMatch[1] || jsonMatch[0] : text;
-                    const data = JSON.parse(jsonStr);
-                    console.log(`[AI Service] JSON parsed successfully for ${feature}`);
-                    const finalResult = { success: true, data };
-                    console.log(`[AI Service] Returning result with success: true`);
-                    return finalResult;
-                } catch (parseError) {
-                    console.warn(`[AI Service] AI Response was not valid JSON for ${feature}:`, text.substring(0, 100) + "...");
-                    return { success: true, data: { rawText: text } }; // Return raw text if JSON parse fails
-                }
-            },
-            metadata,
-            imageBase64 // Cache key input
-        );
-
-    } catch (error) {
-        const message = error instanceof Error ? error.message : "Unknown error during AI analysis";
-        console.error("Gemini Analysis Error:", error);
-        return { success: false, error: message };
-    }
+        // Try to parse JSON from the response
+        try {
+          console.log(`[AI Service] Parsing JSON from text (length: ${text.length})...`);
+          // Find JSON block if wrapped in markdown
+          const jsonMatch = /```json\n([\s\S]*?)\n```/.exec(text) || /\{[\s\S]*\}/.exec(text);
+          const jsonStr = jsonMatch ? jsonMatch[1] || jsonMatch[0] : text;
+          const data = JSON.parse(jsonStr);
+          console.log(`[AI Service] JSON parsed successfully for ${feature}`);
+          const finalResult = { success: true, data };
+          console.log(`[AI Service] Returning result with success: true`);
+          return finalResult;
+        } catch (parseError) {
+          console.warn(
+            `[AI Service] AI Response was not valid JSON for ${feature}:`,
+            text.substring(0, 100) + '...'
+          );
+          return { success: true, data: { rawText: text } }; // Return raw text if JSON parse fails
+        }
+      },
+      metadata,
+      imageBase64 // Cache key input
+    );
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unknown error during AI analysis';
+    console.error('Gemini Analysis Error:', error);
+    return { success: false, error: message };
+  }
 }
 
 export async function generateContent(
-    prompt: string,
-    feature: AIFeature = 'universalImporter',
-    metadataOverride?: AICallMetadata
+  prompt: string,
+  feature: AIFeature = 'universalImporter',
+  metadataOverride?: AICallMetadata
 ): Promise<string> {
-    const metadata = metadataOverride || getMetadata();
+  const metadata = metadataOverride || getMetadata();
 
-    try {
-        return await trackedGeminiCall(
-            feature,
-            async () => {
-                const aiService = getAIService();
-                const response = await aiService.generateText(prompt);
-                return response.text;
-            },
-            metadata,
-            prompt
-        );
-    } catch (error) {
-        console.error("Gemini Generation Error:", error);
-        throw error;
-    }
+  try {
+    return await trackedGeminiCall(
+      feature,
+      async () => {
+        const aiService = getAIService();
+        const response = await aiService.generateText(prompt);
+        return response.text;
+      },
+      metadata,
+      prompt
+    );
+  } catch (error) {
+    console.error('Gemini Generation Error:', error);
+    throw error;
+  }
 }
 
 // --- Specialized AI Functions (Client-Side) ---
@@ -117,12 +120,12 @@ export async function generateContent(
  * Generate a menu based on criteria
  */
 export async function generateMenuFromCriteria(criteria: {
-    eventType: string;
-    pax: number;
-    season: string;
-    restrictions: string[];
+  eventType: string;
+  pax: number;
+  season: string;
+  restrictions: string[];
 }): Promise<AIAnalysisResult> {
-    const prompt = `
+  const prompt = `
         Act as a professional Chef. Design a menu for a "${criteria.eventType}" event for ${criteria.pax} people.
         Season: ${criteria.season}.
         Dietary Restrictions: ${criteria.restrictions.join(', ') || 'None'}.
@@ -144,44 +147,47 @@ export async function generateMenuFromCriteria(criteria: {
         }
     `;
 
-    try {
-        // Reuse generateContent which is now tracked. We pass the feature.
-        const responseText = await generateContent(prompt, 'menuGenerator');
-        const text = responseText;
+  try {
+    // Reuse generateContent which is now tracked. We pass the feature.
+    const responseText = await generateContent(prompt, 'menuGenerator');
+    const text = responseText;
 
-        const jsonMatch = (/```json\n([\s\S]*?)\n```/.exec(text)) || (/\{[\s\S]*\}/.exec(text));
-        const jsonStr = jsonMatch ? jsonMatch[1] || jsonMatch[0] : text;
-        const data = JSON.parse(jsonStr);
-        return { success: true, data };
-    } catch (error) {
-        const message = error instanceof Error ? error.message : "Error desconocido";
-        console.error("Menu Generation Error:", error);
-        return { success: false, error: message };
-    }
+    const jsonMatch = /```json\n([\s\S]*?)\n```/.exec(text) || /\{[\s\S]*\}/.exec(text);
+    const jsonStr = jsonMatch ? jsonMatch[1] || jsonMatch[0] : text;
+    const data = JSON.parse(jsonStr);
+    return { success: true, data };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Error desconocido';
+    console.error('Menu Generation Error:', error);
+    return { success: false, error: message };
+  }
 }
 
 /**
  * Analyze an invoice image calling analyzeImage with a specific prompt
  * Includes context-aware training via aiConfig if provided
  */
-export async function scanInvoiceImage(base64Data: string, aiConfig?: import('../types/suppliers').SupplierAIConfig): Promise<AIAnalysisResult> {
-    let trainingContext = "";
+export async function scanInvoiceImage(
+  base64Data: string,
+  aiConfig?: import('../types/suppliers').SupplierAIConfig
+): Promise<AIAnalysisResult> {
+  let trainingContext = '';
 
-    if (aiConfig) {
-        if (aiConfig.hints) {
-            trainingContext += `\nHINTS ESPECÍFICOS PARA ESTE PROVEEDOR:\n${aiConfig.hints}\n`;
-        }
-
-        if (aiConfig.samples && aiConfig.samples.length > 0) {
-            trainingContext += `\nEJEMPLOS DE EXTRACCIONES EXITOSAS (FEW-SHOT):\n`;
-            aiConfig.samples.forEach(sample => {
-                trainingContext += `TEXTO ORIGINAL DETECTADO: "${sample.rawTextSnippet.substring(0, 500)}..."\n`;
-                trainingContext += `EXTRACCIÓN CORRECTA: ${JSON.stringify(sample.verifiedData)}\n---\n`;
-            });
-        }
+  if (aiConfig) {
+    if (aiConfig.hints) {
+      trainingContext += `\nHINTS ESPECÍFICOS PARA ESTE PROVEEDOR:\n${aiConfig.hints}\n`;
     }
 
-    const prompt = `
+    if (aiConfig.samples && aiConfig.samples.length > 0) {
+      trainingContext += `\nEJEMPLOS DE EXTRACCIONES EXITOSAS (FEW-SHOT):\n`;
+      aiConfig.samples.forEach((sample) => {
+        trainingContext += `TEXTO ORIGINAL DETECTADO: "${sample.rawTextSnippet.substring(0, 500)}..."\n`;
+        trainingContext += `EXTRACCIÓN CORRECTA: ${JSON.stringify(sample.verifiedData)}\n---\n`;
+      });
+    }
+  }
+
+  const prompt = `
         Analiza esta factura o albarán de restaurante/proveedor. Extrae los datos en JSON siguiendo estrictamente este esquema:
         {
             "supplierName": "String",
@@ -194,14 +200,14 @@ export async function scanInvoiceImage(base64Data: string, aiConfig?: import('..
         ${trainingContext}
         Si un campo no es legible, devuelve null. Asegúrate de que los números sean tipos Number de JS, no strings.
     `;
-    return analyzeImage(base64Data, prompt, 'invoiceScanner');
+  return analyzeImage(base64Data, prompt, 'invoiceScanner');
 }
 
 /**
  * Scan an Ingredient Label for allergens and nutrition
  */
 export async function scanIngredientLabel(base64Data: string): Promise<AIAnalysisResult> {
-    const prompt = `
+  const prompt = `
         Analiza esta etiqueta de producto alimenticio. Extrae en JSON:
         {
             "name": "Nombre del producto",
@@ -215,14 +221,14 @@ export async function scanIngredientLabel(base64Data: string): Promise<AIAnalysi
             }
         }
     `;
-    return analyzeImage(base64Data, prompt, 'universalImporter');
+  return analyzeImage(base64Data, prompt, 'universalImporter');
 }
 
 /**
  * Scan a Recipe Card (Handwritten or Printed)
  */
 export async function scanRecipeFromImage(base64Data: string): Promise<AIAnalysisResult> {
-    const prompt = `
+  const prompt = `
         Analiza esta receta (foto o texto). Extrae en JSON:
         {
             "name": "Nombre Receta",
@@ -235,14 +241,14 @@ export async function scanRecipeFromImage(base64Data: string): Promise<AIAnalysi
         }
         Normaliza las unidades a sistema métrico si es posible.
     `;
-    return analyzeImage(base64Data, prompt, 'universalImporter');
+  return analyzeImage(base64Data, prompt, 'universalImporter');
 }
 
 /**
  * Scan a Physical Menu to digitalize it
  */
 export async function scanMenuImage(base64Data: string): Promise<AIAnalysisResult> {
-    const prompt = `
+  const prompt = `
         Digitaliza esta carta/menú. Extrae en JSON:
         {
             "name": "Nombre del Menú (ej. Carta Verano)",
@@ -256,14 +262,14 @@ export async function scanMenuImage(base64Data: string): Promise<AIAnalysisResul
             ]
         }
     `;
-    return analyzeImage(base64Data, prompt, 'universalImporter');
+  return analyzeImage(base64Data, prompt, 'universalImporter');
 }
 
 /**
  * Scan an Event Order (BEO)
  */
 export async function scanEventOrder(base64Data: string): Promise<AIAnalysisResult> {
-    const prompt = `
+  const prompt = `
         Analiza esta Hoja de Orden de Evento (BEO). Extrae en JSON:
         {
             "eventName": "Nombre Evento",
@@ -281,14 +287,14 @@ export async function scanEventOrder(base64Data: string): Promise<AIAnalysisResu
             "notes": "Notas especiales (dietas, montaje...)"
         }
     `;
-    return analyzeImage(base64Data, prompt, 'beoScanner');
+  return analyzeImage(base64Data, prompt, 'beoScanner');
 }
 
 /**
  * Scan a Handwritten Inventory Count Sheet
  */
 export async function scanInventorySheet(base64Data: string): Promise<AIAnalysisResult> {
-    const prompt = `
+  const prompt = `
         Analiza esta hoja de recuento de inventario manuscrita. Extrae en JSON:
         {
             "date": "YYYY-MM-DD",
@@ -298,14 +304,14 @@ export async function scanInventorySheet(base64Data: string): Promise<AIAnalysis
         }
         Trata de interpretar la caligrafía lo mejor posible.
     `;
-    return analyzeImage(base64Data, prompt, 'universalImporter');
+  return analyzeImage(base64Data, prompt, 'universalImporter');
 }
 
 /**
  * Scan a Handwritten HACCP Log (Temperatures/Cleaning)
  */
 export async function scanHACCPLog(base64Data: string): Promise<AIAnalysisResult> {
-    const prompt = `
+  const prompt = `
         Analiza esta hoja de registro de HACCP/Temperaturas. Extrae en JSON:
         {
             "date": "YYYY-MM-DD",
@@ -320,16 +326,20 @@ export async function scanHACCPLog(base64Data: string): Promise<AIAnalysisResult
         }
         Intenta mapear los nombres de equipos a PCCs genéricos si es posible.
     `;
-    return analyzeImage(base64Data, prompt, 'universalImporter');
+  return analyzeImage(base64Data, prompt, 'universalImporter');
 }
 /**
  * Optimize Inventory Settings based on historical usage and future demand
  */
 export async function optimizeInventorySettings(context: {
-    ingredients: (Ingredient & { currentStock: number; usageHistory?: { avgDaily: number }; futureDemand?: { neededQuantity: number; eventCount: number } })[];
-    totalFuturePax: number;
+  ingredients: (Ingredient & {
+    currentStock: number;
+    usageHistory?: { avgDaily: number };
+    futureDemand?: { neededQuantity: number; eventCount: number };
+  })[];
+  totalFuturePax: number;
 }): Promise<AIAnalysisResult> {
-    const prompt = `
+  const prompt = `
         Actúa como un experto en cadena de suministro para restaurantes de alta gama.
         Analiza los siguientes datos de inventario y eventos próximos para optimizar los 'Reorder Points' (punto de pedido) y 'Optimal Stock' (stock máximo).
 
@@ -338,17 +348,21 @@ export async function optimizeInventorySettings(context: {
         - Ingredientes (incluye histórico de consumo diario y demanda futura por eventos confirmados).
 
         CONTEXTO:
-        ${JSON.stringify(context.ingredients.map(i => ({
-        id: i.id,
-        name: i.name,
-        unit: i.unit,
-        currentReorderPoint: i.reorderPoint,
-        currentOptimalStock: i.optimalStock,
-        currentStock: i.currentStock,
-        avgDailyUsage: i.usageHistory?.avgDaily,
-        futureEventDemand: i.futureDemand?.neededQuantity,
-        eventCount: i.futureDemand?.eventCount
-    })), null, 2)}
+        ${JSON.stringify(
+          context.ingredients.map((i) => ({
+            id: i.id,
+            name: i.name,
+            unit: i.unit,
+            currentReorderPoint: i.reorderPoint,
+            currentOptimalStock: i.optimalStock,
+            currentStock: i.currentStock,
+            avgDailyUsage: i.usageHistory?.avgDaily,
+            futureEventDemand: i.futureDemand?.neededQuantity,
+            eventCount: i.futureDemand?.eventCount,
+          })),
+          null,
+          2
+        )}
 
         INSTRUCCIONES:
         1. Compara el uso histórico vs la demanda futura.
@@ -372,32 +386,34 @@ export async function optimizeInventorySettings(context: {
         Sugiere cambios solo para ingredientes donde la diferencia sea significativa (>10%).
     `;
 
-    try {
-        const text = await generateContent(prompt, 'inventoryOptimization');
-        const jsonMatch = (/```json\n([\s\S]*?)\n```/.exec(text)) || (/\{[\s\S]*\}/.exec(text));
-        const jsonStr = jsonMatch ? jsonMatch[1] || jsonMatch[0] : text;
-        const data = JSON.parse(jsonStr);
-        return { success: true, data };
-    } catch (error) {
-        const message = error instanceof Error ? error.message : "Error desconocido";
-        console.error("Inventory Optimization Error:", error);
-        return { success: false, error: message };
-    }
+  try {
+    const text = await generateContent(prompt, 'inventoryOptimization');
+    const jsonMatch = /```json\n([\s\S]*?)\n```/.exec(text) || /\{[\s\S]*\}/.exec(text);
+    const jsonStr = jsonMatch ? jsonMatch[1] || jsonMatch[0] : text;
+    const data = JSON.parse(jsonStr);
+    return { success: true, data };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Error desconocido';
+    console.error('Inventory Optimization Error:', error);
+    return { success: false, error: message };
+  }
 }
 
 /**
  * NEW: Suggest specific purchases based on future demand
  */
 export interface PurchaseSuggestionContext {
-    ingredientId: string;
-    ingredientName: string;
-    futureDemand: number;
-    currentStock: number;
-    reorderPoint: number;
+  ingredientId: string;
+  ingredientName: string;
+  futureDemand: number;
+  currentStock: number;
+  reorderPoint: number;
 }
 
-export async function suggestPurchases(context: PurchaseSuggestionContext[]): Promise<AIAnalysisResult> {
-    const prompt = `
+export async function suggestPurchases(
+  context: PurchaseSuggestionContext[]
+): Promise<AIAnalysisResult> {
+  const prompt = `
         Actúa como un Jefe de Compras experto. 
         Analiza las necesidades de ingredientes para los próximos eventos y genera una lista de compra sugerida.
         
@@ -424,18 +440,18 @@ export async function suggestPurchases(context: PurchaseSuggestionContext[]): Pr
         }
     `;
 
-    try {
-        const text = await generateContent(prompt, 'purchaseSuggestion');
+  try {
+    const text = await generateContent(prompt, 'purchaseSuggestion');
 
-        const jsonMatch = (/```json\n([\s\S]*?)\n```/.exec(text)) || (/\{[\s\S]*\}/.exec(text));
-        const jsonStr = jsonMatch ? jsonMatch[1] || jsonMatch[0] : text;
-        const data = JSON.parse(jsonStr);
-        return { success: true, data };
-    } catch (error) {
-        const message = error instanceof Error ? error.message : "Error desconocido";
-        console.error("Purchase Suggestion Error:", error);
-        return { success: false, error: message };
-    }
+    const jsonMatch = /```json\n([\s\S]*?)\n```/.exec(text) || /\{[\s\S]*\}/.exec(text);
+    const jsonStr = jsonMatch ? jsonMatch[1] || jsonMatch[0] : text;
+    const data = JSON.parse(jsonStr);
+    return { success: true, data };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Error desconocido';
+    console.error('Purchase Suggestion Error:', error);
+    return { success: false, error: message };
+  }
 }
 
 /**
@@ -443,20 +459,27 @@ export async function suggestPurchases(context: PurchaseSuggestionContext[]): Pr
  */
 import type { WasteRecord } from '@/types';
 
-export async function analyzeWaste(wasteRecords: WasteRecord[], ingredients: Ingredient[]): Promise<AIAnalysisResult> {
-    const prompt = `
+export async function analyzeWaste(
+  wasteRecords: WasteRecord[],
+  ingredients: Ingredient[]
+): Promise<AIAnalysisResult> {
+  const prompt = `
         Actúa como un experto en control de costes y sostenibilidad en restauración (Loss Prevention Expert).
         Analiza los siguientes registros de mermas y propón estrategias concretas para reducirlas.
 
         DATOS DE MERMAS:
-        ${JSON.stringify(wasteRecords.map(r => ({
-        date: r.date,
-        ingredient: ingredients.find(i => i.id === r.ingredientId)?.name,
-        quantity: r.quantity,
-        unit: r.unit,
-        reason: r.reason,
-        cost: r.quantity * r.costAtTime
-    })), null, 2)}
+        ${JSON.stringify(
+          wasteRecords.map((r) => ({
+            date: r.date,
+            ingredient: ingredients.find((i) => i.id === r.ingredientId)?.name,
+            quantity: r.quantity,
+            unit: r.unit,
+            reason: r.reason,
+            cost: r.quantity * r.costAtTime,
+          })),
+          null,
+          2
+        )}
 
         INSTRUCCIONES:
         1. Identifica patrones (ej: "Se tira mucha leche los lunes", "La merma por caducidad en carne es alta").
@@ -477,25 +500,25 @@ export async function analyzeWaste(wasteRecords: WasteRecord[], ingredients: Ing
         }
     `;
 
-    try {
-        const text = await generateContent(prompt, 'wasteAnalysis');
+  try {
+    const text = await generateContent(prompt, 'wasteAnalysis');
 
-        const jsonMatch = (/```json\n([\s\S]*?)\n```/.exec(text)) || (/\{[\s\S]*\}/.exec(text));
-        const jsonStr = jsonMatch ? jsonMatch[1] || jsonMatch[0] : text;
-        const data = JSON.parse(jsonStr);
-        return { success: true, data };
-    } catch (error) {
-        const message = error instanceof Error ? error.message : "Error desconocido";
-        console.error("Waste Analysis Error:", error);
-        return { success: false, error: message };
-    }
+    const jsonMatch = /```json\n([\s\S]*?)\n```/.exec(text) || /\{[\s\S]*\}/.exec(text);
+    const jsonStr = jsonMatch ? jsonMatch[1] || jsonMatch[0] : text;
+    const data = JSON.parse(jsonStr);
+    return { success: true, data };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Error desconocido';
+    console.error('Waste Analysis Error:', error);
+    return { success: false, error: message };
+  }
 }
 /**
  * NEW: Specialized Scanner for Sports Team Menus
  * Targets the column-based layout (Guarnición, 1, 2, Postre) and handwritten notes.
  */
 export async function scanSportsTeamMenu(base64Data: string): Promise<AIAnalysisResult> {
-    const prompt = `
+  const prompt = `
         Analiza esta foto de un menú para un Equipo Deportivo.
         Este formato suele tener columnas como "GUARNICIÓN", "PRIMER PLATO", "SEGUNDO PLATO", "POSTRES".
         
@@ -524,5 +547,5 @@ export async function scanSportsTeamMenu(base64Data: string): Promise<AIAnalysis
         2. Detecta todas las restricciones dietéticas mencionadas para cada plato.
         3. Si hay marcas (checks o cruces) al lado de un plato, regístralo en las notas del plato.
     `;
-    return analyzeImage(base64Data, prompt, 'sportsMenuScanner');
+  return analyzeImage(base64Data, prompt, 'sportsMenuScanner');
 }

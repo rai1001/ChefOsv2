@@ -46,7 +46,7 @@ export const ProductionPage: React.FC = () => {
 
   const {
     tasks: productionTasks,
-    loading,
+    loading: _loading,
     fetchTasks,
     generateTasksForEvent,
     updateStatus,

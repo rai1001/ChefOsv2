@@ -1,4 +1,3 @@
-import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { LoginPage } from './presentation/pages/LoginPage';
 import { Layout } from './presentation/components/Layout';
@@ -22,55 +21,40 @@ import { HospitalityLogisticsPage } from './presentation/pages/HospitalityLogist
 import { KitchenDisplayPage } from './presentation/pages/KitchenDisplayPage';
 import { IntegrationsPage } from './presentation/pages/IntegrationsPage';
 import { AIFeaturesPage } from './presentation/pages/AIFeaturesPage';
-import { useAtomValue } from 'jotai';
-import { userAtom, isLoadingAtom } from './presentation/store/authAtoms';
+import { ProtectedRoute } from './presentation/components/auth/ProtectedRoute';
 
 // Protected Route Component
-const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
-  const user = useAtomValue(userAtom);
-  const isLoading = useAtomValue(isLoadingAtom);
-
-  if (isLoading) return <div>Loading...</div>;
-  if (!user) return <Navigate to="/login" replace />;
-
-  return <>{children}</>;
-};
+// Note: Local ProtectedRoute removed in favor of Shared component
 
 export const App = () => {
   return (
     <BrowserRouter>
       <Routes>
         <Route path="/login" element={<LoginPage />} />
-        <Route
-          path="/"
-          element={
-            <ProtectedRoute>
-              <Layout />
-            </ProtectedRoute>
-          }
-        >
-          <Route path="dashboard" element={<Dashboard />} />
-          <Route path="ingredients" element={<IngredientsPage />} />
-          <Route path="recipes" element={<RecipesPage />} />
-          <Route path="inventory" element={<InventoryPage />} />
-          <Route path="analytics" element={<AnalyticsPage />} />
-          <Route path="schedule" element={<SchedulePage />} />
-          <Route path="events" element={<EventsPage />} />
-          <Route path="events" element={<EventsPage />} />
-          <Route path="staff" element={<StaffPage />} />
-          <Route path="haccp" element={<HACCPPage />} />
-          <Route path="production" element={<ProductionPage />} />
-          <Route path="waste" element={<WastePage />} />
-          <Route path="purchasing" element={<PurchasingPage />} />
-          <Route path="suppliers" element={<SupplierPage />} />
-          <Route path="menu" element={<MenuPage />} />
-          <Route path="menu-engineering" element={<MenuAnalyticsPage />} />
-          <Route path="fichas" element={<FichasTecnicasPage />} />
-          <Route path="logistics" element={<HospitalityLogisticsPage />} />
-          <Route path="kds" element={<KitchenDisplayPage />} />
-          <Route path="integrations" element={<IntegrationsPage />} />
-          <Route path="ai-features" element={<AIFeaturesPage />} />
-          <Route path="" element={<Navigate to="/dashboard" replace />} />
+        <Route element={<ProtectedRoute />}>
+          <Route element={<Layout />}>
+            <Route path="dashboard" element={<Dashboard />} />
+            <Route path="ingredients" element={<IngredientsPage />} />
+            <Route path="recipes" element={<RecipesPage />} />
+            <Route path="inventory" element={<InventoryPage />} />
+            <Route path="analytics" element={<AnalyticsPage />} />
+            <Route path="schedule" element={<SchedulePage />} />
+            <Route path="events" element={<EventsPage />} />
+            <Route path="staff" element={<StaffPage />} />
+            <Route path="haccp" element={<HACCPPage />} />
+            <Route path="production" element={<ProductionPage />} />
+            <Route path="waste" element={<WastePage />} />
+            <Route path="purchasing" element={<PurchasingPage />} />
+            <Route path="suppliers" element={<SupplierPage />} />
+            <Route path="menu" element={<MenuPage />} />
+            <Route path="menu-engineering" element={<MenuAnalyticsPage />} />
+            <Route path="fichas" element={<FichasTecnicasPage />} />
+            <Route path="logistics" element={<HospitalityLogisticsPage />} />
+            <Route path="kds" element={<KitchenDisplayPage />} />
+            <Route path="integrations" element={<IntegrationsPage />} />
+            <Route path="ai-features" element={<AIFeaturesPage />} />
+            <Route path="" element={<Navigate to="/dashboard" replace />} />
+          </Route>
         </Route>
       </Routes>
     </BrowserRouter>

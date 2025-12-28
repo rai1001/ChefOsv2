@@ -14,7 +14,6 @@
     "lint": "eslint src --ext .ts"
   },
   "dependencies": {
-    "@culinaryos/core": "workspace:*",
     "@google-cloud/documentai": "^8.0.0",
     "@google-cloud/vertexai": "^1.10.0",
     "@slack/web-api": "^7.13.0",

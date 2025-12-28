@@ -1,0 +1,43 @@
+{
+  "users": [
+    {
+      "localId": "44H6eRcHUEQZ8Z3eqKHm9BkTabB2",
+      "email": "pagopaypal1978@gmail.com",
+      "emailVerified": false,
+      "passwordHash": "MQJ5b/YKd6jievLTO0sJBPj+J26faTBMkYGfgvCTspqVelJRxLb76PlUMUYYsYR50CRddJzYezqRoYDaPIDM4g==",
+      "salt": "vJB4pVdHv5MpXg==",
+      "createdAt": "1766772913473",
+      "disabled": false,
+      "providerUserInfo": []
+    },
+    {
+      "localId": "KO2B0z5CiYSwk6lbwQY71dw9lXp1",
+      "email": "raisada1001@gmail.com",
+      "emailVerified": true,
+      "displayName": "Israel mendez vazquez",
+      "photoUrl": "https://lh3.googleusercontent.com/a/ACg8ocI-jNLQKivsRJkUk5GnDJtguMDUPO2qaF3XwwqZPH6p_MyrZA=s96-c",
+      "lastSignedInAt": "1766821365170",
+      "createdAt": "1766772897637",
+      "disabled": false,
+      "providerUserInfo": [
+        {
+          "providerId": "google.com",
+          "rawId": "107847419741868599917",
+          "email": "raisada1001@gmail.com",
+          "displayName": "Israel mendez vazquez",
+          "photoUrl": "https://lh3.googleusercontent.com/a/ACg8ocI-jNLQKivsRJkUk5GnDJtguMDUPO2qaF3XwwqZPH6p_MyrZA=s96-c"
+        }
+      ]
+    },
+    {
+      "localId": "uqMcgyhrvpRINy7Uxt9LcB7ALup1",
+      "email": "prueba@cocina.com",
+      "emailVerified": false,
+      "passwordHash": "IqfqlIMH2e0JYNJ+7OOIx5uTKR/e0FSZTwZz1/QpP5DJNfLxSwmR3DhRsEXrZSygVmglwSG+9FiXyVAyaSWGig==",
+      "salt": "H3pxCkDsz0CkWw==",
+      "lastSignedInAt": "1766873270561",
+      "createdAt": "1766823856189",
+      "providerUserInfo": []
+    }
+  ]
+}

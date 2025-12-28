@@ -10,7 +10,7 @@ import {
   Printer,
 } from 'lucide-react';
 import { printLabel } from '../printing/PrintService';
-import { ProductionTask, ProductionTaskStatus, ProductionStation } from '@culinaryos/core';
+import { ProductionTask, ProductionTaskStatus } from '@culinaryos/core';
 
 interface ColumnProps {
   id: ProductionTaskStatus;

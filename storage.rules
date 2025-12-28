@@ -11,10 +11,16 @@ service firebase.storage {
       return firestore.get(/databases/(default)/documents/users/$(request.auth.uid)).data;
     }
 
+    function isAdmin() {
+      return getUserData().role == 'admin';
+    }
+
     function hasOutletAccess(outletId) {
       return isAuthenticated() &&
-             getUserData().outletIds != null &&
-             outletId in getUserData().outletIds;
+             (
+               isAdmin() ||
+               (getUserData().outletIds != null && outletId in getUserData().outletIds)
+             );
     }
 
     // Outlet-specific files
