@@ -167,10 +167,28 @@ service cloud.firestore {
         allow delete: if canWriteDocument(resource.data);
     }
 
+    match /schedule/{id} {
+        allow read: if canReadDocument(resource.data);
+        allow create: if canWriteDocument(request.resource.data);
+        allow update: if canWriteDocument(resource.data) && canWriteDocument(request.resource.data);
+        allow delete: if canWriteDocument(resource.data);
+    }
+
     // AI Usage Metrics
     match /aiUsageMetrics/{id} {
         allow read: if canReadDocument(resource.data);
         allow create: if isAuthenticated() && isActive();
+    }
+    
+    match /ai_pricing/{docId} {
+        allow read: if isAuthenticated();
+        // allow write: if false; 
+    }
+    
+    // Exact match for the collection used in code
+    match /aiConfiguration/{docId} {
+        allow read: if isAuthenticated();
+        allow write: if false;
     }
 
     match /aiBudgets/{id} {

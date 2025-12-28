@@ -26,7 +26,7 @@ function isThisMonth(date: any): boolean {
 
 const DEFAULT_BUDGET: BudgetConfig = {
   monthly: { hardCap: 100, softCap: 80, currentSpend: 0, resetDate: null },
-  daily: { hardCap: 10, softCap: 8, currentSpend: 0, resetDate: null },
+  daily: { hardCap: 25, softCap: 20, currentSpend: 0, resetDate: null },
   perFeature: {
     invoiceScanner: { dailyLimit: 100, currentCount: 0 },
     beoScanner: { dailyLimit: 50, currentCount: 0 },

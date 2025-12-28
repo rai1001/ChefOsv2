@@ -16,7 +16,7 @@ const firebaseConfig = {
   appId: import.meta.env.VITE_FIREBASE_APP_ID || '1:462911840752:web:13284f498bbf5045507d35',
   databaseURL:
     import.meta.env.VITE_FIREBASE_DATABASE_URL ||
-    'https://chefosv2-default-rtdb.europe-west1.firebasedatabase.app',
+    'https://chefosv2.europe-west1.firebasedatabase.app',
 };
 
 // Detectar si estamos en modo emulator
@@ -27,7 +27,10 @@ export const app: FirebaseApp = initializeApp(firebaseConfig);
 export const auth: Auth = getAuth(app);
 export const db: Firestore = getFirestore(app);
 export const storage: FirebaseStorage = getStorage(app);
-export const functions: Functions = getFunctions(app);
+// Most functions are in europe-southwest1
+export const functions: Functions = getFunctions(app, 'europe-southwest1');
+// AI functions (Gemini) are in europe-west1
+export const functionsAI: Functions = getFunctions(app, 'europe-west1');
 export const perf: FirebasePerformance | null =
   typeof window !== 'undefined' && !USE_EMULATOR ? getPerformance(app) : null;
 export const rtdb: Database = getDatabase(app);

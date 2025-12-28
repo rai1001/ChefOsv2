@@ -17,9 +17,8 @@ interface SocialChefResponse {
 export const generateMarketingContent = functions
   .region('europe-west1')
   .runWith({
-    timeoutSeconds: 10,
+    timeoutSeconds: 60,
     memory: '1GB',
-    secrets: ['GCLOUD_PROJECT'],
   })
   .https.onCall(async (data: SocialChefRequest, context: functions.https.CallableContext) => {
     // 1. Authentication Check

@@ -92,7 +92,10 @@ export const SocialManagerHistory: React.FC<SocialManagerHistoryProps> = ({ onSe
             </div>
 
             <p className="text-sm text-slate-300 line-clamp-2 font-medium">
-              {post.data.instagram.copy}
+              {post.data?.instagram?.copy ||
+                post.data?.facebook?.copy ||
+                post.data?.linkedin?.copy ||
+                'Contenido generado'}
             </p>
 
             <div className="pt-2 border-t border-white/5 flex justify-between items-center">

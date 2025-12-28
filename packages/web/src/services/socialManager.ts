@@ -1,4 +1,4 @@
-import { functions } from '@/config/firebase';
+import { functionsAI } from '@/config/firebase';
 import { httpsCallable } from 'firebase/functions';
 import type { SocialContentType, GeneratedSocialContent } from '@/types/socialManager';
 
@@ -17,7 +17,7 @@ export const generateSocialContent = async (
 ): Promise<GeneratedSocialContent> => {
   try {
     const generateFn = httpsCallable<GenerateSocialContentRequest, GeneratedSocialContent>(
-      functions,
+      functionsAI,
       'generateSocialContent'
     );
 

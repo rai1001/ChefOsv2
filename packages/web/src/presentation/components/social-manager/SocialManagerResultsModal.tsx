@@ -161,7 +161,7 @@ export const SocialManagerResultsModal: React.FC<SocialManagerResultsModalProps>
                       </button>
                     </div>
                     <div className="p-4 bg-black/30 rounded-xl border border-white/10 text-slate-200 text-sm whitespace-pre-wrap leading-relaxed">
-                      {data.instagram.copy}
+                      {data.instagram?.copy || 'Sin contenido'}
                     </div>
                   </div>
 
@@ -178,7 +178,7 @@ export const SocialManagerResultsModal: React.FC<SocialManagerResultsModalProps>
                     </div>
                     <div className="p-4 bg-black/30 rounded-xl border border-white/10">
                       <div className="flex flex-wrap gap-2">
-                        {data.instagram.hashtags.map((tag, i) => (
+                        {data.instagram?.hashtags?.map((tag, i) => (
                           <span key={i} className="text-blue-400 text-sm">
                             #{tag.replace(/^#/, '')}
                           </span>
@@ -192,7 +192,7 @@ export const SocialManagerResultsModal: React.FC<SocialManagerResultsModalProps>
                       <p className="text-xs font-bold text-purple-300 uppercase mb-1">
                         Call to Action
                       </p>
-                      <p className="text-sm text-white">{data.instagram.callToAction}</p>
+                      <p className="text-sm text-white">{data.instagram?.callToAction || '-'}</p>
                     </div>
                     <div className="p-4 bg-blue-500/10 rounded-xl border border-blue-500/20 flex items-center gap-3">
                       <Clock className="text-blue-400" />
@@ -201,7 +201,7 @@ export const SocialManagerResultsModal: React.FC<SocialManagerResultsModalProps>
                           Hora Publicación
                         </p>
                         <p className="text-lg font-mono font-bold text-white">
-                          {data.instagram.suggestedTime}
+                          {data.instagram?.suggestedTime || '-'}
                         </p>
                       </div>
                     </div>
@@ -226,7 +226,7 @@ export const SocialManagerResultsModal: React.FC<SocialManagerResultsModalProps>
                       </button>
                     </div>
                     <div className="p-4 bg-black/30 rounded-xl border border-white/10 text-slate-200 text-sm whitespace-pre-wrap leading-relaxed">
-                      {data.facebook.copy}
+                      {data.facebook?.copy || 'Sin contenido'}
                     </div>
                   </div>
 
@@ -236,7 +236,7 @@ export const SocialManagerResultsModal: React.FC<SocialManagerResultsModalProps>
                         <MessageSquare size={14} /> Pregunta Engagement
                       </p>
                       <p className="text-sm text-white italic">
-                        "{data.facebook.engagementQuestion}"
+                        "{data.facebook?.engagementQuestion || '-'}"
                       </p>
                     </div>
                     <div className="p-4 bg-white/5 rounded-xl border border-white/10">
@@ -244,7 +244,7 @@ export const SocialManagerResultsModal: React.FC<SocialManagerResultsModalProps>
                         Tipo Recomendado
                       </p>
                       <span className="px-2 py-1 bg-green-500/20 text-green-400 text-xs rounded-lg border border-green-500/20 font-bold">
-                        {data.facebook.postType}
+                        {data.facebook?.postType || 'Standard'}
                       </span>
                     </div>
                   </div>
@@ -300,15 +300,17 @@ export const SocialManagerResultsModal: React.FC<SocialManagerResultsModalProps>
                         Tweet (
                         <span
                           className={
-                            data.twitter.copy.length > 280 ? 'text-red-400' : 'text-green-400'
+                            (data.twitter?.copy?.length || 0) > 280
+                              ? 'text-red-400'
+                              : 'text-green-400'
                           }
                         >
-                          {data.twitter.copy.length}/280
+                          {data.twitter?.copy?.length || 0}/280
                         </span>
                         )
                       </label>
                       <button
-                        onClick={() => handleCopy(data.twitter.copy, 'tw-copy')}
+                        onClick={() => handleCopy(data.twitter?.copy || '', 'tw-copy')}
                         className="text-xs text-primary hover:text-primary-light flex items-center gap-1 transition-colors"
                       >
                         {copiedField === 'tw-copy' ? <Check size={14} /> : <Copy size={14} />}
@@ -316,12 +318,12 @@ export const SocialManagerResultsModal: React.FC<SocialManagerResultsModalProps>
                       </button>
                     </div>
                     <div className="p-4 bg-black/30 rounded-xl border border-white/10 text-slate-200 text-lg whitespace-pre-wrap leading-relaxed">
-                      {data.twitter.copy}
+                      {data.twitter?.copy || 'Sin contenido'}
                     </div>
                   </div>
 
                   <div className="flex flex-wrap gap-2">
-                    {data.twitter.hashtags.map((tag, i) => (
+                    {data.twitter?.hashtags?.map((tag, i) => (
                       <span key={i} className="text-sky-400 text-sm">
                         #{tag.replace(/^#/, '')}
                       </span>

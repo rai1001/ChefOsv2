@@ -40,7 +40,10 @@ async function getPricingConfig(): Promise<PricingConfig> {
       return cachedPricing!;
     }
   } catch (e) {
-    console.warn('[AI Metrics] Failed to fetch pricing from Firestore, using defaults', e);
+    console.log(
+      '[AI Metrics] Info: Using default pricing (Firestore config not found/accessible)',
+      e
+    );
   }
 
   return {
@@ -270,17 +273,20 @@ export async function trackedGeminiCall<T>(
           estimatedCost: actualCost,
           latencyMs: latency,
           success,
-          errorMessage: errorMsg,
+          errorMessage: errorMsg || undefined, // Ensure not null if interface expects undefined
           model: 'gemini-2.0-flash',
         };
+
+        // Remove undefined values recursively (shallow check sufficient for this flat object)
+        const sanitizedMetric = JSON.parse(JSON.stringify(metric));
 
         console.log(`[AI Metrics] Logging metric for ${feature}:`, metric);
 
         // Log Metrics (Async - Fire and Forget)
-        logMetricToRealtime(metric).catch((err) =>
+        logMetricToRealtime(sanitizedMetric).catch((err) =>
           console.error('[AI Metrics] RTDB Log Error:', err)
         );
-        logMetricToFirestore(metric).catch((err) =>
+        logMetricToFirestore(sanitizedMetric).catch((err) =>
           console.error('[AI Metrics] Firestore Log Error:', err)
         );
 
