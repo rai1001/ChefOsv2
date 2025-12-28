@@ -81,7 +81,10 @@ export async function analyzeImage(
         }
       },
       metadata,
-      imageBase64 // Cache key input
+      {
+        prompt,
+        imageSize: imageBase64.length,
+      } // Structured payload for estimation
     );
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unknown error during AI analysis';

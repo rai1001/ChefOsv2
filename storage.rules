@@ -45,5 +45,13 @@ service firebase.storage {
                       request.resource.size < 5 * 1024 * 1024 &&
                       request.resource.contentType.matches('image/.*|application/pdf');
     }
+
+    // Social Media images
+    match /social-manager/{outletId}/{fileName} {
+      allow read: if hasOutletAccess(outletId);
+      allow write: if hasOutletAccess(outletId) &&
+                      request.resource.size < 5 * 1024 * 1024 &&
+                      request.resource.contentType.matches('image/.*');
+    }
   }
 }

@@ -1,15 +1,22 @@
 import React, { useState } from 'react';
 import { Upload, Image as ImageIcon, Sparkles, History, Loader2, Share2 } from 'lucide-react';
 import { useStore } from '@/presentation/store/useStore';
-// import { uploadToStorage } from '@/services/storage'; // TODO: Implement specific storage service
+import { uploadFile } from '@/services/storage';
+import { compressImage } from '@/utils/imageCompression';
 import { generateSocialContent } from '@/services/socialManager';
 import { SocialManagerResultsModal } from '@/presentation/components/social-manager/SocialManagerResultsModal';
 import { SocialManagerHistory } from '@/presentation/components/social-manager/SocialManagerHistory';
-import type { SocialContentType, GeneratedSocialContent } from '@/types/socialManager';
+import { db } from '@/config/firebase';
+import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import type {
+  SocialContentType,
+  GeneratedSocialContent,
+  SocialManagerPost,
+} from '@/types/socialManager';
 import { useToast } from '@/presentation/components/ui';
 
 export const SocialManagerView: React.FC = () => {
-  const { settings } = useStore();
+  const { settings, activeOutletId, currentUser } = useStore();
   const { addToast } = useToast();
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
@@ -43,44 +50,38 @@ export const SocialManagerView: React.FC = () => {
 
     setIsGenerating(true);
     try {
-      // 1. Upload image to get URL (assuming public or signed URL approach)
-      // For MVP, we pass the URL if accessible, or we might need to handle base64 in backend as fallback
-      // Let's assume we upload to a temp path in firebase storage
-      // const imageUrl = await uploadToStorage(imageFile, `social-manager/${Date.now()}_${imageFile.name}`);
+      // 1. Compress and Upload image to Storage
+      const compressedBase64 = await compressImage(imageFile, { quality: 0.6 });
 
-      // MOCK URL for dev if uploadToStorage is not ready or complex to setup in this turn
-      // We'll trust the plan mentioned using Cloud Storage.
-      // I'll assume uploadToStorage exists or implement a basic one.
-      // If not, I'll pass the base64 data url if backend supports it (my backend impl handled http url, but had a fallback comment)
+      // Convert base64 back to File for uploadFile service
+      const response = await fetch(compressedBase64);
+      const blob = await response.blob();
+      const compressedFile = new File([blob], imageFile.name, { type: 'image/jpeg' });
 
-      // For now, let's assume we use the imagePreview (base64) for the prompt if local, or upload.
-      // Backend implementation I wrote fetches HTTP.
-      // So I MUST upload it. Let's use a placeholder or assume uploadToStorage works.
-      // I will use a simple utility to simulate upload or actually upload if I can find the utility.
+      const storagePath = `social-manager/${activeOutletId}/${Date.now()}_${imageFile.name}`;
+      const uploadedImageUrl = await uploadFile(compressedFile, storagePath);
 
-      // TEMP FIX: For the demo, I will use a publicly accessible placeholder if no upload service found,
-      // or better, I will check if I can use the existing `uploadFile` from some service.
-      // Converting to base64 and sending might be easier if backend supported it.
-      // My backend implementation: `if (imageUrl.startsWith('http')) fetch... else throw`.
-
-      // Let's rely on `uploadToStorage` being available or I'll catch the error.
-      // Actually I don't see `services/storage` in the file list I've seen.
-      // Use `URL.createObjectURL` is local only.
-
-      // Strategies:
-      // 1. Implement simple Firebase Storage upload here.
-
-      // Placeholder for upload logic:
-      const imageUrl = 'https://placehold.co/600x400/png';
-      // In a real scenario I would implement the upload.
-      // Given the complexity constraints, I'll comment this out and put a TODO or try to implement a quick upload function if firebase is configured.
-
+      // 2. Generate Content
       const generatedData = await generateSocialContent(
-        imageUrl,
+        uploadedImageUrl,
         contentType,
         (settings.businessType as 'HOTEL' | 'RESTAURANT') || 'RESTAURANT',
         additionalContext
       );
+
+      // 3. Save to Firestore
+      const newPost: Omit<SocialManagerPost, 'id'> = {
+        userId: (currentUser as any)?.uid || 'unknown',
+        businessId: activeOutletId || 'unknown',
+        businessType: (settings.businessType as 'HOTEL' | 'RESTAURANT') || 'RESTAURANT',
+        contentType,
+        imageUrl: uploadedImageUrl,
+        additionalContext,
+        generatedAt: serverTimestamp(),
+        data: generatedData,
+      };
+
+      await addDoc(collection(db, 'socialManagerPosts'), newPost);
 
       setResult(generatedData);
       setIsModalOpen(true);

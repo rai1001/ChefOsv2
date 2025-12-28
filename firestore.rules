@@ -181,5 +181,11 @@ service cloud.firestore {
     match /aiCache/{id} {
         allow read, write: if isAuthenticated() && isActive();
     }
+
+    match /socialManagerPosts/{id} {
+        allow read: if isAuthenticated() && isActive() && (isAdmin() || (resource.data.businessId != null && canAccessOutlet(resource.data.businessId)));
+        allow create: if isAuthenticated() && isActive() && (isAdmin() || (request.resource.data.businessId != null && canManageOutlet(request.resource.data.businessId)));
+        allow update, delete: if isAuthenticated() && isActive() && (isAdmin() || (resource.data.businessId != null && canManageOutlet(resource.data.businessId)));
+    }
   }
 }
