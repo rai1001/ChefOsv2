@@ -9,7 +9,7 @@
     "build": "tsc",
     "test": "vitest run",
     "test:watch": "vitest",
-    "lint": "eslint src --ext .ts"
+    "lint": "eslint src"
   },
   "devDependencies": {
     "@types/node": "^22.10.2",
