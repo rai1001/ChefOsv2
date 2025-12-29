@@ -144,6 +144,28 @@ export interface User {
   name: string;
   photoURL?: string;
   allowedOutlets?: string[]; // IDs of outlets this user can access
+  defaultOutletId?: string;
+}
+
+export interface UserUpdateDTO {
+  displayName?: string;
+  role?: Role; // Updated to use Role type
+  active?: boolean;
+  allowedOutlets?: string[];
+  defaultOutletId?: string;
+}
+
+export interface UserListItem {
+  uid: string;
+  email: string;
+  displayName: string;
+  photoURL?: string;
+  role: Role; // Updated to use Role type
+  active: boolean;
+  allowedOutlets: string[];
+  defaultOutletId?: string;
+  createdAt: string;
+  updatedAt?: string;
 }
 
 export type Role =
