@@ -13,7 +13,10 @@ import {
   Clock,
   ChefHat,
   LayoutDashboard,
+  ClipboardList,
+  AlertTriangle,
 } from 'lucide-react';
+import { LoggingService } from '@/infrastructure/services/LoggingService';
 import { printLabel, formatLabelData } from '@/presentation/components/printing/PrintService';
 import * as XLSX from 'xlsx';
 import {
@@ -156,26 +159,41 @@ export const ProductionPage: React.FC = () => {
   // Consolidating Tasks for Selected Aggregated Event
   const eventTasks = useMemo(() => {
     if (!selectedEvent) return [];
-    const consolidatedMap = new Map<string, ProductionTask>();
+    try {
+      const consolidatedMap = new Map<string, ProductionTask>();
 
-    // We filter from the ALL productionTasks fetched by hook, looking for tasks belonging to any ID in selectedEvent.ids
-    const relevantTasks = productionTasks.filter((task) =>
-      selectedEvent.ids.includes(task.eventId || '')
-    );
+      const relevantTasks = productionTasks.filter((task) =>
+        selectedEvent.ids.includes(task.eventId || '')
+      );
 
-    relevantTasks.forEach((task) => {
-      const taskKey = `${task.fichaId}_${task.station}`;
-      if (consolidatedMap.has(taskKey)) {
-        const existing = consolidatedMap.get(taskKey)!;
-        // Add quantity (returns new Quantity)
-        const newQty = existing.quantity.add(task.quantity);
-        consolidatedMap.set(taskKey, { ...existing, quantity: newQty });
-      } else {
-        consolidatedMap.set(taskKey, { ...task });
-      }
-    });
+      relevantTasks.forEach((task) => {
+        const taskKey = `${task.fichaId}_${task.station}`;
+        if (consolidatedMap.has(taskKey)) {
+          const existing = consolidatedMap.get(taskKey)!;
+          // Defensive check for quantity and add method
+          if (existing.quantity?.add && task.quantity) {
+            try {
+              const newQty = existing.quantity.add(task.quantity);
+              consolidatedMap.set(taskKey, { ...existing, quantity: newQty });
+            } catch (err) {
+              LoggingService.error(`Failed to add quantities for task ${taskKey}`, {
+                error: err,
+                existing: existing.quantity,
+                task: task.quantity,
+              });
+              // Keep existing if add fails
+            }
+          }
+        } else {
+          consolidatedMap.set(taskKey, { ...task });
+        }
+      });
 
-    return Array.from(consolidatedMap.values());
+      return Array.from(consolidatedMap.values());
+    } catch (err) {
+      LoggingService.error('Error during eventTasks consolidation', err);
+      return [];
+    }
   }, [selectedEvent, productionTasks]);
 
   const handleCreateEvent = (e: React.FormEvent) => {

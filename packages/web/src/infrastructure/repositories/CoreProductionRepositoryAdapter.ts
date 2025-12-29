@@ -8,6 +8,7 @@ import {
   ProductionStation,
   RepositoryOptions,
   Quantity,
+  Unit,
 } from '@culinaryos/core';
 import { db } from '@/config/firebase';
 import {
@@ -22,6 +23,7 @@ import {
   deleteDoc,
   Timestamp,
 } from 'firebase/firestore';
+import { LoggingService } from '../services/LoggingService';
 
 @injectable()
 export class CoreProductionRepositoryAdapter implements IProductionTaskRepository {
@@ -31,7 +33,12 @@ export class CoreProductionRepositoryAdapter implements IProductionTaskRepositor
     return {
       ...data,
       id,
-      quantity: new Quantity(data.quantity.value, data.quantity.unit),
+      quantity: new Quantity(
+        data.quantity.value,
+        typeof data.quantity.unit === 'string'
+          ? Unit.from(data.quantity.unit)
+          : (data.quantity.unit as Unit)
+      ),
       scheduledFor:
         data.scheduledFor instanceof Timestamp
           ? data.scheduledFor.toDate()
@@ -88,7 +95,7 @@ export class CoreProductionRepositoryAdapter implements IProductionTaskRepositor
 
     const firestoreData = {
       ...task,
-      quantity: { value: task.quantity.value, unit: task.quantity.unit }, // Flatten Quantity
+      quantity: { value: task.quantity.value, unit: task.quantity.unit.toString() }, // Flatten Quantity correctly
       scheduledFor: Timestamp.fromDate(task.scheduledFor),
       createdAt: Timestamp.fromDate(now),
       updatedAt: Timestamp.fromDate(now),
@@ -99,8 +106,13 @@ export class CoreProductionRepositoryAdapter implements IProductionTaskRepositor
       (key) => (firestoreData as any)[key] === undefined && delete (firestoreData as any)[key]
     );
 
-    await setDoc(doc(db, this.collectionName, id), firestoreData);
-    return task;
+    try {
+      await setDoc(doc(db, this.collectionName, id), firestoreData);
+      return task;
+    } catch (error) {
+      LoggingService.error(`Failed to create production task: ${id}`, { error, task });
+      throw error;
+    }
   }
 
   async findById(id: string): Promise<ProductionTask | null> {

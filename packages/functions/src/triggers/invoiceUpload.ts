@@ -171,7 +171,7 @@ export const processRestaurantInvoice = onObjectFinalized(
 
       // Smart Ingredient Matching
       if (!result) throw new Error('Failed to process invoice with any processor');
-      const matchedItems = await smartIngredientMatch(restaurantId, result.data.lineItems);
+      const matchedItems = await smartIngredientMatch(restaurantId!, result.data.lineItems);
 
       // Guardar en Firestore para revisión humana
       const invoiceRef = await db.collection(`restaurants/${restaurantId}/invoices`).add({
@@ -236,23 +236,23 @@ function parseInvoiceWithRegex(text: string): { data: InvoiceData; confidence: n
 
   return {
     data: {
-      supplierName,
-      totalAmount,
-      invoiceDate,
-      lineItems,
-    },
+      supplierName: String(supplierName || 'Unknown Supplier'),
+      totalAmount: (totalAmount as number) || 0,
+      invoiceDate: String(invoiceDate || new Date().toISOString().split('T')[0]),
+      lineItems: lineItems as InvoiceData['lineItems'],
+    } as InvoiceData,
     confidence,
   };
 }
 
-function extractFormFields(document: any): { data: InvoiceData; confidence: number } {
+function extractFormFields(_document: any): { data: InvoiceData; confidence: number } {
   // basic implementation as per prompt template
   return {
     data: {
-      supplierName: 'Form Parser Supplier',
-      totalAmount: 0,
-      invoiceDate: new Date().toISOString().split('T')[0],
-      lineItems: [],
+      supplierName: 'Form Parser Supplier' as string,
+      totalAmount: 0 as number,
+      invoiceDate: new Date().toISOString().split('T')[0] as string,
+      lineItems: [] as any[],
     },
     confidence: 0.8,
   };
@@ -327,7 +327,7 @@ async function smartIngredientMatch(restaurantId: string, ocrItems: InvoiceData[
       (i) => itemLower.includes(i.name) || i.name.includes(itemLower.split(' ')[0])
     );
 
-    if (potentialMatches.length === 1) {
+    if (potentialMatches.length === 1 && potentialMatches[0]?.id) {
       return {
         ...item,
         ingredientId: potentialMatches[0].id,

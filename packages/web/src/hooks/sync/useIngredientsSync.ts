@@ -20,34 +20,35 @@ export const useIngredientsSync = () => {
       q,
       'ingredients',
       (snapshot) => {
-        const data = snapshot.docs.map((doc) => {
-          const d = doc.data();
-          // Hydrate Core Value Objects
-          const currentStock = new Quantity(
-            d.currentStock?.value || d.stock || 0,
-            new Unit(d.currentStock?.unit || d.unit || 'un')
-          );
-          const minimumStock = new Quantity(
-            d.minimumStock?.value || d.minStock || 0,
-            new Unit(d.minimumStock?.unit || d.unit || 'un')
-          );
-          const lastCost = d.lastCost
-            ? new Money(d.lastCost.amount, d.lastCost.currency)
-            : new Money(d.costPerUnit || 0, 'EUR');
+        const data: Ingredient[] = [];
 
-          return {
-            id: doc.id,
-            ...d,
-            // Override/Hydrate Fields
-            currentStock,
-            minimumStock,
-            lastCost,
-            unit: d.unit, // Keep string for UI or map to Unit object? Interface says Unit | string.
-            isTrackedInInventory: d.isTrackedInInventory ?? true,
-            suppliers: d.suppliers || [],
-            // Ensure legacy fields don't overwrite if they exist but we want hydrated ones favored
-            // But we return an object matching Ingredient interface.
-          } as Ingredient;
+        snapshot.docs.forEach((doc) => {
+          try {
+            const d = doc.data();
+            // Hydrate Core Value Objects safely
+            const unit = d.currentStock?.unit || d.unit || 'ud';
+            const coreUnit = Unit.from(typeof unit === 'string' ? unit : unit.type || 'ud');
+
+            const currentStock = new Quantity(d.currentStock?.value || d.stock || 0, coreUnit);
+            const minimumStock = new Quantity(d.minimumStock?.value || d.minStock || 0, coreUnit);
+            const lastCost = d.lastCost
+              ? new Money(d.lastCost.amount, d.lastCost.currency)
+              : new Money(d.costPerUnit || 0, 'EUR');
+
+            data.push({
+              id: doc.id,
+              ...d,
+              currentStock,
+              minimumStock,
+              lastCost,
+              unit: d.unit,
+              isTrackedInInventory: d.isTrackedInInventory ?? true,
+              suppliers: d.suppliers || [],
+            } as Ingredient);
+          } catch (itemErr) {
+            console.error(`Error hydrating ingredient ${doc.id}:`, itemErr);
+            // Skip broken items to keep UI alive
+          }
         });
 
         setIngredients(data);

@@ -15,6 +15,7 @@ import {
   Sparkles,
   ImageIcon,
 } from 'lucide-react';
+import { LoggingService } from '@/infrastructure/services/LoggingService';
 import { useToast } from '@/presentation/components/ui';
 import { ImportPreviewGrid } from './ImportPreviewGrid';
 
@@ -108,13 +109,18 @@ export const UniversalImporter: React.FC<UniversalImporterProps> = ({
     setLoading(true);
     setStep('processing');
     try {
+      LoggingService.info('Confirming import', {
+        itemsCount: finalItems.length,
+        outletId: activeOutletId || 'GLOBAL',
+      });
       const result = await confirmAndCommit(finalItems, activeOutletId || 'GLOBAL', defaultType);
+      LoggingService.info('Import confirmed', { result });
       setImportResult({ count: result.count });
       setStep('success');
       if (onCompleted) onCompleted(result);
       addToast('Importación completada con éxito', 'success');
     } catch (error: any) {
-      console.error('Commit error:', error);
+      LoggingService.error('Commit error:', error);
       setStatus({ type: 'error', message: error.message || 'Error al guardar los datos' });
       setStep('preview');
     } finally {

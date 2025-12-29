@@ -26,9 +26,10 @@ export class FirebaseIngredientRepository implements IIngredientRepository {
     // But for master library, usually it's "ingredients" collection directly.
     // Let's assume fetching all for now to match 'useStore' behavior essentially.
 
-    const q = outletId
-      ? query(collection(db, this.collectionName), where('outletId', '==', outletId))
-      : collection(db, this.collectionName);
+    const q =
+      outletId && outletId !== 'GLOBAL'
+        ? query(collection(db, this.collectionName), where('outletId', 'in', [outletId, 'GLOBAL']))
+        : collection(db, this.collectionName);
     const snapshot = await getDocs(q);
 
     return snapshot.docs.map((doc) => {

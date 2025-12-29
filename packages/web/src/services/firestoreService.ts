@@ -382,7 +382,7 @@ export const getEventsRange = async ({
   }
 
   const constraints: QueryConstraint[] = [
-    where('outletId', '==', outletId),
+    where('outletId', 'in', [outletId, 'GLOBAL']),
     where('date', '>=', startDate),
     where('date', '<=', endDate),
     orderBy('date', 'asc'),

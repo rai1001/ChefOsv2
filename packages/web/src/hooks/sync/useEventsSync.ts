@@ -5,36 +5,37 @@ import { useStore } from '@/presentation/store/useStore';
 import type { Event } from '@/types';
 
 export const useEventsSync = () => {
-    const { setEvents, activeOutletId } = useStore();
-    const [loading, setLoading] = useState(true);
+  const { setEvents, activeOutletId } = useStore();
+  const [loading, setLoading] = useState(true);
 
-    useEffect(() => {
-        if (!activeOutletId) {
-            setEvents([]);
-            setLoading(false);
-            return;
-        }
+  useEffect(() => {
+    if (!activeOutletId) {
+      setEvents([]);
+      setLoading(false);
+      return;
+    }
 
-        const q = query(
-            collections.events,
-            where('outletId', '==', activeOutletId)
-        );
+    const q = query(collections.events, where('outletId', 'in', [activeOutletId, 'GLOBAL']));
 
-        const unsubscribe = onSnapshot(q, (snapshot) => {
-            const eventsData = snapshot.docs.map(doc => ({
-                id: doc.id,
-                ...doc.data()
-            })) as Event[];
+    const unsubscribe = onSnapshot(
+      q,
+      (snapshot) => {
+        const eventsData = snapshot.docs.map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+        })) as Event[];
 
-            setEvents(eventsData);
-            setLoading(false);
-        }, (error) => {
-            console.error("Error syncing events:", error);
-            setLoading(false);
-        });
+        setEvents(eventsData);
+        setLoading(false);
+      },
+      (error) => {
+        console.error('Error syncing events:', error);
+        setLoading(false);
+      }
+    );
 
-        return () => unsubscribe();
-    }, [activeOutletId, setEvents]);
+    return () => unsubscribe();
+  }, [activeOutletId, setEvents]);
 
-    return { loading };
+  return { loading };
 };
