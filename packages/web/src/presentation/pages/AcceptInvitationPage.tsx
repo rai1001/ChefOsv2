@@ -1,135 +1,134 @@
-import { useEffect, useState } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
-import { getFunctions, httpsCallable } from 'firebase/functions';
-import { getAuth } from 'firebase/auth';
-import { CheckCircle, XCircle, Loader2, ArrowRight } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { useSearchParams, useNavigate } from 'react-router-dom';
+import { doc, getDoc, updateDoc } from 'firebase/firestore';
+import { db } from '@/config/firebase';
+import { useStore } from '@/presentation/store/useStore';
+import { Mail, XCircle, Loader2 } from 'lucide-react';
 
 export const AcceptInvitationPage = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const invitationId = searchParams.get('inviteId'); // Changed from 'token' to 'inviteId' to match email link
-  // Email is also passed for UX but verification happens on backend against auth token
-  const emailParam = searchParams.get('email');
+  const { currentUser } = useStore();
 
-  const [status, setStatus] = useState<'idle' | 'processing' | 'success' | 'error'>('idle');
-  const [errorMessage, setErrorMessage] = useState('');
-  const [role, setRole] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [invitation, setInvitation] = useState<any>(null);
 
-  const auth = getAuth();
-  const user = auth.currentUser;
+  const invitationId = searchParams.get('token');
 
   useEffect(() => {
-    if (!invitationId) {
-      setStatus('error');
-      setErrorMessage('Enlace de invitación inválido.');
+    async function loadInvitation() {
+      if (!invitationId) {
+        setError('Token de invitación no válido');
+        setLoading(false);
+        return;
+      }
+
+      try {
+        const inviteRef = doc(db, 'invitations', invitationId);
+        const inviteSnap = await getDoc(inviteRef);
+
+        if (!inviteSnap.exists()) {
+          setError('Invitación no encontrada');
+          setLoading(false);
+          return;
+        }
+
+        const data = inviteSnap.data();
+
+        // Validar status
+        if (data.status !== 'pending' && data.status !== 'sent') {
+          setError('Esta invitación ya fue usada');
+          setLoading(false);
+          return;
+        }
+
+        setInvitation({ id: inviteSnap.id, ...data });
+        setLoading(false);
+      } catch (err) {
+        console.error('Error loading invitation:', err);
+        setError('Error al cargar la invitación');
+        setLoading(false);
+      }
     }
+
+    loadInvitation();
   }, [invitationId]);
 
   const handleAccept = async () => {
-    if (!user) {
-      // Should be handled by AuthWrapper or redirection logic, but just in case
-      setStatus('error');
-      setErrorMessage('Debes iniciar sesión para aceptar la invitación.');
-      return;
-    }
+    if (!currentUser || !invitation) return;
 
-    setStatus('processing');
+    setLoading(true);
     try {
-      const functions = getFunctions();
-      const acceptInvitation = httpsCallable(functions, 'acceptInvitation');
-      const result = await acceptInvitation({ invitationId });
+      // Actualizar usuario
+      const userRef = doc(db, 'users', currentUser.id);
+      await updateDoc(userRef, {
+        role: invitation.role,
+        allowedOutlets: invitation.allowedOutlets || [],
+        active: true,
+        updatedAt: new Date().toISOString(),
+      });
 
-      const data = result.data as any;
-      if (data.success) {
-        setRole(data.role);
-        setStatus('success');
-        setTimeout(() => {
-          navigate('/dashboard');
-        }, 3000);
-      }
-    } catch (error: any) {
-      console.error('Accept invitation error:', error);
-      setStatus('error');
-      setErrorMessage(error.message || 'Error al procesar la invitación.');
+      // Marcar invitación como aceptada
+      const inviteRef = doc(db, 'invitations', invitation.id);
+      await updateDoc(inviteRef, {
+        status: 'accepted',
+        acceptedAt: new Date().toISOString(),
+        acceptedBy: currentUser.id,
+      });
+
+      // Redirigir a dashboard
+      navigate('/dashboard');
+    } catch (err) {
+      console.error('Error accepting invitation:', err);
+      setError('Error al aceptar la invitación');
+      setLoading(false);
     }
   };
 
-  if (status === 'success') {
-    return (
-      <div className="min-h-screen bg-slate-900 flex items-center justify-center p-4">
-        <div className="bg-surface border border-white/10 rounded-2xl p-8 max-w-md w-full text-center space-y-6 shadow-2xl">
-          <div className="w-20 h-20 bg-green-500/10 rounded-full flex items-center justify-center mx-auto">
-            <CheckCircle className="text-green-500" size={40} />
-          </div>
-          <h1 className="text-2xl font-bold text-white">¡Bienvenido a ChefOS!</h1>
-          <p className="text-slate-400">
-            Tu cuenta ha sido configurada correctamente con el rol de{' '}
-            <span className="text-white font-bold uppercase">{role}</span>.
-          </p>
-          <p className="text-sm text-slate-500 animate-pulse">
-            Redirigiendo al panel de control...
-          </p>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="min-h-screen bg-slate-900 flex items-center justify-center p-4">
-      <div className="bg-surface border border-white/10 rounded-2xl p-8 max-w-md w-full text-center space-y-6 shadow-2xl">
-        {status === 'processing' ? (
-          <div className="space-y-4">
-            <div className="w-16 h-16 bg-indigo-500/10 rounded-full flex items-center justify-center mx-auto animate-pulse">
-              <Loader2 className="text-indigo-500 animate-spin" size={32} />
-            </div>
-            <h2 className="text-xl font-bold text-white">Procesando...</h2>
-            <p className="text-slate-400">Configurando tu perfil y accesos.</p>
+      <div className="bg-surface border border-white/10 rounded-2xl p-8 max-w-md w-full">
+        {loading ? (
+          <div className="text-center">
+            <Loader2 className="animate-spin mx-auto text-indigo-500" size={48} />
           </div>
-        ) : status === 'error' ? (
-          <div className="space-y-4">
-            <div className="w-16 h-16 bg-red-500/10 rounded-full flex items-center justify-center mx-auto">
-              <XCircle className="text-red-500" size={32} />
-            </div>
-            <h2 className="text-xl font-bold text-white">Error</h2>
-            <p className="text-red-400 text-sm">{errorMessage}</p>
-            <button
-              onClick={() => navigate('/')}
-              className="mt-4 text-slate-400 hover:text-white underline text-sm"
-            >
-              Volver al inicio
-            </button>
+        ) : error ? (
+          <div className="text-center">
+            <XCircle className="mx-auto text-red-400 mb-4" size={48} />
+            <h2 className="text-xl font-bold text-white mb-2">Error</h2>
+            <p className="text-slate-400">{error}</p>
           </div>
-        ) : (
-          // Idle State
-          <div className="space-y-6">
-            <div>
-              <h1 className="text-2xl font-bold text-white mb-2">Invitación Recibida</h1>
-              <p className="text-slate-400 text-sm">
-                Has sido invitado a unirte al equipo de cocina.
-              </p>
-              {emailParam && (
-                <div className="mt-4 p-3 bg-black/30 rounded-lg border border-white/5">
-                  <p className="text-xs text-slate-500">Invitación para:</p>
-                  <p className="text-white font-medium">{emailParam}</p>
-                </div>
-              )}
+        ) : invitation ? (
+          <div>
+            <Mail className="mx-auto text-indigo-400 mb-4" size={48} />
+            <h2 className="text-xl font-bold text-white mb-4 text-center">Invitación a ChefOS</h2>
+            <div className="space-y-3 mb-6">
+              <div className="bg-black/20 p-3 rounded-lg">
+                <p className="text-xs text-slate-500">Email</p>
+                <p className="text-white">{invitation.email}</p>
+              </div>
+              <div className="bg-black/20 p-3 rounded-lg">
+                <p className="text-xs text-slate-500">Rol asignado</p>
+                <p className="text-white">{invitation.role}</p>
+              </div>
             </div>
-
-            <div className="border-t border-white/10 pt-6">
-              <p className="text-sm text-slate-400 mb-6">
-                Al aceptar, se configurará tu cuenta y tendrás acceso inmediato a las herramientas
-                asignadas.
-              </p>
+            <div className="flex gap-3">
               <button
                 onClick={handleAccept}
-                className="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-3 px-6 rounded-xl transition-all shadow-lg hover:shadow-indigo-500/25 flex items-center justify-center gap-2"
+                className="flex-1 bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-3 rounded-xl font-medium"
               >
-                <span>Aceptar e Ingresar</span>
-                <ArrowRight size={18} />
+                Aceptar Invitación
+              </button>
+              <button
+                onClick={() => navigate('/login')}
+                className="flex-1 bg-white/5 hover:bg-white/10 text-white px-4 py-3 rounded-xl font-medium"
+              >
+                Cancelar
               </button>
             </div>
           </div>
-        )}
+        ) : null}
       </div>
     </div>
   );
