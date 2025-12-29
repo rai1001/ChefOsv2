@@ -199,6 +199,9 @@ export const commitImport = onCall(async (request) => {
           case 'occupancy':
             collection = 'occupancy';
             break;
+          case 'event':
+            collection = 'events';
+            break;
           default:
             if (data.name && (data.price || data.unit)) collection = 'ingredients';
             else return;

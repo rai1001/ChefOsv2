@@ -8,7 +8,6 @@ import {
   Loader2,
   AlertCircle,
   Camera,
-  FileText,
   Calendar,
   RefreshCw,
   Users,
@@ -41,12 +40,11 @@ export const EventImportModal: React.FC<EventImportModalProps> = ({ onClose, onS
   const { events, addEvents, addEvent, activeOutletId } = useStore();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const [mode, setMode] = useState<'excel' | 'matrix' | 'scan' | 'ics' | 'sync'>('excel');
+  const [mode, setMode] = useState<'excel' | 'matrix' | 'scan' | 'sync'>('excel');
   const [year, setYear] = useState(new Date().getFullYear());
   const [parsing, setParsing] = useState(false);
   const [parsedData, setParsedData] = useState<ParsedEvent | null>(null);
   const [matrixEvents, setMatrixEvents] = useState<PlaningEvent[]>([]);
-  const [importedEvents, setImportedEvents] = useState<Partial<ParsedEvent>[]>([]); // For bulk ICS
   const [error, setError] = useState<string | null>(null);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -56,43 +54,7 @@ export const EventImportModal: React.FC<EventImportModalProps> = ({ onClose, onS
         parseExcel(selectedFile);
       } else if (mode === 'matrix') {
         parseExcel(selectedFile);
-      } else if (mode === 'ics') {
-        parseICSFile(selectedFile);
       }
-    }
-  };
-
-  // ICS Handler
-  const parseICSFile = async (file: File) => {
-    setParsing(true);
-    setError(null);
-    setImportedEvents([]);
-
-    try {
-      const text = await file.text();
-      const events = calendarIntegrationService.parseICS(text);
-      if (events.length > 0) {
-        // Map to ParsedEvent structure for preview
-        const mapped = events.map(
-          (e) =>
-            ({
-              name: e.name || 'Sin Título',
-              date: e.date || format(new Date(), 'yyyy-MM-dd'),
-              pax: e.pax || 0,
-              menuNotes: e.notes || '',
-              type: e.type || 'Otros',
-            }) as ParsedEvent
-        );
-        setImportedEvents(mapped);
-        // Auto-select first for detail view if wanted, or show list
-      } else {
-        throw new Error('No se encontraron eventos válidos en el archivo ICS.');
-      }
-    } catch (err: any) {
-      console.error(err);
-      setError(err.message || 'Error al leer ICS');
-    } finally {
-      setParsing(false);
     }
   };
 
@@ -142,7 +104,7 @@ export const EventImportModal: React.FC<EventImportModalProps> = ({ onClose, onS
     }
   };
 
-  const parseExcel = async (file: File) => {
+  async function parseExcel(file: File) {
     setParsing(true);
     setError(null);
     setParsedData(null);
@@ -184,9 +146,9 @@ export const EventImportModal: React.FC<EventImportModalProps> = ({ onClose, onS
     } finally {
       setParsing(false);
     }
-  };
+  }
 
-  const extractData = (data: any[][], filename: string): ParsedEvent => {
+  function extractData(data: any[][], filename: string): ParsedEvent {
     let name = filename.replace(/\.xlsx?$/, '');
     let date = format(new Date(), 'yyyy-MM-dd');
     let pax = 0;
@@ -278,7 +240,7 @@ export const EventImportModal: React.FC<EventImportModalProps> = ({ onClose, onS
     else if (lowerName.includes('desayuno') || lowerName.includes('coffee')) type = 'Coffee Break';
 
     return { name, date, pax, menuNotes, type };
-  };
+  }
 
   const handleSave = async () => {
     if (!parsedData) return;
@@ -303,16 +265,15 @@ export const EventImportModal: React.FC<EventImportModalProps> = ({ onClose, onS
   };
 
   const handleSaveBulk = async () => {
-    const sourceData =
-      matrixEvents.length > 0
-        ? matrixEvents.map((e) => ({
-            name: e.name,
-            date: e.date,
-            pax: e.pax,
-            type: e.type,
-            menuNotes: e.notes,
-          }))
-        : importedEvents;
+    if (matrixEvents.length === 0) return;
+
+    const sourceData = matrixEvents.map((e) => ({
+      name: e.name,
+      date: e.date,
+      pax: e.pax,
+      type: e.type,
+      menuNotes: e.notes,
+    }));
 
     const newEventsArray = sourceData.map((evt) => ({
       id: crypto.randomUUID(),
@@ -320,7 +281,7 @@ export const EventImportModal: React.FC<EventImportModalProps> = ({ onClose, onS
       date: evt.date || format(new Date(), 'yyyy-MM-dd'),
       pax: evt.pax || 0,
       type: evt.type || ('Otros' as EventType),
-      room: 'room' in evt ? (evt as any).room : undefined,
+      room: (evt as any).room, // Only matrix has room currently
       notes: evt.menuNotes || '',
       status: 'confirmed' as const,
       menuId: undefined,
@@ -342,8 +303,6 @@ export const EventImportModal: React.FC<EventImportModalProps> = ({ onClose, onS
               <FileSpreadsheet className="text-emerald-400" />
             ) : mode === 'scan' ? (
               <Camera className="text-purple-400" />
-            ) : mode === 'ics' ? (
-              <Calendar className="text-blue-400" />
             ) : (
               <RefreshCw className="text-orange-400" />
             )}
@@ -353,9 +312,7 @@ export const EventImportModal: React.FC<EventImportModalProps> = ({ onClose, onS
                 ? 'Importar Matriz Planing'
                 : mode === 'scan'
                   ? 'Escanear Orden de Evento (BEO)'
-                  : mode === 'ics'
-                    ? 'Importar Calendario (.ics)'
-                    : 'Sincronizar Nube'}
+                  : 'Sincronizar Nube'}
           </h3>
           <button onClick={onClose} className="text-slate-400 hover:text-white transition-colors">
             <X className="w-5 h-5" />
@@ -381,12 +338,7 @@ export const EventImportModal: React.FC<EventImportModalProps> = ({ onClose, onS
           >
             OCR Scanner
           </button>
-          <button
-            onClick={() => setMode('ics')}
-            className={`flex-1 py-3 text-sm font-medium whitespace-nowrap px-4 transition-colors ${mode === 'ics' ? 'bg-white/5 text-blue-400 border-b-2 border-blue-400' : 'text-slate-400 hover:text-white'}`}
-          >
-            ICS File
-          </button>
+
           <button
             onClick={() => setMode('sync')}
             className={`flex-1 py-3 text-sm font-medium whitespace-nowrap px-4 transition-colors ${mode === 'sync' ? 'bg-white/5 text-orange-400 border-b-2 border-orange-400' : 'text-slate-400 hover:text-white'}`}
@@ -435,7 +387,7 @@ export const EventImportModal: React.FC<EventImportModalProps> = ({ onClose, onS
             </div>
           )}
 
-          {!parsedData && matrixEvents.length === 0 && importedEvents.length === 0 ? (
+          {!parsedData && matrixEvents.length === 0 && mode !== 'sync' ? (
             <>
               {mode === 'scan' ? (
                 <div className="h-full flex flex-col justify-center">
@@ -456,9 +408,7 @@ export const EventImportModal: React.FC<EventImportModalProps> = ({ onClose, onS
                     accept={
                       mode === 'excel' || mode === 'matrix'
                         ? '.xlsx, .xls'
-                        : mode === 'ics'
-                          ? '.ics'
-                          : '.jpg, .jpeg, .png, .webp'
+                        : '.jpg, .jpeg, .png, .webp'
                     }
                   />
 
@@ -469,9 +419,7 @@ export const EventImportModal: React.FC<EventImportModalProps> = ({ onClose, onS
                       <p className="text-sm text-slate-400 mt-2">
                         {mode === 'excel' || mode === 'matrix'
                           ? 'Buscando fechas, comensales y eventos'
-                          : mode === 'ics'
-                            ? 'Leyendo calendario...'
-                            : 'Extrayendo datos con IA'}
+                          : 'Extrayendo datos con IA'}
                       </p>
                     </>
                   ) : error ? (
@@ -485,21 +433,17 @@ export const EventImportModal: React.FC<EventImportModalProps> = ({ onClose, onS
                       {mode === 'excel' ? (
                         <Upload className="w-10 h-10 text-slate-400 mb-4" />
                       ) : (
-                        <FileText className="w-10 h-10 text-purple-400 mb-4" />
+                        <Camera className="w-10 h-10 text-purple-400 mb-4" />
                       )}
                       <p className="text-lg font-medium text-white">
                         {mode === 'excel' || mode === 'matrix'
                           ? 'Click para subir Excel'
-                          : mode === 'ics'
-                            ? 'Click para subir archivo ICS'
-                            : 'Click para subir Imagen BEO'}
+                          : 'Click para subir Imagen BEO'}
                       </p>
                       <p className="text-sm text-slate-400 mt-2">
                         {mode === 'excel' || mode === 'matrix'
                           ? 'Soporta .xlsx y .xls'
-                          : mode === 'ics'
-                            ? 'Soporta archivos .ics estándar'
-                            : 'Soporta JPG, PNG (las fotos claras funcionan mejor)'}
+                          : 'Soporta JPG, PNG (las fotos claras funcionan mejor)'}
                       </p>
                     </>
                   )}
@@ -541,14 +485,14 @@ export const EventImportModal: React.FC<EventImportModalProps> = ({ onClose, onS
               </div>
               <p className="text-xs text-slate-500 mt-4">(Próximamente: Integración API directa)</p>
             </div>
-          ) : matrixEvents.length > 0 || importedEvents.length > 0 ? (
+          ) : matrixEvents.length > 0 ? (
             <div className="space-y-4">
               <div className="flex items-center gap-2 text-blue-400 bg-blue-400/10 p-3 rounded-lg border border-blue-400/20 text-sm">
                 <Check className="w-4 h-4" />
-                <span>Se encontraron {matrixEvents.length || importedEvents.length} eventos.</span>
+                <span>Se encontraron {matrixEvents.length} eventos.</span>
               </div>
               <div className="space-y-2 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
-                {(matrixEvents.length > 0 ? matrixEvents : importedEvents).map((evt, idx) => (
+                {matrixEvents.map((evt, idx) => (
                   <div
                     key={idx}
                     className="bg-white/5 p-4 rounded-xl border border-white/5 flex justify-between items-center group hover:bg-white/10 transition-all"
@@ -645,21 +589,6 @@ export const EventImportModal: React.FC<EventImportModalProps> = ({ onClose, onS
                 </div>
               </div>
 
-              {/* ICS Bulk Review Warning */}
-              {importedEvents.length > 0 &&
-                /* Only if single Parsed Data logic is skipped? Wait. logic flows here if parsedData is set.*/ null}
-              {/* Actually loop above for ImportedEvents handles 'null' parsedData case. If parsedData is set (single edit flow) it goes here.
-                               Wait: my logic for importedEvents sets them in array but doesn't set parsedData (single).
-                               So if importedEvents > 0, we are in the "List View" block I added above?
-                               Ah, I replaced the "else" block of "if !parsedData". 
-                               So if !parsedData:
-                                  if mode == sync -> show sync
-                                  else if importedEvents > 0 -> show list
-                                  else -> show upload box
-                               
-                               Perfect.
-                            */}
-
               <div className="space-y-1">
                 <label className="text-xs text-slate-400 uppercase font-bold">
                   Menú / Observaciones
@@ -704,24 +633,19 @@ export const EventImportModal: React.FC<EventImportModalProps> = ({ onClose, onS
           </button>
 
           <div className="flex items-center gap-3">
-            {parsedData || matrixEvents.length > 0 || importedEvents.length > 0 ? (
+            {parsedData || matrixEvents.length > 0 ? (
               <>
                 <button
                   onClick={() => {
                     setParsedData(null);
                     setMatrixEvents([]);
-                    setImportedEvents([]);
                   }}
                   className="px-4 py-2 hover:bg-white/10 rounded text-slate-300 transition-colors text-sm"
                 >
                   Atrás
                 </button>
                 <button
-                  onClick={
-                    matrixEvents.length > 0 || importedEvents.length > 0
-                      ? handleSaveBulk
-                      : handleSave
-                  }
+                  onClick={matrixEvents.length > 0 ? handleSaveBulk : handleSave}
                   className="px-6 py-2 bg-primary hover:bg-blue-600 rounded text-white font-medium shadow-lg shadow-primary/25 transition-all text-sm"
                 >
                   Confirmar e Importar

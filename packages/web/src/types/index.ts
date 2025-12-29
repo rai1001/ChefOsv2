@@ -66,6 +66,7 @@ export interface Menu {
   outletId?: string;
   createdAt?: string;
   updatedAt?: string;
+  sportsData?: SportsMenuData;
 }
 
 export type EventType =

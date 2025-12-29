@@ -19,6 +19,7 @@ import { useToast } from '@/presentation/components/ui';
 import { ImportPreviewGrid } from './ImportPreviewGrid';
 
 import { ImportType, ImportMode } from '@/types/import';
+import { parseICS } from '@/utils/icsParser';
 
 interface UniversalImporterProps {
   buttonLabel?: string;
@@ -65,7 +66,15 @@ export const UniversalImporter: React.FC<UniversalImporterProps> = ({
 
     try {
       let items: IngestionItem[] = [];
-      if (isSmartMode) {
+      if (file.name.toLowerCase().endsWith('.ics')) {
+        const text = await file.text();
+        const events = parseICS(text);
+        items = events.map((e) => ({
+          type: 'event' as ImportType,
+          data: { ...e, status: 'confirmed' },
+          confidence: 100,
+        }));
+      } else if (isSmartMode) {
         items = await processFileForAnalysis(file, template ? JSON.stringify(template) : undefined);
       } else {
         items = await processStructuredFile(file, defaultType);
@@ -187,7 +196,7 @@ export const UniversalImporter: React.FC<UniversalImporterProps> = ({
               <p className="text-slate-400 text-xs mb-6 leading-relaxed">
                 {isSmartMode
                   ? 'Sube PDF, fotos de facturas o listas escritas a mano. Nuestra IA extraerá ingredientes, recetas y más automáticamente.'
-                  : 'Sube archivos Excel (.xlsx, .xlsm), CSV o JSON. Procesamiento optimizado por lotes en la nube.'}
+                  : 'Sube archivos Excel (.xlsx, .xlsm), CSV, JSON o ICS (.ics). Procesamiento optimizado por lotes en la nube.'}
               </p>
 
               {step === 'upload' && (
@@ -196,7 +205,7 @@ export const UniversalImporter: React.FC<UniversalImporterProps> = ({
                 >
                   <input
                     type="file"
-                    accept={isSmartMode ? '.pdf,image/*' : '.xlsx,.xls,.xlsm,.csv,.json'}
+                    accept={isSmartMode ? '.pdf,image/*' : '.xlsx,.xls,.xlsm,.csv,.json,.ics'}
                     onChange={handleFileUpload}
                     className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
                     disabled={loading}
@@ -217,7 +226,7 @@ export const UniversalImporter: React.FC<UniversalImporterProps> = ({
                           ? 'Subiendo...'
                           : isSmartMode
                             ? 'Soltar PDF o Imagen'
-                            : 'Soltar Excel, CSV o JSON'}
+                            : 'Soltar Excel, CSV, JSON o ICS'}
                       </p>
                     </div>
                   </div>
