@@ -46,6 +46,9 @@ export { scanBEO } from './triggers/beoScanner';
 // Universal Ingestion (Mission 6)
 export { analyzeDocument, parseStructuredFile, commitImport } from './ingestion';
 
+// Invoice OCR (Priority Use Case)
+export { processRestaurantInvoice } from './triggers/invoiceUpload';
+
 // Legacy Triggers (Scheduled for removal)
 // export { processExcelImport } from "./triggers/excelProcessor";
 // export { aiSmartImporter } from "./triggers/aiSmartImporter";

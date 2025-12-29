@@ -38,6 +38,17 @@ service firebase.storage {
                       request.resource.contentType.matches('image/.*');
     }
 
+    // New Restaurant Invoice Uploads (Priority Use Case)
+    match /restaurants/{restaurantId}/invoices/{fileName} {
+      allow write: if request.auth != null && 
+                   hasOutletAccess(restaurantId) &&
+                   request.resource.size < 10 * 1024 * 1024 &&  // Max 10MB
+                   request.resource.contentType.matches('image/.*');
+      
+      allow read: if request.auth != null && 
+                  hasOutletAccess(restaurantId);
+    }
+
     // BEO/Menu scans
     match /beo/{outletId}/{fileName} {
       allow read: if hasOutletAccess(outletId);
