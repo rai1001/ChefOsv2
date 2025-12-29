@@ -145,6 +145,8 @@ export interface User {
   photoURL?: string;
   allowedOutlets?: string[]; // IDs of outlets this user can access
   defaultOutletId?: string;
+  createdAt?: string; // ISO Date
+  updatedAt?: string; // ISO Date
 }
 
 export interface UserUpdateDTO {

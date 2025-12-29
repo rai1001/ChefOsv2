@@ -1,65 +1,21 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Users,
   UserPlus,
   Search,
   Shield,
   ChefHat,
-  User,
+  User as UserIcon,
   CheckCircle,
   XCircle,
   Edit,
   Trash2,
   Mail,
   X,
+  Loader2,
 } from 'lucide-react';
-
-// --- MOCK DATA ---
-interface UserProfile {
-  uid: string;
-  email: string;
-  displayName: string;
-  photoURL: string;
-  role: 'admin' | 'chef' | 'staff';
-  active: boolean;
-  allowedOutlets: string[];
-  defaultOutletId?: string;
-  createdAt: string;
-}
-
-const mockUsers: UserProfile[] = [
-  {
-    uid: 'user1',
-    email: 'admin@kitchen.com',
-    displayName: 'Admin Principal',
-    photoURL: '',
-    role: 'admin',
-    active: true,
-    allowedOutlets: ['outlet1', 'outlet2'],
-    defaultOutletId: 'outlet1',
-    createdAt: '2025-01-15T10:00:00Z',
-  },
-  {
-    uid: 'user2',
-    email: 'chef@kitchen.com',
-    displayName: 'Chef Maria',
-    photoURL: '',
-    role: 'chef',
-    active: true,
-    allowedOutlets: ['outlet1'],
-    createdAt: '2025-01-20T14:30:00Z',
-  },
-  {
-    uid: 'user3',
-    email: 'staff@kitchen.com',
-    displayName: 'Personal Juan',
-    photoURL: '',
-    role: 'staff',
-    active: false,
-    allowedOutlets: [],
-    createdAt: '2025-01-25T09:15:00Z',
-  },
-];
+import { useUserManagement } from '@/presentation/hooks/useUserManagement';
+import type { User, Role } from '@/types';
 
 // --- COMPONENTS ---
 
@@ -86,38 +42,104 @@ const StatsCard = ({
 );
 
 export const UserManagementPage = () => {
-  const [users, setUsers] = useState<UserProfile[]>(mockUsers);
+  const { users, loading, fetchUsers, updateUser, deleteUser, toggleUserStatus, inviteUser } =
+    useUserManagement();
   const [searchTerm, setSearchTerm] = useState('');
   const [roleFilter, setRoleFilter] = useState<'all' | 'admin' | 'chef' | 'staff'>('all');
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive'>('all');
 
   // Modals
   const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
-  const [editingUser, setEditingUser] = useState<UserProfile | null>(null);
+  const [editingUser, setEditingUser] = useState<User | null>(null);
 
-  const handleDeleteUser = (uid: string) => {
+  // Edit Form State
+  const [editForm, setEditForm] = useState<{
+    displayName: string;
+    role: Role;
+    active: boolean;
+    allowedOutlets: string[];
+  }>({ displayName: '', role: 'staff', active: false, allowedOutlets: [] });
+
+  useEffect(() => {
+    fetchUsers();
+  }, [fetchUsers]);
+
+  // Update form state when editing user changes
+  useEffect(() => {
+    if (editingUser) {
+      setEditForm({
+        displayName: editingUser.name || '',
+        role: editingUser.role,
+        active: (editingUser as any).active ?? true,
+        allowedOutlets: editingUser.allowedOutlets || [],
+      });
+    }
+  }, [editingUser]);
+
+  const handleDeleteUser = async (uid: string) => {
     if (confirm('¿Estás seguro de eliminar este usuario?')) {
-      setUsers(users.filter((u) => u.uid !== uid));
+      await deleteUser(uid);
+    }
+  };
+
+  const handleSaveEdit = async () => {
+    if (!editingUser) return;
+    try {
+      await updateUser(editingUser.id, {
+        displayName: editForm.displayName,
+        role: editForm.role,
+        active: editForm.active,
+        allowedOutlets: editForm.allowedOutlets,
+      });
+      setEditingUser(null);
+    } catch (error) {
+      // Error handling already in hook
+    }
+  };
+
+  const handleToggleStatus = (user: User, currentStatus: boolean) => {
+    toggleUserStatus(user.id, !currentStatus);
+  };
+
+  // Invite Form State
+  const [inviteForm, setInviteForm] = useState<{
+    email: string;
+    role: Role;
+    allowedOutlets: string[];
+  }>({ email: '', role: 'staff', allowedOutlets: [] });
+
+  const handleInviteUser = async () => {
+    try {
+      await inviteUser({
+        email: inviteForm.email,
+        role: inviteForm.role,
+        allowedOutlets: inviteForm.allowedOutlets,
+      });
+      setIsInviteModalOpen(false);
+      setInviteForm({ email: '', role: 'staff', allowedOutlets: [] });
+    } catch (error) {
+      // Error handled in hook
     }
   };
 
   // --- DERIVED STATE ---
   const filteredUsers = users.filter((user) => {
+    const userActive = (user as any).active ?? true;
     const matchesSearch =
-      user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      user.displayName.toLowerCase().includes(searchTerm.toLowerCase());
+      user.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      user.name?.toLowerCase().includes(searchTerm.toLowerCase());
 
     const matchesRole = roleFilter === 'all' || user.role === roleFilter;
     const matchesStatus =
-      statusFilter === 'all' || (statusFilter === 'active' ? user.active : !user.active);
+      statusFilter === 'all' || (statusFilter === 'active' ? userActive : !userActive);
 
     return matchesSearch && matchesRole && matchesStatus;
   });
 
   const stats = {
     total: users.length,
-    active: users.filter((u) => u.active).length,
-    pending: users.filter((u) => !u.active).length, // using !active as pending for now or maybe check if verified?
+    active: users.filter((u) => (u as any).active).length,
+    pending: users.filter((u) => !(u as any).active).length,
     admins: users.filter((u) => u.role === 'admin').length,
   };
 
@@ -138,7 +160,7 @@ export const UserManagementPage = () => {
       default:
         return (
           <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-500/10 text-slate-400 border border-slate-500/20">
-            <User size={12} /> Staff
+            <UserIcon size={12} /> Staff
           </span>
         );
     }
@@ -155,6 +177,14 @@ export const UserManagementPage = () => {
       </span>
     );
   };
+
+  if (loading && users.length === 0) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-slate-900 text-white">
+        <Loader2 className="animate-spin text-indigo-500" size={48} />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6 p-6 min-h-screen bg-slate-900 text-white">
@@ -250,7 +280,7 @@ export const UserManagementPage = () => {
                   Outlets
                 </th>
                 <th className="px-6 py-4 text-xs font-semibold text-slate-400 uppercase tracking-wider">
-                  Registro
+                  Creado
                 </th>
                 <th className="px-6 py-4 text-xs font-semibold text-slate-400 uppercase tracking-wider text-right">
                   Acciones
@@ -262,30 +292,50 @@ export const UserManagementPage = () => {
                 <tr>
                   <td colSpan={6} className="px-6 py-12 text-center text-slate-500">
                     <div className="flex flex-col items-center gap-2">
-                      <UserPlus size={32} className="opacity-20" />
-                      <p>No se encontraron usuarios</p>
+                      {loading ? (
+                        <Loader2 className="animate-spin" />
+                      ) : (
+                        <>
+                          <UserPlus size={32} className="opacity-20" />
+                          <p>No se encontraron usuarios</p>
+                        </>
+                      )}
                     </div>
                   </td>
                 </tr>
               ) : (
                 filteredUsers.map((user) => (
-                  <tr key={user.uid} className="hover:bg-white/5 transition-colors">
+                  <tr key={user.id} className="hover:bg-white/5 transition-colors">
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
                         <div className="w-10 h-10 rounded-full bg-indigo-500/20 flex items-center justify-center text-indigo-400 font-bold border border-indigo-500/10">
-                          {user.displayName.charAt(0)}
+                          {user.photoURL ? (
+                            <img
+                              src={user.photoURL}
+                              alt={user.name}
+                              className="w-full h-full rounded-full object-cover"
+                            />
+                          ) : (
+                            user.name?.charAt(0) || 'U'
+                          )}
                         </div>
                         <div>
-                          <p className="text-sm font-medium text-white">{user.displayName}</p>
+                          <p className="text-sm font-medium text-white">
+                            {user.name || 'Sin Nombre'}
+                          </p>
                           <p className="text-xs text-slate-500">{user.email}</p>
                         </div>
                       </div>
                     </td>
                     <td className="px-6 py-4">{getRoleBadge(user.role)}</td>
-                    <td className="px-6 py-4">{getStatusBadge(user.active)}</td>
+                    <td className="px-6 py-4">
+                      <button onClick={() => handleToggleStatus(user, (user as any).active)}>
+                        {getStatusBadge((user as any).active)}
+                      </button>
+                    </td>
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-1.5 flex-wrap">
-                        {user.allowedOutlets.length > 0 ? (
+                        {user.allowedOutlets && user.allowedOutlets.length > 0 ? (
                           user.allowedOutlets.map((outlet, idx) => (
                             <span
                               key={idx}
@@ -300,7 +350,7 @@ export const UserManagementPage = () => {
                       </div>
                     </td>
                     <td className="px-6 py-4 text-sm text-slate-400">
-                      {new Date(user.createdAt).toLocaleDateString()}
+                      {user.createdAt ? new Date(user.createdAt).toLocaleDateString() : 'N/A'}
                     </td>
                     <td className="px-6 py-4 text-right">
                       <div className="flex items-center justify-end gap-2">
@@ -312,7 +362,7 @@ export const UserManagementPage = () => {
                           <Edit size={16} />
                         </button>
                         <button
-                          onClick={() => handleDeleteUser(user.uid)}
+                          onClick={() => handleDeleteUser(user.id)}
                           className="p-2 rounded-lg hover:bg-red-500/10 text-slate-400 hover:text-red-400 transition-colors"
                           title="Eliminar"
                         >
@@ -356,7 +406,10 @@ export const UserManagementPage = () => {
                 <label className="text-xs font-medium text-slate-400 ml-1">Nombre</label>
                 <input
                   type="text"
-                  defaultValue={editingUser.displayName}
+                  value={editForm.displayName}
+                  onChange={(e) =>
+                    setEditForm((prev) => ({ ...prev, displayName: e.target.value }))
+                  }
                   className="w-full bg-black/30 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
                 />
               </div>
@@ -365,7 +418,10 @@ export const UserManagementPage = () => {
                 <div>
                   <label className="text-xs font-medium text-slate-400 ml-1">Rol</label>
                   <select
-                    defaultValue={editingUser.role}
+                    value={editForm.role}
+                    onChange={(e) =>
+                      setEditForm((prev) => ({ ...prev, role: e.target.value as any }))
+                    }
                     className="w-full bg-black/30 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
                   >
                     <option value="admin">Admin</option>
@@ -379,11 +435,16 @@ export const UserManagementPage = () => {
                     <label className="relative inline-flex items-center cursor-pointer">
                       <input
                         type="checkbox"
-                        defaultChecked={editingUser.active}
+                        checked={editForm.active}
+                        onChange={(e) =>
+                          setEditForm((prev) => ({ ...prev, active: e.target.checked }))
+                        }
                         className="sr-only peer"
                       />
                       <div className="w-11 h-6 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-600"></div>
-                      <span className="ml-3 text-sm font-medium text-slate-300">Activo</span>
+                      <span className="ml-3 text-sm font-medium text-slate-300">
+                        {editForm.active ? 'Activo' : 'Inactivo'}
+                      </span>
                     </label>
                   </div>
                 </div>
@@ -397,7 +458,10 @@ export const UserManagementPage = () => {
               >
                 Cancelar
               </button>
-              <button className="px-6 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl font-medium shadow-lg shadow-indigo-500/20">
+              <button
+                onClick={handleSaveEdit}
+                className="px-6 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl font-medium shadow-lg shadow-indigo-500/20"
+              >
                 Guardar Cambios
               </button>
             </div>
@@ -405,7 +469,7 @@ export const UserManagementPage = () => {
         </div>
       )}
 
-      {/* INVITE MODAL */}
+      {/* INVITE MODAL - Placeholder for now as backend logic is separate */}
       {isInviteModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
           <div
@@ -427,6 +491,9 @@ export const UserManagementPage = () => {
             </div>
 
             <div className="space-y-4">
+              <div className="p-4 bg-indigo-500/10 border border-indigo-500/20 rounded-xl text-indigo-300 text-sm">
+                Esta funcionalidad enviará un correo de invitación. Actualmente en desarrollo.
+              </div>
               <div>
                 <label className="text-xs font-medium text-slate-400 ml-1">
                   Email del invitado
@@ -435,12 +502,20 @@ export const UserManagementPage = () => {
                   type="email"
                   placeholder="ejemplo@correo.com"
                   className="w-full bg-black/30 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
+                  value={inviteForm.email}
+                  onChange={(e) => setInviteForm((prev) => ({ ...prev, email: e.target.value }))}
                 />
               </div>
 
               <div>
                 <label className="text-xs font-medium text-slate-400 ml-1">Rol Inicial</label>
-                <select className="w-full bg-black/30 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/50">
+                <select
+                  className="w-full bg-black/30 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
+                  value={inviteForm.role}
+                  onChange={(e) =>
+                    setInviteForm((prev) => ({ ...prev, role: e.target.value as any }))
+                  }
+                >
                   <option value="staff">Staff (Acceso básico)</option>
                   <option value="chef">Chef (Gestión de cocina)</option>
                   <option value="admin">Administrador (Acceso total)</option>
@@ -460,6 +535,20 @@ export const UserManagementPage = () => {
                       <input
                         type="checkbox"
                         className="rounded border-slate-600 text-indigo-600 focus:ring-indigo-500 bg-slate-800"
+                        checked={inviteForm.allowedOutlets.includes(outlet)}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setInviteForm((prev) => ({
+                              ...prev,
+                              allowedOutlets: [...prev.allowedOutlets, outlet],
+                            }));
+                          } else {
+                            setInviteForm((prev) => ({
+                              ...prev,
+                              allowedOutlets: prev.allowedOutlets.filter((o) => o !== outlet),
+                            }));
+                          }
+                        }}
                       />
                       <span className="text-sm text-slate-300">{outlet}</span>
                     </label>
@@ -475,7 +564,10 @@ export const UserManagementPage = () => {
               >
                 Cancelar
               </button>
-              <button className="px-6 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl font-medium shadow-lg shadow-indigo-500/20">
+              <button
+                onClick={handleInviteUser}
+                className="px-6 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl font-medium shadow-lg shadow-indigo-500/20"
+              >
                 Enviar Invitación
               </button>
             </div>

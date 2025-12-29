@@ -23,6 +23,7 @@ export { createOrderNotification } from './triggers/createOrderNotification';
 export { generateMonthlyHACCPReport } from './scheduled/haccpScheduler';
 export { resetDailyBudgets, sendWeeklyBudgetReport } from './scheduled/budgetScheduler';
 export { onBudgetUpdate } from './triggers/budgetAlerts';
+export { onInvitationCreated } from './triggers/onInvitationCreated';
 
 // New KPI Triggers
 export { onInventoryUpdate } from './triggers/inventoryTriggers';

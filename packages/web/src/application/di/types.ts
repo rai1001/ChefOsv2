@@ -75,4 +75,15 @@ export const TYPES = {
   GetEmployeesUseCase: Symbol.for('GetEmployeesUseCase'),
   SaveEmployeeUseCase: Symbol.for('SaveEmployeeUseCase'),
   DeleteEmployeeUseCase: Symbol.for('DeleteEmployeeUseCase'),
+
+  // User Management Module
+  UserRepository: Symbol.for('UserRepository'),
+  ListUsersUseCase: Symbol.for('ListUsersUseCase'),
+  UpdateUserUseCase: Symbol.for('UpdateUserUseCase'),
+  ActivateUserUseCase: Symbol.for('ActivateUserUseCase'),
+  DeactivateUserUseCase: Symbol.for('DeactivateUserUseCase'),
+  DeleteUserUseCase: Symbol.for('DeleteUserUseCase'),
+  AssignOutletsUseCase: Symbol.for('AssignOutletsUseCase'),
+  ChangeUserRoleUseCase: Symbol.for('ChangeUserRoleUseCase'),
+  InviteUserUseCase: Symbol.for('InviteUserUseCase'),
 };

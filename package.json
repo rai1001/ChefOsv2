@@ -4,6 +4,9 @@
   "private": true,
   "type": "module",
   "description": "SaaS de gestión para cocinas profesionales",
+  "workspaces": [
+    "packages/*"
+  ],
   "scripts": {
     "dev": "pnpm --filter @culinaryos/web dev",
     "build": "pnpm -r build",

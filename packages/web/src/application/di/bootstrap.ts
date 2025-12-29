@@ -98,6 +98,18 @@ import { FirebaseShiftRepository } from '@/infrastructure/repositories/FirebaseS
 import { IEventRepository } from '@/domain/interfaces/repositories/IEventRepository';
 import { FirebaseEventRepository } from '@/infrastructure/repositories/FirebaseEventRepository';
 
+// User Management Imports
+import { IUserRepository } from '@/domain/repositories/IUserRepository';
+import { FirestoreUserRepository } from '@/infrastructure/repositories/FirestoreUserRepository';
+import { ListUsersUseCase } from '@/application/use-cases/user-management/ListUsersUseCase';
+import { UpdateUserUseCase } from '@/application/use-cases/user-management/UpdateUserUseCase';
+import { ActivateUserUseCase } from '@/application/use-cases/user-management/ActivateUserUseCase';
+import { DeactivateUserUseCase } from '@/application/use-cases/user-management/DeactivateUserUseCase';
+import { DeleteUserUseCase } from '@/application/use-cases/user-management/DeleteUserUseCase';
+import { AssignOutletsUseCase } from '@/application/use-cases/user-management/AssignOutletsUseCase';
+import { ChangeUserRoleUseCase } from '@/application/use-cases/user-management/ChangeUserRoleUseCase';
+import { InviteUserUseCase } from '@/application/use-cases/user-management/InviteUserUseCase';
+
 export function bootstrap() {
   // Auth
   container
@@ -431,4 +443,39 @@ export function bootstrap() {
     .bind<IEventRepository>(TYPES.EventRepository)
     .to(FirebaseEventRepository)
     .inSingletonScope();
+
+  // User Management
+  container
+    .bind<IUserRepository>(TYPES.UserRepository)
+    .to(FirestoreUserRepository)
+    .inSingletonScope();
+  container.bind<ListUsersUseCase>(TYPES.ListUsersUseCase).to(ListUsersUseCase).inTransientScope();
+  container
+    .bind<UpdateUserUseCase>(TYPES.UpdateUserUseCase)
+    .to(UpdateUserUseCase)
+    .inTransientScope();
+  container
+    .bind<ActivateUserUseCase>(TYPES.ActivateUserUseCase)
+    .to(ActivateUserUseCase)
+    .inTransientScope();
+  container
+    .bind<DeactivateUserUseCase>(TYPES.DeactivateUserUseCase)
+    .to(DeactivateUserUseCase)
+    .inTransientScope();
+  container
+    .bind<DeleteUserUseCase>(TYPES.DeleteUserUseCase)
+    .to(DeleteUserUseCase)
+    .inTransientScope();
+  container
+    .bind<AssignOutletsUseCase>(TYPES.AssignOutletsUseCase)
+    .to(AssignOutletsUseCase)
+    .inTransientScope();
+  container
+    .bind<ChangeUserRoleUseCase>(TYPES.ChangeUserRoleUseCase)
+    .to(ChangeUserRoleUseCase)
+    .inTransientScope();
+  container
+    .bind<InviteUserUseCase>(TYPES.InviteUserUseCase)
+    .to(InviteUserUseCase)
+    .inTransientScope();
 }
