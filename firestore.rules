@@ -207,12 +207,10 @@ service cloud.firestore {
     }
 
     match /invitations/{invitationId} {
-        allow read: if isAuthenticated() && (
-            (resource.data.email == request.auth.token.email) || isAdmin()
-        );
-        allow create: if isAdmin();
-        allow update: if isAdmin();
-        allow delete: if isAdmin();
+      allow read: if isAuthenticated() && (
+        request.auth.token.email == resource.data.email || isAdmin()
+      );
+      allow create, update, delete: if isAdmin();
     }
   }
 }

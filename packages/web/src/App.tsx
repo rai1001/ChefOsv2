@@ -27,6 +27,7 @@ import { SettingsPage } from './presentation/pages/SettingsPage';
 import { AITelemetryPage } from './presentation/pages/AITelemetryPage';
 import { UserManagementPage } from './presentation/pages/UserManagementPage';
 import { ProtectedRoute } from './presentation/components/auth/ProtectedRoute';
+import { Toaster } from 'sonner';
 
 // Protected Route Component
 // Note: Local ProtectedRoute removed in favor of Shared component
@@ -36,8 +37,9 @@ export const App = () => {
     <BrowserRouter>
       <Routes>
         <Route path="/login" element={<LoginPage />} />
+        <Route path="/accept-invitation" element={<AcceptInvitationPage />} />
         <Route element={<ProtectedRoute />}>
-          <Route path="register" element={<AcceptInvitationPage />} />
+          {/* <Route path="register" element={<AcceptInvitationPage />} /> */}
           <Route element={<Layout />}>
             <Route path="dashboard" element={<Dashboard />} />
             <Route path="ingredients" element={<IngredientsPage />} />
@@ -72,6 +74,7 @@ export const App = () => {
           </Route>
         </Route>
       </Routes>
+      <Toaster position="top-right" theme="dark" richColors />
     </BrowserRouter>
   );
 };

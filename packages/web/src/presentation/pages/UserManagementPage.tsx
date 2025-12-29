@@ -15,6 +15,7 @@ import {
   Loader2,
 } from 'lucide-react';
 import { useUserManagement } from '@/presentation/hooks/useUserManagement';
+import { useStore } from '@/presentation/store/useStore';
 import type { User, Role } from '@/types';
 
 // --- COMPONENTS ---
@@ -53,6 +54,7 @@ export const UserManagementPage = () => {
     invitations,
     cancelInvitation,
   } = useUserManagement();
+  const { outlets } = useStore();
   const [searchTerm, setSearchTerm] = useState('');
   const [roleFilter, setRoleFilter] = useState<'all' | 'admin' | 'chef' | 'staff'>('all');
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive'>('all');
@@ -582,6 +584,43 @@ export const UserManagementPage = () => {
                   </div>
                 </div>
               </div>
+              <div>
+                <label className="text-xs font-medium text-slate-400 ml-1">
+                  Outlets Permitidos
+                </label>
+                <div className="bg-black/30 border border-white/10 rounded-xl p-3 space-y-2 max-h-32 overflow-y-auto mt-2">
+                  {outlets.length === 0 ? (
+                    <p className="text-xs text-slate-500 italic p-2">No hay outlets disponibles</p>
+                  ) : (
+                    outlets.map((outlet) => (
+                      <label
+                        key={outlet.id}
+                        className="flex items-center gap-2 p-2 hover:bg-white/5 rounded cursor-pointer"
+                      >
+                        <input
+                          type="checkbox"
+                          className="rounded border-slate-600 text-indigo-600 focus:ring-indigo-500 bg-slate-800"
+                          checked={editForm.allowedOutlets.includes(outlet.id)}
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              setEditForm((prev) => ({
+                                ...prev,
+                                allowedOutlets: [...prev.allowedOutlets, outlet.id],
+                              }));
+                            } else {
+                              setEditForm((prev) => ({
+                                ...prev,
+                                allowedOutlets: prev.allowedOutlets.filter((o) => o !== outlet.id),
+                              }));
+                            }
+                          }}
+                        />
+                        <span className="text-sm text-slate-300">{outlet.name}</span>
+                      </label>
+                    ))
+                  )}
+                </div>
+              </div>
             </div>
 
             <div className="mt-8 flex justify-end gap-3">
@@ -657,32 +696,36 @@ export const UserManagementPage = () => {
                   Outlets Permitidos
                 </label>
                 <div className="bg-black/30 border border-white/10 rounded-xl p-3 space-y-2 max-h-32 overflow-y-auto">
-                  {['Main Kitchen', 'Bar Terrace', 'Pastry Shop'].map((outlet) => (
-                    <label
-                      key={outlet}
-                      className="flex items-center gap-2 p-2 hover:bg-white/5 rounded cursor-pointer"
-                    >
-                      <input
-                        type="checkbox"
-                        className="rounded border-slate-600 text-indigo-600 focus:ring-indigo-500 bg-slate-800"
-                        checked={inviteForm.allowedOutlets.includes(outlet)}
-                        onChange={(e) => {
-                          if (e.target.checked) {
-                            setInviteForm((prev) => ({
-                              ...prev,
-                              allowedOutlets: [...prev.allowedOutlets, outlet],
-                            }));
-                          } else {
-                            setInviteForm((prev) => ({
-                              ...prev,
-                              allowedOutlets: prev.allowedOutlets.filter((o) => o !== outlet),
-                            }));
-                          }
-                        }}
-                      />
-                      <span className="text-sm text-slate-300">{outlet}</span>
-                    </label>
-                  ))}
+                  {outlets.length === 0 ? (
+                    <p className="text-xs text-slate-500 italic p-2">No hay outlets disponibles</p>
+                  ) : (
+                    outlets.map((outlet) => (
+                      <label
+                        key={outlet.id}
+                        className="flex items-center gap-2 p-2 hover:bg-white/5 rounded cursor-pointer"
+                      >
+                        <input
+                          type="checkbox"
+                          className="rounded border-slate-600 text-indigo-600 focus:ring-indigo-500 bg-slate-800"
+                          checked={inviteForm.allowedOutlets.includes(outlet.id)}
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              setInviteForm((prev) => ({
+                                ...prev,
+                                allowedOutlets: [...prev.allowedOutlets, outlet.id],
+                              }));
+                            } else {
+                              setInviteForm((prev) => ({
+                                ...prev,
+                                allowedOutlets: prev.allowedOutlets.filter((o) => o !== outlet.id),
+                              }));
+                            }
+                          }}
+                        />
+                        <span className="text-sm text-slate-300">{outlet.name}</span>
+                      </label>
+                    ))
+                  )}
                 </div>
               </div>
             </div>
