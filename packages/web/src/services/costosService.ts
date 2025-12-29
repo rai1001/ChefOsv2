@@ -63,6 +63,7 @@ export async function calcularCostosFicha(
         // Assuming firestoreService.query handles this, or we use raw query
         const results = await firestoreService.query<Ingredient>(
           collections.ingredients as any,
+          {},
           where(documentId(), 'in', chunk)
         );
         results.forEach((ing) => ingredientsMap.set(ing.id, ing));

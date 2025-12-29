@@ -1,15 +1,15 @@
 import { injectable } from 'inversify';
-import { IIngredientRepository } from '@culinaryos/core/infrastructure/repositories/IIngredientRepository';
 import {
+  IIngredientRepository,
   Ingredient,
   CreateIngredientDTO,
   UpdateIngredientDTO,
   SupplierOption,
-} from '@culinaryos/core/domain/entities/Ingredient';
-import { Quantity } from '@culinaryos/core/domain/value-objects/Quantity';
-import { Unit } from '@culinaryos/core/domain/value-objects/Unit';
-import { Money } from '@culinaryos/core/domain/value-objects/Money';
-import { NutritionalInfo } from '@culinaryos/core/domain/value-objects/NutritionalInfo';
+  Quantity,
+  Unit,
+  Money,
+  NutritionalInfo,
+} from '@culinaryos/core';
 import { DocumentData, QueryDocumentSnapshot } from 'firebase/firestore';
 
 @injectable()

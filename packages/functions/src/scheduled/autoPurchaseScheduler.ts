@@ -49,7 +49,7 @@ const shouldRunNow = (settings: AutoPurchaseSettings): boolean => {
 export const autoPurchaseScheduler = onSchedule(
   {
     schedule: 'every 1 hours',
-    region: 'europe-west1',
+    region: 'europe-southwest1',
   },
   async (_event) => {
     const db = admin.firestore();

@@ -1,14 +1,14 @@
 import {
   FichaTecnica as CoreFichaTecnica,
   RecipeIngredient as CoreRecipeIngredient,
-} from '@culinaryos/core/domain/entities/FichaTecnica';
+  Quantity,
+  Unit,
+  Money,
+} from '@culinaryos/core';
 import {
   Recipe as LegacyRecipe,
   RecipeIngredient as LegacyRecipeIngredient,
 } from '@/domain/entities/Recipe';
-import { Quantity } from '@culinaryos/core/domain/value-objects/Quantity';
-import { Unit } from '@culinaryos/core/domain/value-objects/Unit';
-import { Money } from '@culinaryos/core/domain/value-objects/Money';
 
 export class RecipeAdapter {
   static toCore(legacy: LegacyRecipe): CoreFichaTecnica {

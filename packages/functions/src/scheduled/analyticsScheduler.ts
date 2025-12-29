@@ -27,7 +27,7 @@ interface Recipe {
 export const calculateMenuEngineering = onSchedule(
   {
     schedule: 'every day 03:00',
-    region: 'europe-west1',
+    region: 'europe-southwest1',
   },
   async (_event) => {
     const db = admin.firestore();

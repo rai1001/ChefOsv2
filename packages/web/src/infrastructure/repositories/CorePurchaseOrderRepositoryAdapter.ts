@@ -19,9 +19,9 @@ import {
   ApprovePurchaseOrderDTO,
   PurchaseOrderStatus,
   Money,
+  NotFoundError,
 } from '@culinaryos/core';
 import { useStore } from '@/presentation/store/useStore';
-import { NotFoundError } from '@culinaryos/core/domain/exceptions/AppError';
 
 @injectable()
 export class CorePurchaseOrderRepositoryAdapter implements IPurchaseOrderRepository {

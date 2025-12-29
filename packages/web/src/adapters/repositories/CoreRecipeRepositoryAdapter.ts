@@ -1,16 +1,16 @@
 import { injectable, inject } from 'inversify';
-import { IFichaTecnicaRepository } from '@culinaryos/core/infrastructure/repositories/IFichaTecnicaRepository';
 import {
+  IFichaTecnicaRepository,
   FichaTecnica,
-  CreateFichaTecnicaDTO,
-  UpdateFichaTecnicaDTO,
-  FichaTecnicaVersion,
-} from '@culinaryos/core/domain/entities/FichaTecnica';
+  CreateFichaTecnicaDTO as CreateFichaTecnicaDTO,
+  UpdateFichaTecnicaDTO as UpdateFichaTecnicaDTO,
+  FichaTecnicaVersion, // Note: Check if exported
+  RepositoryOptions,
+} from '@culinaryos/core';
 import { IRecipeRepository as ILegacyRecipeRepository } from '@/domain/interfaces/repositories/IRecipeRepository';
 import { TYPES } from '@/application/di/types';
 import { RecipeAdapter } from '../RecipeAdapter';
 import { v4 as uuidv4 } from 'uuid';
-import { RepositoryOptions } from '@culinaryos/core/infrastructure/repositories/RepositoryOptions';
 
 @injectable()
 export class CoreRecipeRepositoryAdapter implements IFichaTecnicaRepository {

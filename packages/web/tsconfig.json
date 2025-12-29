@@ -5,13 +5,14 @@
     "lib": ["ES2022", "DOM", "DOM.Iterable"],
     "jsx": "react-jsx",
     "outDir": "./dist",
-    "rootDir": "./src",
     "types": ["vite/client", "reflect-metadata"],
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true,
+    "baseUrl": ".",
+    "rootDir": "src",
     "paths": {
-      "@culinaryos/core": ["../core/src"],
-      "@culinaryos/core/*": ["../core/src/*"],
+      "@culinaryos/core": ["../core"],
+      "@culinaryos/core/*": ["../core/*"],
       "@culinaryos/ui": ["../ui/src"],
       "@culinaryos/ui/*": ["../ui/src/*"],
       "@/*": ["./src/*"]

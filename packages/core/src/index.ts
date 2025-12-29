@@ -3,6 +3,13 @@ export { Money } from './domain/value-objects/Money';
 export { Unit, UnitType } from './domain/value-objects/Unit';
 export { Quantity } from './domain/value-objects/Quantity';
 export { NutritionalInfo, type NutritionalValues } from './domain/value-objects/NutritionalInfo';
+export {
+  AppError,
+  ErrorCode,
+  NotFoundError,
+  UnauthorizedError,
+  ValidationError,
+} from './domain/exceptions/AppError';
 
 // Entities
 export * from './domain/entities/Ingredient';

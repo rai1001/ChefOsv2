@@ -1,11 +1,13 @@
 import { injectable, inject } from 'inversify';
 import { TYPES } from '../../di/types';
-import { CreateIngredientUseCase as CoreUseCase } from '@culinaryos/core';
-import { CreateIngredientDTO } from '@culinaryos/core/domain/entities/Ingredient';
+import {
+  CreateIngredientUseCase as CoreUseCase,
+  CreateIngredientDTO,
+  Money,
+  Unit,
+  Quantity,
+} from '@culinaryos/core';
 import { CreateIngredientRequest } from '@/types/inventory';
-import { Money } from '@culinaryos/core/domain/value-objects/Money';
-import { Unit } from '@culinaryos/core/domain/value-objects/Unit';
-import { Quantity } from '@culinaryos/core/domain/value-objects/Quantity';
 
 @injectable()
 export class CreateIngredientUseCase {
