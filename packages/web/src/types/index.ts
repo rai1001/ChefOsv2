@@ -157,6 +157,25 @@ export interface UserUpdateDTO {
   defaultOutletId?: string;
 }
 
+export interface Invitation {
+  id: string;
+  email: string;
+  role: Role;
+  allowedOutlets: string[];
+  status: 'pending' | 'sent' | 'accepted' | 'expired' | 'error';
+  createdAt: string; // ISO Date
+  sentAt?: string;
+  acceptedAt?: string;
+  acceptedBy?: string;
+  error?: string;
+}
+
+export interface InviteUserDTO {
+  email: string;
+  role: Role;
+  allowedOutlets: string[];
+}
+
 export interface UserListItem {
   uid: string;
   email: string;

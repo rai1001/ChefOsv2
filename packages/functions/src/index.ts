@@ -24,6 +24,7 @@ export { generateMonthlyHACCPReport } from './scheduled/haccpScheduler';
 export { resetDailyBudgets, sendWeeklyBudgetReport } from './scheduled/budgetScheduler';
 export { onBudgetUpdate } from './triggers/budgetAlerts';
 export { onInvitationCreated } from './triggers/onInvitationCreated';
+export { acceptInvitation } from './invitations/acceptInvitation';
 
 // New KPI Triggers
 export { onInventoryUpdate } from './triggers/inventoryTriggers';

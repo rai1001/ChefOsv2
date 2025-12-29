@@ -8,10 +8,11 @@ import {
   query,
   where,
   onSnapshot,
+  addDoc,
 } from 'firebase/firestore';
 import { db } from '@/config/firebase';
 import type { IUserRepository } from '@/domain/repositories/IUserRepository';
-import type { User, UserUpdateDTO } from '@/types'; // Import from types/index.ts where we added DTOs
+import type { User, UserUpdateDTO, Invitation, InviteUserDTO } from '@/types'; // Import from types/index.ts where we added DTOs
 import { UserRole } from '@/domain/entities/User';
 
 export class FirestoreUserRepository implements IUserRepository {
@@ -121,5 +122,49 @@ export class FirestoreUserRepository implements IUserRepository {
 
   async changeUserRole(uid: string, role: UserRole): Promise<void> {
     return this.updateUser(uid, { role: role as any }); // Cast if needed depending on Role type vs UserRole enum match
+  }
+
+  // Invitations
+  async createInvitation(invitation: InviteUserDTO): Promise<string> {
+    try {
+      const docRef = await addDoc(collection(db, 'invitations'), {
+        ...invitation,
+        status: 'pending',
+        createdAt: new Date().toISOString(), // Use ISO string matching our Type. Trigger sends serverTimestamp() but local optimistic can be Date or just let firestore handle
+        // Wait, cloud function uses onCreate.
+        // Let's use Date.now() or ISO.
+        // Best to use serverTimestamp for order but our Type says string.
+        // Let's settle on string for frontend type, but we can write serverTimestamp if we cast.
+      });
+      return docRef.id;
+    } catch (error) {
+      console.error('Error creating invitation:', error);
+      throw error;
+    }
+  }
+
+  getPendingInvitationsStream(callback: (invitations: Invitation[]) => void): () => void {
+    const q = query(collection(db, 'invitations'), where('status', '==', 'pending'));
+    return onSnapshot(
+      q,
+      (snapshot) => {
+        const invitations = snapshot.docs.map(
+          (doc) => ({ id: doc.id, ...doc.data() }) as Invitation
+        );
+        callback(invitations);
+      },
+      (error) => {
+        console.error('Error streaming invitations:', error);
+      }
+    );
+  }
+
+  async deleteInvitation(invitationId: string): Promise<void> {
+    try {
+      await deleteDoc(doc(db, 'invitations', invitationId));
+    } catch (error) {
+      console.error('Error deleting invitation:', error);
+      throw error;
+    }
   }
 }

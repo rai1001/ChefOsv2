@@ -16,6 +16,9 @@ import type {
   InviteUserUseCase,
   InviteUserDTO,
 } from '@/application/use-cases/user-management/InviteUserUseCase';
+import type { ListInvitationsUseCase } from '@/application/use-cases/user-management/ListInvitationsUseCase';
+import type { DeleteInvitationUseCase } from '@/application/use-cases/user-management/DeleteInvitationUseCase';
+import type { Invitation } from '@/types';
 // import { toast } from 'sonner';
 const toast = {
   success: (msg: string) => console.log('Success:', msg),
@@ -38,6 +41,14 @@ export const useUserManagement = () => {
   const assignOutletsUseCase = container.get<AssignOutletsUseCase>(TYPES.AssignOutletsUseCase);
 
   const inviteUserUseCase = container.get<InviteUserUseCase>(TYPES.InviteUserUseCase);
+  const listInvitationsUseCase = container.get<ListInvitationsUseCase>(
+    TYPES.ListInvitationsUseCase
+  );
+  const deleteInvitationUseCase = container.get<DeleteInvitationUseCase>(
+    TYPES.DeleteInvitationUseCase
+  );
+
+  const [invitations, setInvitations] = useState<Invitation[]>([]);
 
   const fetchUsers = useCallback(async () => {
     setLoading(true);
@@ -57,12 +68,22 @@ export const useUserManagement = () => {
   // Real-time listener setup (optional, but good for admin panel)
   useEffect(() => {
     setLoading(true);
-    const unsubscribe = listUsersUseCase.executeStream((data) => {
+    // Users Subscription
+    const unsubscribeUsers = listUsersUseCase.executeStream((data) => {
       setUsers(data);
       setLoading(false);
     });
-    return () => unsubscribe();
-  }, [listUsersUseCase]);
+
+    // Invitations Subscription
+    const unsubscribeInvitations = listInvitationsUseCase.executeStream((data) => {
+      setInvitations(data);
+    });
+
+    return () => {
+      unsubscribeUsers();
+      unsubscribeInvitations();
+    };
+  }, [listUsersUseCase, listInvitationsUseCase]);
 
   const updateUser = async (uid: string, updates: Partial<UserUpdateDTO>) => {
     try {
@@ -129,8 +150,20 @@ export const useUserManagement = () => {
     }
   };
 
+  const cancelInvitation = async (invitationId: string) => {
+    try {
+      await deleteInvitationUseCase.execute(invitationId);
+      toast.success('Invitación cancelada');
+    } catch (err: any) {
+      console.error('Error cancelling invitation:', err);
+      toast.error('Error al cancelar invitación: ' + err.message);
+      throw err;
+    }
+  };
+
   return {
     users,
+    invitations,
     loading,
     error,
     fetchUsers,
@@ -138,5 +171,6 @@ export const useUserManagement = () => {
     deleteUser,
     toggleUserStatus,
     inviteUser,
+    cancelInvitation,
   };
 };

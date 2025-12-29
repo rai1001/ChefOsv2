@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { LoginPage } from './presentation/pages/LoginPage';
+import { AcceptInvitationPage } from './presentation/pages/AcceptInvitationPage';
 import { Layout } from './presentation/components/Layout';
 import { Dashboard } from './presentation/pages/Dashboard';
 import { IngredientsPage } from './presentation/pages/IngredientsPage';
@@ -36,6 +37,7 @@ export const App = () => {
       <Routes>
         <Route path="/login" element={<LoginPage />} />
         <Route element={<ProtectedRoute />}>
+          <Route path="register" element={<AcceptInvitationPage />} />
           <Route element={<Layout />}>
             <Route path="dashboard" element={<Dashboard />} />
             <Route path="ingredients" element={<IngredientsPage />} />

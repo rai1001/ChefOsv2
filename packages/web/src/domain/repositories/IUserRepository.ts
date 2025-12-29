@@ -1,4 +1,4 @@
-import type { User, UserUpdateDTO } from '@/types';
+import type { User, UserUpdateDTO, Invitation, InviteUserDTO } from '@/types';
 import type { UserRole } from '@/domain/entities/User';
 
 export interface IUserRepository {
@@ -17,4 +17,9 @@ export interface IUserRepository {
   assignOutlets(uid: string, outletIds: string[]): Promise<void>;
   setDefaultOutlet(uid: string, outletId: string): Promise<void>;
   changeUserRole(uid: string, role: UserRole): Promise<void>;
+
+  // Invitations
+  createInvitation(invitation: InviteUserDTO): Promise<string>;
+  getPendingInvitationsStream(callback: (invitations: Invitation[]) => void): () => void;
+  deleteInvitation(invitationId: string): Promise<void>;
 }

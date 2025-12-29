@@ -86,4 +86,6 @@ export const TYPES = {
   AssignOutletsUseCase: Symbol.for('AssignOutletsUseCase'),
   ChangeUserRoleUseCase: Symbol.for('ChangeUserRoleUseCase'),
   InviteUserUseCase: Symbol.for('InviteUserUseCase'),
+  ListInvitationsUseCase: Symbol.for('ListInvitationsUseCase'),
+  DeleteInvitationUseCase: Symbol.for('DeleteInvitationUseCase'),
 };

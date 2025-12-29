@@ -109,6 +109,8 @@ import { DeleteUserUseCase } from '@/application/use-cases/user-management/Delet
 import { AssignOutletsUseCase } from '@/application/use-cases/user-management/AssignOutletsUseCase';
 import { ChangeUserRoleUseCase } from '@/application/use-cases/user-management/ChangeUserRoleUseCase';
 import { InviteUserUseCase } from '@/application/use-cases/user-management/InviteUserUseCase';
+import { ListInvitationsUseCase } from '@/application/use-cases/user-management/ListInvitationsUseCase';
+import { DeleteInvitationUseCase } from '@/application/use-cases/user-management/DeleteInvitationUseCase';
 
 export function bootstrap() {
   // Auth
@@ -477,5 +479,13 @@ export function bootstrap() {
   container
     .bind<InviteUserUseCase>(TYPES.InviteUserUseCase)
     .to(InviteUserUseCase)
+    .inTransientScope();
+  container
+    .bind<ListInvitationsUseCase>(TYPES.ListInvitationsUseCase)
+    .to(ListInvitationsUseCase)
+    .inTransientScope();
+  container
+    .bind<DeleteInvitationUseCase>(TYPES.DeleteInvitationUseCase)
+    .to(DeleteInvitationUseCase)
     .inTransientScope();
 }

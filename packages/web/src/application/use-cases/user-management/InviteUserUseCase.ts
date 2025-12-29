@@ -1,25 +1,16 @@
-import { db } from '@/config/firebase';
-import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
-import type { Role } from '@/types';
+import { inject, injectable } from 'inversify';
+import { TYPES } from '@/application/di/types';
+import type { IUserRepository } from '@/domain/repositories/IUserRepository';
+import type { InviteUserDTO } from '@/types'; // Import from types now
 
-export interface InviteUserDTO {
-  email: string;
-  role: Role;
-  allowedOutlets: string[];
-}
-
+@injectable()
 export class InviteUserUseCase {
+  constructor(@inject(TYPES.UserRepository) private userRepository: IUserRepository) {}
+
   async execute(invitation: InviteUserDTO): Promise<string> {
-    try {
-      const docRef = await addDoc(collection(db, 'invitations'), {
-        ...invitation,
-        status: 'pending',
-        createdAt: serverTimestamp(),
-      });
-      return docRef.id;
-    } catch (error) {
-      console.error('Error creating invitation:', error);
-      throw error;
-    }
+    return this.userRepository.createInvitation(invitation);
   }
 }
+
+// Re-export DTO if needed for backward compatibility or just rely on global type
+export type { InviteUserDTO };

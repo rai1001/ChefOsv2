@@ -42,8 +42,17 @@ const StatsCard = ({
 );
 
 export const UserManagementPage = () => {
-  const { users, loading, fetchUsers, updateUser, deleteUser, toggleUserStatus, inviteUser } =
-    useUserManagement();
+  const {
+    users,
+    loading,
+    fetchUsers,
+    updateUser,
+    deleteUser,
+    toggleUserStatus,
+    inviteUser,
+    invitations,
+    cancelInvitation,
+  } = useUserManagement();
   const [searchTerm, setSearchTerm] = useState('');
   const [roleFilter, setRoleFilter] = useState<'all' | 'admin' | 'chef' | 'staff'>('all');
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive'>('all');
@@ -178,6 +187,14 @@ export const UserManagementPage = () => {
     );
   };
 
+  // Invitation State
+  const [activeTab, setActiveTab] = useState<'users' | 'invitations'>('users');
+
+  // Derived state for invitations
+  const filteredInvitations = invitations.filter((inv) =>
+    inv.email.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
   if (loading && users.length === 0) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-slate-900 text-white">
@@ -214,172 +231,288 @@ export const UserManagementPage = () => {
         />
         <StatsCard
           title="Pendientes"
-          value={stats.pending}
+          value={filteredInvitations.length} // Use real pending invitations count
           icon={XCircle}
           color="bg-orange-500/20"
         />
         <StatsCard title="Admins" value={stats.admins} icon={Shield} color="bg-indigo-500/20" />
       </div>
 
-      {/* FILTERS & SEARCH */}
-      <div className="bg-surface border border-white/10 rounded-xl p-4 flex flex-col md:flex-row gap-4 items-center justify-between">
-        <div className="relative w-full md:w-96">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" size={18} />
-          <input
-            type="text"
-            placeholder="Buscar por nombre o email..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full bg-black/30 border border-white/10 rounded-lg pl-10 pr-4 py-2.5 text-sm text-white placeholder:text-slate-600 focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
-          />
-        </div>
-
-        <div className="flex items-center gap-2 w-full md:w-auto overflow-x-auto pb-2 md:pb-0">
-          <button
-            onClick={() => setStatusFilter('all')}
-            className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${statusFilter === 'all' ? 'bg-white/10 text-white' : 'text-slate-400 hover:text-white'}`}
-          >
-            Todos
-          </button>
-          <button
-            onClick={() => setStatusFilter('active')}
-            className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${statusFilter === 'active' ? 'bg-white/10 text-white' : 'text-slate-400 hover:text-white'}`}
-          >
-            Activos
-          </button>
-          <div className="w-px h-6 bg-white/10 mx-2"></div>
-          <select
-            value={roleFilter}
-            onChange={(e) => setRoleFilter(e.target.value as any)}
-            className="bg-black/30 border border-white/10 rounded-lg px-3 py-2 text-sm text-slate-300 focus:outline-none focus:border-indigo-500"
-          >
-            <option value="all">Todos los roles</option>
-            <option value="admin">Administradores</option>
-            <option value="chef">Chefs</option>
-            <option value="staff">Staff</option>
-          </select>
-        </div>
+      {/* TABS */}
+      <div className="flex gap-4 border-b border-white/10">
+        <button
+          onClick={() => setActiveTab('users')}
+          className={`pb-3 px-1 text-sm font-medium transition-colors relative ${
+            activeTab === 'users' ? 'text-indigo-400' : 'text-slate-400 hover:text-white'
+          }`}
+        >
+          Usuarios
+          {activeTab === 'users' && (
+            <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-indigo-500 shadow-[0_-2px_6px_rgba(99,102,241,0.5)]"></div>
+          )}
+        </button>
+        <button
+          onClick={() => setActiveTab('invitations')}
+          className={`pb-3 px-1 text-sm font-medium transition-colors relative ${
+            activeTab === 'invitations' ? 'text-indigo-400' : 'text-slate-400 hover:text-white'
+          }`}
+        >
+          Invitaciones Pendientes
+          {invitations.length > 0 && (
+            <span className="ml-2 bg-indigo-500 text-white text-[10px] px-1.5 py-0.5 rounded-full">
+              {invitations.length}
+            </span>
+          )}
+          {activeTab === 'invitations' && (
+            <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-indigo-500 shadow-[0_-2px_6px_rgba(99,102,241,0.5)]"></div>
+          )}
+        </button>
       </div>
 
-      {/* USER TABLE */}
-      <div className="bg-surface border border-white/10 rounded-xl overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse">
-            <thead>
-              <tr className="border-b border-white/5 bg-black/20">
-                <th className="px-6 py-4 text-xs font-semibold text-slate-400 uppercase tracking-wider">
-                  Usuario
-                </th>
-                <th className="px-6 py-4 text-xs font-semibold text-slate-400 uppercase tracking-wider">
-                  Rol
-                </th>
-                <th className="px-6 py-4 text-xs font-semibold text-slate-400 uppercase tracking-wider">
-                  Estado
-                </th>
-                <th className="px-6 py-4 text-xs font-semibold text-slate-400 uppercase tracking-wider">
-                  Outlets
-                </th>
-                <th className="px-6 py-4 text-xs font-semibold text-slate-400 uppercase tracking-wider">
-                  Creado
-                </th>
-                <th className="px-6 py-4 text-xs font-semibold text-slate-400 uppercase tracking-wider text-right">
-                  Acciones
-                </th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-white/5">
-              {filteredUsers.length === 0 ? (
-                <tr>
-                  <td colSpan={6} className="px-6 py-12 text-center text-slate-500">
-                    <div className="flex flex-col items-center gap-2">
-                      {loading ? (
-                        <Loader2 className="animate-spin" />
-                      ) : (
-                        <>
-                          <UserPlus size={32} className="opacity-20" />
-                          <p>No se encontraron usuarios</p>
-                        </>
-                      )}
-                    </div>
-                  </td>
-                </tr>
-              ) : (
-                filteredUsers.map((user) => (
-                  <tr key={user.id} className="hover:bg-white/5 transition-colors">
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-full bg-indigo-500/20 flex items-center justify-center text-indigo-400 font-bold border border-indigo-500/10">
-                          {user.photoURL ? (
-                            <img
-                              src={user.photoURL}
-                              alt={user.name}
-                              className="w-full h-full rounded-full object-cover"
-                            />
+      {/* CONTENT */}
+      {activeTab === 'users' ? (
+        <>
+          {/* FILTERS & SEARCH */}
+          <div className="bg-surface border border-white/10 rounded-xl p-4 flex flex-col md:flex-row gap-4 items-center justify-between">
+            <div className="relative w-full md:w-96">
+              <Search
+                className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500"
+                size={18}
+              />
+              <input
+                type="text"
+                placeholder="Buscar por nombre o email..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full bg-black/30 border border-white/10 rounded-lg pl-10 pr-4 py-2.5 text-sm text-white placeholder:text-slate-600 focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
+              />
+            </div>
+
+            <div className="flex items-center gap-2 w-full md:w-auto overflow-x-auto pb-2 md:pb-0">
+              <button
+                onClick={() => setStatusFilter('all')}
+                className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${statusFilter === 'all' ? 'bg-white/10 text-white' : 'text-slate-400 hover:text-white'}`}
+              >
+                Todos
+              </button>
+              <button
+                onClick={() => setStatusFilter('active')}
+                className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${statusFilter === 'active' ? 'bg-white/10 text-white' : 'text-slate-400 hover:text-white'}`}
+              >
+                Activos
+              </button>
+              <div className="w-px h-6 bg-white/10 mx-2"></div>
+              <select
+                value={roleFilter}
+                onChange={(e) => setRoleFilter(e.target.value as any)}
+                className="bg-black/30 border border-white/10 rounded-lg px-3 py-2 text-sm text-slate-300 focus:outline-none focus:border-indigo-500"
+              >
+                <option value="all">Todos los roles</option>
+                <option value="admin">Administradores</option>
+                <option value="chef">Chefs</option>
+                <option value="staff">Staff</option>
+              </select>
+            </div>
+          </div>
+
+          {/* USER TABLE */}
+          <div className="bg-surface border border-white/10 rounded-xl overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="border-b border-white/5 bg-black/20">
+                    <th className="px-6 py-4 text-xs font-semibold text-slate-400 uppercase tracking-wider">
+                      Usuario
+                    </th>
+                    <th className="px-6 py-4 text-xs font-semibold text-slate-400 uppercase tracking-wider">
+                      Rol
+                    </th>
+                    <th className="px-6 py-4 text-xs font-semibold text-slate-400 uppercase tracking-wider">
+                      Estado
+                    </th>
+                    <th className="px-6 py-4 text-xs font-semibold text-slate-400 uppercase tracking-wider">
+                      Outlets
+                    </th>
+                    <th className="px-6 py-4 text-xs font-semibold text-slate-400 uppercase tracking-wider">
+                      Creado
+                    </th>
+                    <th className="px-6 py-4 text-xs font-semibold text-slate-400 uppercase tracking-wider text-right">
+                      Acciones
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-white/5">
+                  {filteredUsers.length === 0 ? (
+                    <tr>
+                      <td colSpan={6} className="px-6 py-12 text-center text-slate-500">
+                        <div className="flex flex-col items-center gap-2">
+                          {loading ? (
+                            <Loader2 className="animate-spin" />
                           ) : (
-                            user.name?.charAt(0) || 'U'
+                            <>
+                              <UserPlus size={32} className="opacity-20" />
+                              <p>No se encontraron usuarios</p>
+                            </>
                           )}
                         </div>
-                        <div>
-                          <p className="text-sm font-medium text-white">
-                            {user.name || 'Sin Nombre'}
-                          </p>
-                          <p className="text-xs text-slate-500">{user.email}</p>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">{getRoleBadge(user.role)}</td>
-                    <td className="px-6 py-4">
-                      <button onClick={() => handleToggleStatus(user, (user as any).active)}>
-                        {getStatusBadge((user as any).active)}
-                      </button>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-1.5 flex-wrap">
-                        {user.allowedOutlets && user.allowedOutlets.length > 0 ? (
-                          user.allowedOutlets.map((outlet, idx) => (
-                            <span
-                              key={idx}
-                              className="px-2 py-1 rounded text-xs bg-slate-800 text-slate-300 border border-white/5"
+                      </td>
+                    </tr>
+                  ) : (
+                    filteredUsers.map((user) => (
+                      <tr key={user.id} className="hover:bg-white/5 transition-colors">
+                        <td className="px-6 py-4">
+                          <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-full bg-indigo-500/20 flex items-center justify-center text-indigo-400 font-bold border border-indigo-500/10">
+                              {user.photoURL ? (
+                                <img
+                                  src={user.photoURL}
+                                  alt={user.name}
+                                  className="w-full h-full rounded-full object-cover"
+                                />
+                              ) : (
+                                user.name?.charAt(0) || 'U'
+                              )}
+                            </div>
+                            <div>
+                              <p className="text-sm font-medium text-white">
+                                {user.name || 'Sin Nombre'}
+                              </p>
+                              <p className="text-xs text-slate-500">{user.email}</p>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4">{getRoleBadge(user.role)}</td>
+                        <td className="px-6 py-4">
+                          <button onClick={() => handleToggleStatus(user, (user as any).active)}>
+                            {getStatusBadge((user as any).active)}
+                          </button>
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            {user.allowedOutlets && user.allowedOutlets.length > 0 ? (
+                              user.allowedOutlets.map((outlet, idx) => (
+                                <span
+                                  key={idx}
+                                  className="px-2 py-1 rounded text-xs bg-slate-800 text-slate-300 border border-white/5"
+                                >
+                                  {outlet}
+                                </span>
+                              ))
+                            ) : (
+                              <span className="text-xs text-slate-600 italic">Sin asignar</span>
+                            )}
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 text-sm text-slate-400">
+                          {user.createdAt ? new Date(user.createdAt).toLocaleDateString() : 'N/A'}
+                        </td>
+                        <td className="px-6 py-4 text-right">
+                          <div className="flex items-center justify-end gap-2">
+                            <button
+                              onClick={() => setEditingUser(user)}
+                              className="p-2 rounded-lg hover:bg-white/10 text-slate-400 hover:text-white transition-colors"
+                              title="Editar"
                             >
-                              {outlet}
-                            </span>
-                          ))
-                        ) : (
-                          <span className="text-xs text-slate-600 italic">Sin asignar</span>
-                        )}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 text-sm text-slate-400">
-                      {user.createdAt ? new Date(user.createdAt).toLocaleDateString() : 'N/A'}
-                    </td>
-                    <td className="px-6 py-4 text-right">
-                      <div className="flex items-center justify-end gap-2">
-                        <button
-                          onClick={() => setEditingUser(user)}
-                          className="p-2 rounded-lg hover:bg-white/10 text-slate-400 hover:text-white transition-colors"
-                          title="Editar"
-                        >
-                          <Edit size={16} />
-                        </button>
-                        <button
-                          onClick={() => handleDeleteUser(user.id)}
-                          className="p-2 rounded-lg hover:bg-red-500/10 text-slate-400 hover:text-red-400 transition-colors"
-                          title="Eliminar"
-                        >
-                          <Trash2 size={16} />
-                        </button>
-                      </div>
+                              <Edit size={16} />
+                            </button>
+                            <button
+                              onClick={() => handleDeleteUser(user.id)}
+                              className="p-2 rounded-lg hover:bg-red-500/10 text-slate-400 hover:text-red-400 transition-colors"
+                              title="Eliminar"
+                            >
+                              <Trash2 size={16} />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </>
+      ) : (
+        /* INVITATIONS TABLE */
+        <div className="bg-surface border border-white/10 rounded-xl overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse">
+              <thead>
+                <tr className="border-b border-white/5 bg-black/20">
+                  <th className="px-6 py-4 text-xs font-semibold text-slate-400 uppercase tracking-wider">
+                    Email
+                  </th>
+                  <th className="px-6 py-4 text-xs font-semibold text-slate-400 uppercase tracking-wider">
+                    Rol
+                  </th>
+                  <th className="px-6 py-4 text-xs font-semibold text-slate-400 uppercase tracking-wider">
+                    Outlets Asignados
+                  </th>
+                  <th className="px-6 py-4 text-xs font-semibold text-slate-400 uppercase tracking-wider">
+                    Enviado
+                  </th>
+                  <th className="px-6 py-4 text-xs font-semibold text-slate-400 uppercase tracking-wider">
+                    Estado
+                  </th>
+                  <th className="px-6 py-4 text-xs font-semibold text-slate-400 uppercase tracking-wider text-right">
+                    Acciones
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-white/5">
+                {filteredInvitations.length === 0 ? (
+                  <tr>
+                    <td colSpan={6} className="px-6 py-12 text-center text-slate-500">
+                      <p>No hay invitaciones pendientes</p>
                     </td>
                   </tr>
-                ))
-              )}
-            </tbody>
-          </table>
+                ) : (
+                  filteredInvitations.map((inv) => (
+                    <tr key={inv.id} className="hover:bg-white/5 transition-colors">
+                      <td className="px-6 py-4 text-sm text-white">{inv.email}</td>
+                      <td className="px-6 py-4">{getRoleBadge(inv.role)}</td>
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          {inv.allowedOutlets.map((o) => (
+                            <span
+                              key={o}
+                              className="px-2 py-1 rounded text-xs bg-slate-800 text-slate-300 border border-white/5"
+                            >
+                              {o}
+                            </span>
+                          ))}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 text-sm text-slate-400">
+                        {inv.createdAt ? new Date(inv.createdAt).toLocaleDateString() : 'N/A'}
+                      </td>
+                      <td className="px-6 py-4">
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-orange-500/10 text-orange-400 border border-orange-500/20">
+                          Pending
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 text-right">
+                        <button
+                          onClick={() => {
+                            if (confirm('¿Cancelar invitación?')) cancelInvitation(inv.id);
+                          }}
+                          className="text-red-400 hover:text-red-300 text-sm hover:underline"
+                        >
+                          Cancelar
+                        </button>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* EDIT MODAL */}
       {editingUser && (
+        // ... (keep existing edit modal)
         <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
           <div
             className="absolute inset-0 bg-black/60 backdrop-blur-sm"
@@ -396,7 +529,7 @@ export const UserManagementPage = () => {
                 <label className="text-xs font-medium text-slate-400 ml-1">Email</label>
                 <input
                   type="email"
-                  value={editingUser.email}
+                  value={editingUser?.email || ''}
                   disabled
                   className="w-full bg-black/20 border border-white/5 rounded-xl px-4 py-3 text-slate-400 italic cursor-not-allowed"
                 />
@@ -469,7 +602,7 @@ export const UserManagementPage = () => {
         </div>
       )}
 
-      {/* INVITE MODAL - Placeholder for now as backend logic is separate */}
+      {/* INVITE MODAL */}
       {isInviteModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
           <div
@@ -491,9 +624,6 @@ export const UserManagementPage = () => {
             </div>
 
             <div className="space-y-4">
-              <div className="p-4 bg-indigo-500/10 border border-indigo-500/20 rounded-xl text-indigo-300 text-sm">
-                Esta funcionalidad enviará un correo de invitación. Actualmente en desarrollo.
-              </div>
               <div>
                 <label className="text-xs font-medium text-slate-400 ml-1">
                   Email del invitado
