@@ -13,8 +13,6 @@ import {
   Clock,
   ChefHat,
   LayoutDashboard,
-  ClipboardList,
-  AlertTriangle,
 } from 'lucide-react';
 import { LoggingService } from '@/infrastructure/services/LoggingService';
 import { printLabel, formatLabelData } from '@/presentation/components/printing/PrintService';

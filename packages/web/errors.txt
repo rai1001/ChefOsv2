@@ -1,0 +1,8 @@
+src/infrastructure/services/LoggingService.ts(62,34): error TS6133: 'key' is declared but its value is never read.
+src/presentation/components/invoices/InvoiceReviewModal.tsx(47,30): error TS2532: Object is possibly 'undefined'.
+src/presentation/pages/ProductionPage.tsx(16,3): error TS6133: 'ClipboardList' is declared but its value is never read.
+src/presentation/pages/ProductionPage.tsx(17,3): error TS6133: 'AlertTriangle' is declared but its value is never read.
+src/presentation/pages/SupplierPage.tsx(25,1): error TS6133: 'InvoiceReviewModal' is declared but its value is never read.
+src/presentation/pages/SupplierPage.tsx(103,9): error TS6133: 'handleConfirmInvoice' is declared but its value is never read.
+undefined
+ÔÇëERR_PNPM_RECURSIVE_EXEC_FIRST_FAILÔÇë Command failed with exit code 2: tsc --noEmit

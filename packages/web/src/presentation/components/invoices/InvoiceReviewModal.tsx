@@ -41,11 +41,15 @@ export const InvoiceReviewModal: React.FC<InvoiceReviewModalProps> = ({
   const handleConfirm = async () => {
     setIsSubmitting(true);
     try {
-      const formattedCorrections = Object.entries(corrections).map(([idx, ingId]) => ({
-        itemIndex: parseInt(idx),
-        correctedIngredientId: ingId,
-        originalDescription: invoice.matchedItems[parseInt(idx)].description,
-      }));
+      const formattedCorrections = Object.entries(corrections).map(([idx, ingId]) => {
+        const item = invoice.matchedItems[parseInt(idx)];
+        if (!item) throw new Error(`Item at index ${idx} not found`);
+        return {
+          itemIndex: parseInt(idx),
+          correctedIngredientId: ingId,
+          originalDescription: item.description,
+        };
+      });
       await onConfirm(formattedCorrections);
     } finally {
       setIsSubmitting(false);

@@ -22,17 +22,6 @@ import { COLLECTIONS } from '@/config/collections';
 import { UniversalImporter } from '@/presentation/components/common/UniversalImporter';
 import { ProveedoresList } from '@/presentation/components/proveedores/ProveedoresList';
 import { ProveedorForm } from '@/presentation/components/proveedores/ProveedorForm';
-import { InvoiceReviewModal } from '@/presentation/components/invoices/InvoiceReviewModal';
-import {
-  onSnapshot,
-  query,
-  collection,
-  where,
-  doc,
-  updateDoc,
-  serverTimestamp,
-} from 'firebase/firestore';
-import { db as firestoreDb } from '@/config/firebase';
 
 // Helper for random charts or real data if available
 const Sparkline = ({ data, color }: { data: number[]; color: string }) => (
@@ -74,56 +63,8 @@ export const SupplierPage: React.FC = () => {
   );
   const [expandedIngredientId, setExpandedIngredientId] = useState<string | null>(null);
 
-  // Invoice Review State
-  const [reviewingInvoice, setReviewingInvoice] = useState<any | null>(null);
-
   // Initial Form Data for Scan or New
   const [initialFormData, setInitialFormData] = useState<Partial<Supplier> | null>(null);
-
-  // Listen for invoices needing review
-  React.useEffect(() => {
-    if (!activeOutletId) return;
-
-    const q = query(
-      collection(firestoreDb, `restaurants/${activeOutletId}/invoices`),
-      where('status', '==', 'needs_review')
-    );
-
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      snapshot.docChanges().forEach((change) => {
-        if (change.type === 'added') {
-          setReviewingInvoice({ id: change.doc.id, ...change.doc.data() });
-        }
-      });
-    });
-
-    return () => unsubscribe();
-  }, [activeOutletId]);
-
-  const handleConfirmInvoice = async (corrections: any[]) => {
-    if (!reviewingInvoice || !activeOutletId) return;
-
-    try {
-      const invoiceRef = doc(
-        firestoreDb,
-        `restaurants/${activeOutletId}/invoices`,
-        reviewingInvoice.id
-      );
-      await updateDoc(invoiceRef, {
-        status: 'confirmed',
-        corrections,
-        confirmedAt: serverTimestamp(),
-      });
-
-      // If there are corrections, we might want to update supplier aliases for ingredients
-      // For now, just close the modal
-      setReviewingInvoice(null);
-      alert('✅ Factura confirmada y guardada.');
-    } catch (error) {
-      console.error('Error confirming invoice:', error);
-      alert('❌ Error al confirmar factura');
-    }
-  };
 
   const handleOpenModal = (supplier?: Supplier) => {
     if (supplier) {
@@ -166,7 +107,7 @@ export const SupplierPage: React.FC = () => {
       // Cloud Function se dispara automáticamente
       alert('✅ Factura subida. Procesando...\nRecibirás notificación cuando esté lista.');
     } catch (error) {
-      console.error('Error uploading invoice:', error);
+      console.error(error);
       alert('❌ Error al subir factura');
     } finally {
       setIsUploadingInvoice(false);

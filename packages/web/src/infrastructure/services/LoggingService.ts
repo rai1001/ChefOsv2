@@ -58,8 +58,15 @@ export class LoggingService {
   private static sanitizeContext(context: any): any {
     try {
       // Basic sanitization to avoid circular references and non-serializable data
+      const seen = new Set();
       return JSON.parse(
-        JSON.stringify(context, (key, value) => {
+        JSON.stringify(context, (_key, value) => {
+          if (typeof value === 'object' && value !== null) {
+            if (seen.has(value)) {
+              return '[Circular]';
+            }
+            seen.add(value);
+          }
           if (value instanceof Error) {
             return {
               name: value.name,
