@@ -1,7 +1,10 @@
+import { inject, injectable } from 'inversify';
+import { TYPES } from '@/application/di/types';
 import type { IUserRepository } from '@/domain/repositories/IUserRepository';
 
+@injectable()
 export class DeleteUserUseCase {
-  constructor(private userRepository: IUserRepository) {}
+  constructor(@inject(TYPES.UserRepository) private userRepository: IUserRepository) {}
 
   async execute(uid: string, currentRequestingUserUid: string): Promise<void> {
     if (!uid) throw new Error('User ID is required');

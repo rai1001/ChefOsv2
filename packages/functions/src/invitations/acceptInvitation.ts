@@ -1,5 +1,8 @@
-import * as admin from 'firebase-admin';
+import { getFirestore, FieldValue } from 'firebase-admin/firestore';
 import { onCall, HttpsError } from 'firebase-functions/v2/https';
+import { initializeApp } from 'firebase-admin/app';
+
+initializeApp();
 
 interface AcceptInvitationData {
   invitationId: string;
@@ -25,7 +28,7 @@ export const acceptInvitation = onCall(async (request) => {
     throw new HttpsError('invalid-argument', 'Invitation ID is required.');
   }
 
-  const db = admin.firestore();
+  const db = getFirestore();
   const invitationRef = db.collection('invitations').doc(invitationId);
 
   try {
@@ -74,7 +77,7 @@ export const acceptInvitation = onCall(async (request) => {
       // Mark invitation as accepted
       transaction.update(invitationRef, {
         status: 'accepted',
-        acceptedAt: admin.firestore.FieldValue.serverTimestamp(),
+        acceptedAt: FieldValue.serverTimestamp(),
         acceptedBy: uid,
       });
 

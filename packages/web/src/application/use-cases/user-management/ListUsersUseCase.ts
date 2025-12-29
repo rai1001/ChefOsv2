@@ -1,8 +1,11 @@
+import { inject, injectable } from 'inversify';
+import { TYPES } from '@/application/di/types';
 import type { IUserRepository } from '@/domain/repositories/IUserRepository';
 import type { User } from '@/types';
 
+@injectable()
 export class ListUsersUseCase {
-  constructor(private userRepository: IUserRepository) {}
+  constructor(@inject(TYPES.UserRepository) private userRepository: IUserRepository) {}
 
   async execute(): Promise<User[]> {
     return this.userRepository.getAllUsers();
