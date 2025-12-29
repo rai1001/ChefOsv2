@@ -19,11 +19,7 @@ import type {
 import type { ListInvitationsUseCase } from '@/application/use-cases/user-management/ListInvitationsUseCase';
 import type { DeleteInvitationUseCase } from '@/application/use-cases/user-management/DeleteInvitationUseCase';
 import type { Invitation } from '@/types';
-// import { toast } from 'sonner';
-const toast = {
-  success: (msg: string) => console.log('Success:', msg),
-  error: (msg: string) => console.error('Error:', msg),
-};
+import { toast } from 'sonner';
 
 export const useUserManagement = () => {
   const currentUser = useAtomValue(userAtom);

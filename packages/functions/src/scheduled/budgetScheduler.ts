@@ -8,7 +8,7 @@ export const resetDailyBudgets = onSchedule(
   {
     schedule: '0 0 * * *',
     timeZone: 'Europe/Madrid',
-    region: 'europe-southwest1',
+    region: 'europe-west1',
   },
   async (_event) => {
     // Fetch all budgets
@@ -55,7 +55,7 @@ export const sendWeeklyBudgetReport = onSchedule(
   {
     schedule: '0 9 * * 1',
     timeZone: 'Europe/Madrid',
-    region: 'europe-southwest1',
+    region: 'europe-west1',
   },
   async (_event) => {
     console.log('Weekly budget report generation started.');

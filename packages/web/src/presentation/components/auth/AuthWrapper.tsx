@@ -11,6 +11,9 @@ import {
 import { doc, setDoc, onSnapshot } from 'firebase/firestore';
 import { db } from '@/config/firebase';
 import { useStore } from '@/presentation/store/useStore';
+import { useSetAtom } from 'jotai';
+import { userAtom } from '@/presentation/store/authAtoms';
+import { User as DomainUser } from '@/domain/entities/User'; // Alias to avoid collision with Firebase User
 import { ShieldCheck, Lock, LogOut, Store } from 'lucide-react';
 
 interface AuthWrapperProps {
@@ -37,6 +40,7 @@ export const AuthWrapper: React.FC<AuthWrapperProps> = ({ children }) => {
   const [authLoading, setAuthLoading] = useState(false);
 
   const { setActiveOutletId, setCurrentUser } = useStore();
+  const setUserAtom = useSetAtom(userAtom);
 
   useEffect(() => {
     // E2E Bypass for Testing - Only allowed if environment variable is set
@@ -105,15 +109,29 @@ export const AuthWrapper: React.FC<AuthWrapperProps> = ({ children }) => {
               }
             }
 
-            // Sync to global store
-            setCurrentUser({
+            const updatedUser = {
               id: data.uid,
               email: data.email,
               role: data.role as any,
               name: (data as any).displayName || data.email.split('@')[0],
               photoURL: (data as any).photoURL || currentUser.photoURL || undefined,
               allowedOutlets: data.allowedOutlets,
+            };
+
+            // Sync to global store (Zustand)
+            setCurrentUser(updatedUser);
+
+            // Sync to Atom (Jotai) - Critical for Sidebar visibility
+            const mappedUserForAtom = new DomainUser({
+              id: data.uid,
+              email: data.email,
+              displayName: (data as any).displayName || data.email.split('@')[0],
+              photoURL: (data as any).photoURL || currentUser.photoURL || undefined,
+              role: data.role as any,
+              createdAt: new Date(), // Approximate, strictly for UI role check
+              updatedAt: new Date(),
             });
+            setUserAtom(mappedUserForAtom);
 
             // AUTO-FIX 1: Auto-Activate for Testing Phase
             if (!data.active) {
