@@ -2,8 +2,14 @@ import { trace } from 'firebase/performance';
 import { perf } from '@/config/firebase';
 
 const MAX_ATTR_LENGTH = 100;
-const truncate = (str: string) =>
-  str.length > MAX_ATTR_LENGTH ? str.substring(0, MAX_ATTR_LENGTH - 3) + '...' : str;
+const truncate = (str: string) => {
+  if (!str) return '';
+  // Sanitize: allow alphanumeric, underscores, hyphens, periods, spaces. Remove potentially invalid chars.
+  const sanitized = String(str).replace(/[^a-zA-Z0-9_\- .]/g, '_');
+  return sanitized.length > MAX_ATTR_LENGTH
+    ? sanitized.substring(0, MAX_ATTR_LENGTH - 3) + '...'
+    : sanitized;
+};
 
 /**
  * Utility to measure performance of sync/async functions using Firebase Performance

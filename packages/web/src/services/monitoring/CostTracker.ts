@@ -18,9 +18,9 @@ export interface CostRecord {
  * @deprecated Use geminiMetrics.ts for consistent cost tracking.
  * This class uses hardcoded pricing and performs duplicate logging.
  */
-// Pricing for Gemini 1.5 Flash: $0.075/1M input, $0.30/1M output
-const COST_PER_1K_INPUT_TOKENS = 0.000075;
-const COST_PER_1K_OUTPUT_TOKENS = 0.0003;
+// Pricing for Gemini 2.0 Flash: $0.10/1M input, $0.40/1M output
+const COST_PER_1K_INPUT_TOKENS = 0.0001;
+const COST_PER_1K_OUTPUT_TOKENS = 0.0004;
 
 export class CostTracker {
   private static STORAGE_KEY = 'culinaryos_ai_costs';
