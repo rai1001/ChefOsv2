@@ -137,7 +137,9 @@ export const AuthWrapper: React.FC<AuthWrapperProps> = ({ children }) => {
             }
           } else {
             // Provisioning Logic: Create doc if missing
-            console.log('Provisioning new user...');
+            console.log(
+              `[${new Date().toISOString()}] Provisioning new user: ${currentUser.uid} (${currentUser.email})`
+            );
             try {
               // For the Tester Version, we default to active: true so new testers can enter immediately.
               // We set role to 'admin' so they bypass the "No Outlet" screen and can set up their kitchen.
@@ -154,6 +156,9 @@ export const AuthWrapper: React.FC<AuthWrapperProps> = ({ children }) => {
               };
 
               await setDoc(userRef, newProfile);
+              console.log(
+                `[${new Date().toISOString()}] User provisioned successfully: ${currentUser.uid}`
+              );
               // Snapshot listener will catch the update
             } catch (err) {
               console.error('Error provisioning user:', err);
@@ -349,7 +354,7 @@ export const AuthWrapper: React.FC<AuthWrapperProps> = ({ children }) => {
   }
 
   // State 3: Account Inactive
-  if (userProfile && !userProfile.active && user.uid !== 'KHOxOqvfW9QRAvVdanb8UTpEMsl2') {
+  if (userProfile && !userProfile.active) {
     return (
       <div className="h-screen w-screen bg-slate-900 flex flex-col items-center justify-center p-4">
         <div className="bg-surface p-8 rounded-2xl border border-red-500/20 max-w-md w-full text-center space-y-4">
