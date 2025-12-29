@@ -5,8 +5,14 @@ import { httpsCallable } from 'firebase/functions';
 import { functions } from '@/config/firebase';
 import type { Recipe, Menu, Unit } from '@/types';
 import { ALLERGENS } from './allergenUtils';
+import type { ImportType, IngestionItem } from '@/types/import';
+
+// Stub legacy interfaces if needed or import them if they exist in types/import (they don't yet, so we will use 'any' or define them if strictness needed).
+// For now, mapping IngestionItem is the critical part.
+// But mapToIngestionItem uses IngestionIngredient etc.
+// Let's keep importing the specific data interfaces from IAIService if they define structure, but IngestionItem comes from types/import.
+
 import type {
-  IngestionItem,
   IngestionIngredient,
   IngestionRecipe,
   IngestionStaff,
@@ -14,7 +20,7 @@ import type {
 } from '@/domain/interfaces/services/IAIService';
 
 export type {
-  IngestionItem,
+  IngestionItem, // Re-exporting our unified one
   IngestionIngredient,
   IngestionRecipe,
   IngestionStaff,
@@ -152,7 +158,7 @@ export const confirmAndCommit = async (
 // Internal mapping function to help with type safety (fixes unused imports)
 export function mapToIngestionItem<
   T extends IngestionIngredient | IngestionRecipe | IngestionStaff | IngestionSupplier | any,
->(type: IngestionItem['type'], data: T, confidence: number): IngestionItem<T> {
+>(type: ImportType, data: T, confidence: number): IngestionItem<T> {
   return { type, data, confidence };
 }
 

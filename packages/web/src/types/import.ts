@@ -13,7 +13,8 @@ export type ImportType =
   | 'supplier'
   | 'inventory'
   | 'haccp'
-  | 'occupancy';
+  | 'occupancy'
+  | 'unknown';
 
 export type ImportMode =
   | 'auto' // Auto-detect best method
@@ -43,7 +44,8 @@ export interface ImportResult {
   metadata: ImportMetadata;
 }
 
-export interface IngestionItem {
+export interface IngestionItem<T = any> {
   type: ImportType;
-  data: any;
+  data: T;
+  confidence?: number;
 }
