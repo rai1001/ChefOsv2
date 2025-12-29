@@ -24,6 +24,7 @@ import { AIFeaturesPage } from './presentation/pages/AIFeaturesPage';
 import { SocialManagerView } from './presentation/pages/social/SocialManagerView';
 import { SettingsPage } from './presentation/pages/SettingsPage';
 import { AITelemetryPage } from './presentation/pages/AITelemetryPage';
+import { UserManagementPage } from './presentation/pages/UserManagementPage';
 import { ProtectedRoute } from './presentation/components/auth/ProtectedRoute';
 
 // Protected Route Component
@@ -59,6 +60,12 @@ export const App = () => {
             <Route path="ai-telemetry" element={<AITelemetryPage />} />
             <Route path="social-manager" element={<SocialManagerView />} />
             <Route path="settings" element={<SettingsPage />} />
+
+            {/* Admin Routes */}
+            <Route path="admin" element={<ProtectedRoute allowedRoles={['admin']} />}>
+              <Route path="users" element={<UserManagementPage />} />
+            </Route>
+
             <Route path="" element={<Navigate to="/dashboard" replace />} />
           </Route>
         </Route>

@@ -147,6 +147,9 @@ export interface User {
 }
 
 export type Role =
+  | 'admin'
+  | 'chef'
+  | 'staff'
   | 'HEAD_CHEF'
   | 'SOUS_CHEF'
   | 'CHEF_PARTIE'

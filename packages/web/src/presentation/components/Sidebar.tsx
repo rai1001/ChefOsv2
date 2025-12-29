@@ -22,6 +22,7 @@ import {
   Briefcase,
   Layers,
   X,
+  Users,
 } from 'lucide-react';
 import { OutletSelector } from './dashboard/OutletSelector';
 import { NavItem } from './molecules/NavItem';
@@ -130,6 +131,15 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
 
         <div className="pt-4 border-t border-white/5">
           <NavItem to="/integrations" icon={<Zap />} label="Integraciones" />
+        </div>
+
+        {(user?.role as any) === 'admin' && (
+          <NavGroup label="Administración" icon={<ShieldCheck />} activePaths={['/admin/users']}>
+            <NavItem to="/admin/users" icon={<Users />} label="Usuarios" />
+          </NavGroup>
+        )}
+
+        <div className="pt-4 border-t border-white/5">
           <NavItem to="/settings" icon={<Settings />} label="Configuración" />
         </div>
       </nav>
