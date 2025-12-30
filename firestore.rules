@@ -216,5 +216,12 @@ service cloud.firestore {
       );
       allow create, update, delete: if isAdmin();
     }
+
+    // Audit logs - authenticated users can write, only admins can read
+    match /audit_logs/{id} {
+      allow read: if isAdmin();
+      allow create: if isAuthenticated() && isActive();
+      allow update, delete: if false; // Audit logs should be immutable
+    }
   }
 }
