@@ -10,6 +10,7 @@ export const analyzeDocument = onCall(
   {
     memory: '1GiB',
     timeoutSeconds: 300,
+    cors: true,
   },
   async (request) => {
     const uid = request.auth?.uid;
@@ -90,7 +91,11 @@ export const analyzeDocument = onCall(
   }
 );
 
-export const parseStructuredFile = onCall(async (request) => {
+export const parseStructuredFile = onCall(
+  {
+    cors: true,
+  },
+  async (request) => {
   const uid = request.auth?.uid;
   if (!uid) {
     throw new HttpsError('unauthenticated', 'User must be authenticated.');
@@ -140,6 +145,18 @@ export const parseStructuredFile = onCall(async (request) => {
       }
 
       json.forEach((row) => {
+        // Validate that row has at least one meaningful field
+        const hasData = Object.values(row).some(
+          (val) => val !== null && val !== undefined && String(val).trim() !== ''
+        );
+
+        if (!hasData) return; // Skip empty rows
+
+        // Ensure row has a name field for ingredients/recipes
+        if ((type === 'ingredient' || type === 'recipe') && !row.name && !row.Name && !row.NOMBRE) {
+          return; // Skip rows without name
+        }
+
         results.push({
           data: row,
           type,
@@ -156,7 +173,11 @@ export const parseStructuredFile = onCall(async (request) => {
   }
 });
 
-export const commitImport = onCall(async (request) => {
+export const commitImport = onCall(
+  {
+    cors: true,
+  },
+  async (request) => {
   const uid = request.auth?.uid;
   if (!uid) {
     throw new HttpsError('unauthenticated', 'User must be authenticated.');

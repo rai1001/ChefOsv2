@@ -47,10 +47,13 @@ export const ImportPreviewGrid: React.FC<ImportPreviewGridProps> = ({
         setItems(items.filter((_, i) => i !== index));
     };
 
-    const filteredItems = items.filter(item =>
-        (item.data.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (item.type || '').toLowerCase().includes(searchTerm.toLowerCase())
-    );
+    const filteredItems = items.filter(item => {
+        if (!item || !item.data) return false;
+        const name = item.data?.name || '';
+        const type = item.type || '';
+        return name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+               type.toLowerCase().includes(searchTerm.toLowerCase());
+    });
 
     return (
         <div className="flex flex-col h-full max-h-[70vh] space-y-4">
@@ -86,8 +89,9 @@ export const ImportPreviewGrid: React.FC<ImportPreviewGridProps> = ({
                     </thead>
                     <tbody className="divide-y divide-white/5">
                         {filteredItems.map((item, idx) => {
-                            const match = item.type === 'ingredient' ? fuse.search(item.data.name || '')[0] : null;
-                            const isLowConfidence = item.confidence < 75;
+                            if (!item || !item.data) return null;
+                            const match = item.type === 'ingredient' ? fuse.search(item.data?.name || '')[0] : null;
+                            const isLowConfidence = (item.confidence ?? 0) < 75;
 
                             return (
                                 <React.Fragment key={idx}>

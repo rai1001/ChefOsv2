@@ -51,14 +51,18 @@ service cloud.firestore {
     // For read operations
     function canReadDocument(data) {
         return isAuthenticated() && isActive() && (
-            isAdmin() || (data.outletId != null && canAccessOutlet(data.outletId))
+            isAdmin() ||
+            data.outletId == 'GLOBAL' ||
+            (data.outletId != null && canAccessOutlet(data.outletId))
         );
     }
 
     // For write operations
     function canWriteDocument(data) {
         return isAuthenticated() && isActive() && (
-            isAdmin() || (data.outletId != null && canManageOutlet(data.outletId))
+            isAdmin() ||
+            data.outletId == 'GLOBAL' ||
+            (data.outletId != null && canManageOutlet(data.outletId))
         );
     }
     
