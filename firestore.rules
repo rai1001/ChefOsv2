@@ -177,7 +177,7 @@ service cloud.firestore {
     // AI Usage Metrics
     match /aiUsageMetrics/{id} {
         allow read: if canReadDocument(resource.data);
-        allow create: if isAuthenticated() && isActive();
+        allow create: if isAuthenticated();
     }
     
     match /ai_pricing/{docId} {
