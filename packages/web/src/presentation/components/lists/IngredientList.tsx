@@ -30,6 +30,11 @@ export const IngredientList: React.FC<IngredientListProps> = React.memo(
     const priceComparisonMap = useMemo(() => {
       const map = new Map<string, Ingredient[]>();
       allIngredients.forEach((ing) => {
+        // Defensive: Skip malformed or undefined ingredients
+        if (!ing || !ing.name) {
+          console.warn('Skipping malformed ingredient:', ing);
+          return;
+        }
         const key = ing.name.toLowerCase();
         if (!map.has(key)) {
           map.set(key, []);

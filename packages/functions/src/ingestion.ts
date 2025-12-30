@@ -10,6 +10,7 @@ export const analyzeDocument = onCall(
   {
     memory: '1GiB',
     timeoutSeconds: 300,
+    cors: true,
   },
   async (request) => {
     const uid = request.auth?.uid;
@@ -90,145 +91,172 @@ export const analyzeDocument = onCall(
   }
 );
 
-export const parseStructuredFile = onCall(async (request) => {
-  const uid = request.auth?.uid;
-  if (!uid) {
-    throw new HttpsError('unauthenticated', 'User must be authenticated.');
-  }
-
-  const { base64Data, hintType } = request.data;
-  if (!base64Data) {
-    throw new HttpsError('invalid-argument', 'Missing base64Data.');
-  }
-
-  await checkRateLimit(uid, 'parse_structured_file');
-
-  try {
-    const buffer = Buffer.from(base64Data, 'base64');
-    const workbook = XLSX.read(buffer, { type: 'buffer' });
-    const results: any[] = [];
-
-    workbook.SheetNames.forEach((sheetName) => {
-      const sheet = workbook.Sheets[sheetName];
-      if (!sheet) return;
-      const json = XLSX.utils.sheet_to_json(sheet);
-
-      let type = hintType || 'unknown';
-      const sn = sheetName.toUpperCase();
-      const firstRow = json.length > 0 ? JSON.stringify(json[0]).toUpperCase() : '';
-
-      if (sn.includes('PERSONAL') || sn.includes('STAFF')) {
-        type = 'staff';
-      } else if (sn.includes('PROVEEDOR') || sn.includes('SUPPLIER')) {
-        type = 'supplier';
-      } else if (
-        sn.includes('OCUPAC') ||
-        sn.includes('OCCUPAN') ||
-        firstRow.includes('PAX') ||
-        firstRow.includes('DESAYUNO')
-      ) {
-        type = 'occupancy';
-      } else if (
-        sn.includes('MASTER') ||
-        sn.includes('INGRED') ||
-        firstRow.includes('COST') ||
-        firstRow.includes('PRECIO')
-      ) {
-        type = 'ingredient';
-      } else if (json.length > 0 && type === 'unknown') {
-        type = 'recipe';
-      }
-
-      json.forEach((row) => {
-        results.push({
-          data: row,
-          type,
-          sheetName,
-          confidence: 100,
-        });
-      });
-    });
-
-    return { items: results };
-  } catch (error: any) {
-    logError('File Parsing Error:', error, { uid });
-    throw new HttpsError('internal', error.message);
-  }
-});
-
-export const commitImport = onCall(async (request) => {
-  const uid = request.auth?.uid;
-  if (!uid) {
-    throw new HttpsError('unauthenticated', 'User must be authenticated.');
-  }
-
-  const { items, outletId, defaultType } = request.data;
-  if (!Array.isArray(items)) {
-    throw new HttpsError('invalid-argument', 'Items must be an array.');
-  }
-
-  await checkRateLimit(uid, 'commit_import');
-
-  const db = admin.firestore();
-  const batchSize = 500;
-  let count = 0;
-
-  try {
-    for (let i = 0; i < items.length; i += batchSize) {
-      const batch = db.batch();
-      const chunk = items.slice(i, i + batchSize);
-
-      chunk.forEach((item) => {
-        const { type, data } = item;
-        const itemType = type === 'unknown' ? defaultType : type;
-
-        let collection = '';
-        switch (itemType) {
-          case 'ingredient':
-            collection = 'ingredients';
-            break;
-          case 'recipe':
-            collection = 'recipes';
-            break;
-          case 'staff':
-            collection = 'staff';
-            break;
-          case 'supplier':
-            collection = 'suppliers';
-            break;
-          case 'occupancy':
-            collection = 'occupancy';
-            break;
-          case 'event':
-            collection = 'events';
-            break;
-          default:
-            if (data.name && (data.price || data.unit)) collection = 'ingredients';
-            else return;
-            break;
-        }
-
-        const docId = data.id || uuidv4();
-        const docRef = db.collection(collection).doc(docId);
-
-        batch.set(
-          docRef,
-          {
-            ...data,
-            outletId: outletId || 'GLOBAL',
-            updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-          },
-          { merge: true }
-        );
-        count++;
-      });
-
-      await batch.commit();
+export const parseStructuredFile = onCall(
+  {
+    cors: true,
+  },
+  async (request) => {
+    const uid = request.auth?.uid;
+    if (!uid) {
+      throw new HttpsError('unauthenticated', 'User must be authenticated.');
     }
 
-    return { success: true, count };
-  } catch (error: any) {
-    logError('Commit Import Error:', error, { uid, outletId });
-    throw new HttpsError('internal', error.message);
+    const { base64Data, hintType } = request.data;
+    if (!base64Data) {
+      throw new HttpsError('invalid-argument', 'Missing base64Data.');
+    }
+
+    await checkRateLimit(uid, 'parse_structured_file');
+
+    try {
+      const buffer = Buffer.from(base64Data, 'base64');
+      const workbook = XLSX.read(buffer, { type: 'buffer' });
+      const results: any[] = [];
+
+      workbook.SheetNames.forEach((sheetName) => {
+        const sheet = workbook.Sheets[sheetName];
+        if (!sheet) return;
+        const json = XLSX.utils.sheet_to_json(sheet);
+
+        let type = hintType || 'unknown';
+        const sn = sheetName.toUpperCase();
+        const firstRow = json.length > 0 ? JSON.stringify(json[0]).toUpperCase() : '';
+
+        if (sn.includes('PERSONAL') || sn.includes('STAFF')) {
+          type = 'staff';
+        } else if (sn.includes('PROVEEDOR') || sn.includes('SUPPLIER')) {
+          type = 'supplier';
+        } else if (
+          sn.includes('OCUPAC') ||
+          sn.includes('OCCUPAN') ||
+          firstRow.includes('PAX') ||
+          firstRow.includes('DESAYUNO')
+        ) {
+          type = 'occupancy';
+        } else if (
+          sn.includes('MASTER') ||
+          sn.includes('INGRED') ||
+          firstRow.includes('COST') ||
+          firstRow.includes('PRECIO')
+        ) {
+          type = 'ingredient';
+        } else if (json.length > 0 && type === 'unknown') {
+          type = 'recipe';
+        }
+
+        json.forEach((row) => {
+          // Type assertion for row object
+          const rowData = row as Record<string, any>;
+
+          // Validate that row has at least one meaningful field
+          const hasData = Object.values(rowData).some(
+            (val) => val !== null && val !== undefined && String(val).trim() !== ''
+          );
+
+          if (!hasData) return; // Skip empty rows
+
+          // Ensure row has a name field for ingredients/recipes
+          if (
+            (type === 'ingredient' || type === 'recipe') &&
+            !rowData.name &&
+            !rowData.Name &&
+            !rowData.NOMBRE
+          ) {
+            return; // Skip rows without name
+          }
+
+          results.push({
+            data: row,
+            type,
+            sheetName,
+            confidence: 100,
+          });
+        });
+      });
+
+      return { items: results };
+    } catch (error: any) {
+      logError('File Parsing Error:', error, { uid });
+      throw new HttpsError('internal', error.message);
+    }
   }
-});
+);
+
+export const commitImport = onCall(
+  {
+    cors: true,
+  },
+  async (request) => {
+    const uid = request.auth?.uid;
+    if (!uid) {
+      throw new HttpsError('unauthenticated', 'User must be authenticated.');
+    }
+
+    const { items, outletId, defaultType } = request.data;
+    if (!Array.isArray(items)) {
+      throw new HttpsError('invalid-argument', 'Items must be an array.');
+    }
+
+    await checkRateLimit(uid, 'commit_import');
+
+    const db = admin.firestore();
+    const batchSize = 500;
+    let count = 0;
+
+    try {
+      for (let i = 0; i < items.length; i += batchSize) {
+        const batch = db.batch();
+        const chunk = items.slice(i, i + batchSize);
+
+        chunk.forEach((item) => {
+          const { type, data } = item;
+          const itemType = type === 'unknown' ? defaultType : type;
+
+          let collection = '';
+          switch (itemType) {
+            case 'ingredient':
+              collection = 'ingredients';
+              break;
+            case 'recipe':
+              collection = 'recipes';
+              break;
+            case 'staff':
+              collection = 'staff';
+              break;
+            case 'supplier':
+              collection = 'suppliers';
+              break;
+            case 'occupancy':
+              collection = 'occupancy';
+              break;
+            default:
+              if (data.name && (data.price || data.unit)) collection = 'ingredients';
+              else return;
+              break;
+          }
+
+          const docId = data.id || uuidv4();
+          const docRef = db.collection(collection).doc(docId);
+
+          batch.set(
+            docRef,
+            {
+              ...data,
+              outletId: outletId || 'GLOBAL',
+              updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+            },
+            { merge: true }
+          );
+          count++;
+        });
+
+        await batch.commit();
+      }
+
+      return { success: true, count };
+    } catch (error: any) {
+      logError('Commit Import Error:', error, { uid, outletId });
+      throw new HttpsError('internal', error.message);
+    }
+  }
+);
