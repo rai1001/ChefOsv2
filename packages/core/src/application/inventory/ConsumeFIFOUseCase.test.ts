@@ -153,8 +153,11 @@ describe('ConsumeFIFOUseCase', () => {
     (mockBatchRepo.findActiveBatchesFIFO as any).mockResolvedValue([
       {
         id: 'b1',
+        ingredientId,
+        lotNumber: 'L1',
         remainingQuantity: new Quantity(2, new Unit(UnitType.KG)),
-        unitCost: Money.fromCents(100), // Add missing unitCost
+        unitCost: new Money(1, 'EUR'), // Money object with proper structure
+        status: BatchStatus.ACTIVE,
       },
     ]);
 
@@ -169,11 +172,12 @@ describe('ConsumeFIFOUseCase', () => {
       reason: 'Production',
     };
 
-    // Usually the UseCase checks this before consuming?
-    // Or does it consume all and error?
-    // UseCase logic: `if (totalAvailable < quantity.value) throw Error`
+    // The UseCase will consume what it can and then throw integrity error
+    // because batches don't have enough stock even though ingredient says it does
 
-    await expect(consumeFIFOUseCase.execute(dto)).rejects.toThrow('Data integrity mismatch');
+    await expect(consumeFIFOUseCase.execute(dto)).rejects.toThrow(
+      'Data integrity mismatch: Ingredient stock says available but Batches sum is insufficient'
+    );
   });
 
   it('should handle zero quantity consumption', async () => {
@@ -206,12 +210,18 @@ describe('ConsumeFIFOUseCase', () => {
     (mockBatchRepo.findActiveBatchesFIFO as any).mockResolvedValue([
       {
         id: 'b1',
+        ingredientId,
+        lotNumber: 'L1',
         remainingQuantity: new Quantity(2, new Unit(UnitType.KG)),
-        unitCost: Money.fromCents(100),
+        unitCost: new Money(1, 'EUR'),
+        status: BatchStatus.ACTIVE,
       },
     ]);
 
-    (mockBatchRepo.consume as any).mockResolvedValue({});
+    (mockBatchRepo.consume as any).mockResolvedValue({
+      id: 'b1',
+      remainingQuantity: new Quantity(0.5, new Unit(UnitType.KG)), // 2 - 1.5 = 0.5
+    });
     (mockBatchRepo.updateStatus as any).mockResolvedValue({});
 
     await consumeFIFOUseCase.execute({
