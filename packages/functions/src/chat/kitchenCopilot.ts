@@ -48,7 +48,7 @@ export const chatWithCopilot = onCall(async (request: CallableRequest<ChatData>)
     throw new HttpsError('internal', 'Server configuration error.');
   }
 
-  const vertexAI = new VertexAI({ project: projectId, location: 'europe-west1' });
+  const vertexAI = new VertexAI({ project: projectId, location: 'europe-southwest1' });
   const model = vertexAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
 
   // 3. Generate embedding & RAG Context

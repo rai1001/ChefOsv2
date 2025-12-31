@@ -25,7 +25,7 @@ export const generateMenu = onCall(async (request: CallableRequest<MenuGenerator
     throw new HttpsError('internal', 'Server configuration error.');
   }
 
-  const vertexAI = new VertexAI({ project: projectId, location: 'europe-west1' });
+  const vertexAI = new VertexAI({ project: projectId, location: 'europe-southwest1' });
   const model = vertexAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
 
   const prompt = `

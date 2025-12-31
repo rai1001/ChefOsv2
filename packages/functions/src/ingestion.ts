@@ -27,7 +27,7 @@ export const analyzeDocument = onCall(
     try {
       const vertexAI = new VertexAI({
         project: process.env.GCLOUD_PROJECT || admin.app().options.projectId || 'chefosv2',
-        location: 'europe-west1',
+        location: 'europe-southwest1',
       });
       const generativeModel = vertexAI.getGenerativeModel({
         model: 'gemini-2.0-flash',

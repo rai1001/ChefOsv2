@@ -16,7 +16,7 @@ export const embedRecipe = onDocumentWritten("recipes/{recipeId}", async (event)
     const projectId = process.env.GCLOUD_PROJECT;
     if (!projectId) return null;
 
-    const vertexAI = new VertexAI({ project: projectId, location: "europe-west1" });
+    const vertexAI = new VertexAI({ project: projectId, location: "europe-southwest1" });
     const model = vertexAI.getGenerativeModel({ model: "text-embedding-004" });
 
     const textToEmbed = `Recipe: ${after.name}. Station: ${after.station}.`;

@@ -26,7 +26,7 @@ export const monitorHACCP = onDocumentCreated("haccpLogs/{logId}", async (event)
     const pcc = pccDoc.data();
     const limits = pcc ? `Min Temp: ${pcc.minTemp ?? 'N/A'}, Max Temp: ${pcc.maxTemp ?? 'N/A'}` : "Unknown limits";
 
-    const vertexAI = new VertexAI({ project: projectId, location: "europe-west1" });
+    const vertexAI = new VertexAI({ project: projectId, location: "europe-southwest1" });
     const model = vertexAI.getGenerativeModel({ model: "gemini-2.0-flash" });
 
     const prompt = `

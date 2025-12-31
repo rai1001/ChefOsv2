@@ -17,7 +17,8 @@ export async function enrichIngredientWithAI(name: string): Promise<EnrichmentRe
         return null;
     }
 
-    const vertexAI = new VertexAI({ project: projectId, location: "europe-west1" });
+    // OPTIMIZACIÓN: Usar misma región que Cloud Functions para evitar costos de networking
+    const vertexAI = new VertexAI({ project: projectId, location: "europe-southwest1" });
     const model = vertexAI.getGenerativeModel({ model: "gemini-2.0-flash" });
 
     const prompt = `
@@ -57,7 +58,8 @@ export async function generateEmbedding(text: string): Promise<number[] | null> 
         return null;
     }
 
-    const vertexAI = new VertexAI({ project: projectId, location: "europe-west1" });
+    // OPTIMIZACIÓN: Usar misma región que Cloud Functions
+    const vertexAI = new VertexAI({ project: projectId, location: "europe-southwest1" });
     const model = vertexAI.getGenerativeModel({ model: "text-embedding-004" });
 
     try {
