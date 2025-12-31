@@ -63,6 +63,8 @@ export const IngredientsPage: React.FC = () => {
   const filteredIngredients = useMemo(() => {
     const result = ingredients.filter(
       (i) =>
+        i &&
+        i.name &&
         i.name.toLowerCase().includes(searchTerm.toLowerCase()) &&
         (activeCategory === 'all' || i.category === activeCategory)
     );
