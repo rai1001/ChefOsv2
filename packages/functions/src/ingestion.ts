@@ -9,7 +9,8 @@ import { checkRateLimit } from './utils/rateLimiter';
 export const analyzeDocument = onCall(
   {
     memory: '2GiB',
-    timeoutSeconds: 540,
+    timeoutSeconds: 120, // Reduced from 540s (9min) to 120s (2min) for cost safety
+    maxInstances: 2, // COST CONTROL: Max 2 concurrent executions
     cors: true,
   },
   async (request) => {
@@ -114,6 +115,9 @@ IMPORTANTE: Solo JSON válido. Sin markdown, sin \`\`\`json, sin texto extra.
 export const parseStructuredFile = onCall(
   {
     cors: true,
+    timeoutSeconds: 60, // COST CONTROL: 1 minute timeout
+    memory: '512MiB',
+    maxInstances: 3, // COST CONTROL: Max 3 concurrent executions
   },
   async (request) => {
     const uid = request.auth?.uid;
@@ -377,6 +381,9 @@ export const parseStructuredFile = onCall(
 export const commitImport = onCall(
   {
     cors: true,
+    timeoutSeconds: 120, // COST CONTROL: 2 minute timeout for batch writes
+    memory: '512MiB',
+    maxInstances: 2, // COST CONTROL: Max 2 concurrent executions (writes are expensive)
   },
   async (request) => {
     const uid = request.auth?.uid;
@@ -807,7 +814,8 @@ export const classifyIngredients = onCall(
   {
     cors: true,
     memory: '512MiB',
-    timeoutSeconds: 120,
+    timeoutSeconds: 60, // COST CONTROL: Reduced to 1 min (was 2 min)
+    maxInstances: 2, // COST CONTROL: Max 2 concurrent AI calls
   },
   async (request) => {
     const uid = request.auth?.uid;
@@ -895,7 +903,8 @@ export const deleteAllIngredients = onCall(
   {
     cors: true,
     memory: '512MiB',
-    timeoutSeconds: 300,
+    timeoutSeconds: 300, // 5 minutes for mass deletion
+    maxInstances: 1, // COST CONTROL: Only 1 deletion at a time (prevents accidental mass deletions)
   },
   async (request) => {
     const uid = request.auth?.uid;
