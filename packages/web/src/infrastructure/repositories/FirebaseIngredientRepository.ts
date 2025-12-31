@@ -19,6 +19,16 @@ import { LegacyIngredient } from '@/domain/entities/Ingredient';
 export class FirebaseIngredientRepository implements IIngredientRepository {
   private collectionName = 'ingredients';
 
+  // Sanitize unit field - BUGFIX: some records have numbers instead of UnitType
+  private sanitizeUnit(rawUnit: any): string {
+    // If it's a number or invalid, default to 'un'
+    if (typeof rawUnit === 'number' || !rawUnit || typeof rawUnit !== 'string') {
+      console.warn(`Invalid unit type encountered: ${rawUnit}, defaulting to unitType.UNIT`);
+      return 'un';
+    }
+    return rawUnit;
+  }
+
   async getIngredients(outletId: string): Promise<LegacyIngredient[]> {
     // Query by outletId if provided, or logic for global ingredients
     // For now, let's assume all ingredients are accessible or filtered by validation if needed.
@@ -37,7 +47,7 @@ export class FirebaseIngredientRepository implements IIngredientRepository {
       return new LegacyIngredient(
         doc.id,
         data.name,
-        data.unit,
+        this.sanitizeUnit(data.unit),
         data.costPerUnit,
         data.yield || 1, // field renamed to yieldVal in class but logic maps to yield in DB?
         // Wait, Firestore data has 'yield'. Entity has 'yieldVal'.
@@ -78,7 +88,7 @@ export class FirebaseIngredientRepository implements IIngredientRepository {
     return new LegacyIngredient(
       snapshot.id,
       data.name,
-      data.unit,
+      this.sanitizeUnit(data.unit),
       data.costPerUnit,
       data.yield || 1,
       data.allergens || [],

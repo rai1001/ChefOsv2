@@ -49,6 +49,9 @@ export { analyzeDocument, parseStructuredFile, commitImport } from './ingestion'
 // Invoice OCR (Priority Use Case)
 export { processRestaurantInvoice } from './triggers/invoiceUpload';
 
+// Maintenance Functions
+export { fixIngredientsData } from './ingestion';
+
 // Legacy Triggers (Scheduled for removal)
 // export { processExcelImport } from "./triggers/excelProcessor";
 // export { aiSmartImporter } from "./triggers/aiSmartImporter";

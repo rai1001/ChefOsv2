@@ -204,15 +204,103 @@ export const commitImport = onCall(
     let count = 0;
 
     try {
+      // Build lookup maps for deduplication
+      const supplierNameToId = new Map<string, string>();
+      const ingredientKeyToId = new Map<string, string>();
+
+      // First pass: collect all suppliers and check for existing ones
+      const suppliersToProcess: Array<{ item: any; normalizedName: string }> = [];
+
+      for (const item of items) {
+        const { type, data } = item;
+        const itemType = type === 'unknown' ? defaultType : type;
+
+        if (itemType === 'supplier' && data.name) {
+          const normalizedName = data.name.toLowerCase().trim();
+          suppliersToProcess.push({ item, normalizedName });
+        }
+      }
+
+      // Query existing suppliers by name
+      if (suppliersToProcess.length > 0) {
+        const uniqueNames = [...new Set(suppliersToProcess.map((s) => s.normalizedName))];
+
+        for (const name of uniqueNames) {
+          const existingSuppliers = await db
+            .collection('suppliers')
+            .where('name', '>=', name)
+            .where('name', '<=', name + '\uf8ff')
+            .limit(1)
+            .get();
+
+          if (!existingSuppliers.empty) {
+            const existingDoc = existingSuppliers.docs[0];
+            supplierNameToId.set(name, existingDoc.id);
+          }
+        }
+      }
+
+      // Second pass: collect all ingredients and check for existing ones
+      const ingredientsToProcess: Array<{
+        item: any;
+        normalizedName: string;
+        supplierId?: string;
+      }> = [];
+
+      for (const item of items) {
+        const { type, data } = item;
+        const itemType = type === 'unknown' ? defaultType : type;
+
+        if ((itemType === 'ingredient' || (data.name && (data.price || data.unit))) && data.name) {
+          const normalizedName = data.name.toLowerCase().trim();
+          const supplierId = data.supplierId || data.preferredSupplierId;
+          ingredientsToProcess.push({ item, normalizedName, supplierId });
+        }
+      }
+
+      // Query existing ingredients by name
+      if (ingredientsToProcess.length > 0) {
+        const uniqueNames = [...new Set(ingredientsToProcess.map((i) => i.normalizedName))];
+
+        for (const name of uniqueNames) {
+          const existingIngredients = await db
+            .collection('ingredients')
+            .where('name', '>=', name)
+            .where('name', '<=', name + '\uf8ff')
+            .limit(5) // Get a few to check supplier match
+            .get();
+
+          existingIngredients.docs.forEach((doc) => {
+            const data = doc.data();
+            const docName = (data.name || '').toLowerCase().trim();
+
+            if (docName === name) {
+              const key = `${name}|${data.supplierId || data.preferredSupplierId || 'none'}`;
+              ingredientKeyToId.set(key, doc.id);
+
+              // Also store just by name for fallback
+              if (!ingredientKeyToId.has(name)) {
+                ingredientKeyToId.set(name, doc.id);
+              }
+            }
+          });
+        }
+      }
+
+      // Third pass: process items in batches
       for (let i = 0; i < items.length; i += batchSize) {
         const batch = db.batch();
         const chunk = items.slice(i, i + batchSize);
 
-        chunk.forEach((item) => {
+        for (const item of chunk) {
           const { type, data } = item;
           const itemType = type === 'unknown' ? defaultType : type;
 
           let collection = '';
+          let docId = data.id || uuidv4();
+          let shouldUpdate = true;
+          let updateData = { ...data };
+
           switch (itemType) {
             case 'ingredient':
               collection = 'ingredients';
@@ -231,24 +319,115 @@ export const commitImport = onCall(
               break;
             default:
               if (data.name && (data.price || data.unit)) collection = 'ingredients';
-              else return;
+              else continue;
               break;
           }
 
-          const docId = data.id || uuidv4();
+          // Handle supplier deduplication
+          if (collection === 'suppliers' && data.name) {
+            const normalizedName = data.name.toLowerCase().trim();
+            const existingId = supplierNameToId.get(normalizedName);
+
+            if (existingId) {
+              // Supplier exists, use existing ID
+              docId = existingId;
+              supplierNameToId.set(normalizedName, existingId);
+            } else {
+              // New supplier, remember it
+              supplierNameToId.set(normalizedName, docId);
+            }
+          }
+
+          // Handle ingredient deduplication and price updates
+          if (collection === 'ingredients' && data.name) {
+            const normalizedName = data.name.toLowerCase().trim();
+
+            // Resolve supplier ID if supplier name is provided
+            if (data.supplierName && !data.supplierId && !data.preferredSupplierId) {
+              const supplierNormalized = data.supplierName.toLowerCase().trim();
+              const foundSupplierId = supplierNameToId.get(supplierNormalized);
+              if (foundSupplierId) {
+                updateData.supplierId = foundSupplierId;
+                updateData.preferredSupplierId = foundSupplierId;
+              }
+            }
+
+            const supplierId = updateData.supplierId || updateData.preferredSupplierId;
+            const key = supplierId ? `${normalizedName}|${supplierId}` : normalizedName;
+            const existingId = ingredientKeyToId.get(key);
+
+            if (existingId) {
+              // Ingredient exists
+              docId = existingId;
+
+              // Check if we need to update the price
+              const existingDoc = await db.collection('ingredients').doc(existingId).get();
+              const existingData = existingDoc.data();
+
+              if (existingData) {
+                const existingPrice =
+                  existingData.costPerUnit ||
+                  existingData.lastCost?.amount ||
+                  existingData.price ||
+                  0;
+                const newPrice = data.costPerUnit || data.price || 0;
+
+                // Only update if price changed
+                if (existingPrice === newPrice) {
+                  shouldUpdate = false;
+                } else {
+                  // Update price and add to price history
+                  updateData.costPerUnit = newPrice;
+                  updateData.lastCost = { amount: newPrice, currency: 'EUR' };
+
+                  if (!updateData.priceHistory) {
+                    updateData.priceHistory = existingData.priceHistory || [];
+                  }
+                  updateData.priceHistory = [
+                    ...(existingData.priceHistory || []),
+                    {
+                      date: new Date().toISOString(),
+                      price: newPrice,
+                      supplierId: supplierId,
+                      changeReason: 'import_update',
+                    },
+                  ];
+                }
+              }
+
+              ingredientKeyToId.set(key, existingId);
+            } else {
+              // New ingredient, remember it
+              ingredientKeyToId.set(key, docId);
+
+              // Set initial price
+              if (data.costPerUnit || data.price) {
+                updateData.costPerUnit = data.costPerUnit || data.price;
+                updateData.lastCost = {
+                  amount: data.costPerUnit || data.price,
+                  currency: 'EUR',
+                };
+              }
+            }
+          }
+
+          if (!collection) continue;
+
           const docRef = db.collection(collection).doc(docId);
 
-          batch.set(
-            docRef,
-            {
-              ...data,
-              outletId: outletId || 'GLOBAL',
-              updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-            },
-            { merge: true }
-          );
-          count++;
-        });
+          if (shouldUpdate) {
+            batch.set(
+              docRef,
+              {
+                ...updateData,
+                outletId: outletId || 'GLOBAL',
+                updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+              },
+              { merge: true }
+            );
+            count++;
+          }
+        }
 
         await batch.commit();
       }
@@ -258,5 +437,153 @@ export const commitImport = onCall(
       logError('Commit Import Error:', error, { uid, outletId });
       throw new HttpsError('internal', error.message);
     }
+  }
+);
+
+// Valid unit types
+const VALID_UNITS = ['kg', 'g', 'L', 'ml', 'un', 'manojo'];
+
+// Valid categories
+const VALID_CATEGORIES = [
+  'meat',
+  'fish',
+  'produce',
+  'dairy',
+  'dry',
+  'frozen',
+  'canned',
+  'cocktail',
+  'sports_menu',
+  'corporate_menu',
+  'coffee_break',
+  'restaurant',
+  'other',
+  'preparation',
+];
+
+export const fixIngredientsData = onCall(
+  {
+    cors: true,
+    timeoutSeconds: 540,
+    memory: '1GiB',
+  },
+  async (request) => {
+    const uid = request.auth?.uid;
+    if (!uid) {
+      throw new HttpsError('unauthenticated', 'User must be authenticated.');
+    }
+
+    const db = admin.firestore();
+    const ingredientsRef = db.collection('ingredients');
+    const snapshot = await ingredientsRef.get();
+
+    let fixed = 0;
+    let deleted = 0;
+    let skipped = 0;
+
+    for (let batchStart = 0; batchStart < snapshot.docs.length; batchStart += 500) {
+      const batch = db.batch();
+      const batchDocs = snapshot.docs.slice(batchStart, batchStart + 500);
+
+      for (const docSnapshot of batchDocs) {
+        const data = docSnapshot.data();
+        const updates: any = {};
+        let needsUpdate = false;
+        let shouldDelete = false;
+
+        // Check if ingredient has a valid name
+        if (!data.name || typeof data.name !== 'string' || data.name.trim().length === 0) {
+          batch.delete(docSnapshot.ref);
+          deleted++;
+          shouldDelete = true;
+        }
+
+        if (shouldDelete) continue;
+
+        // Fix unit field
+        if (data.unit) {
+          const unitLower = String(data.unit).toLowerCase().trim();
+          let normalizedUnit = unitLower;
+
+          if (['ud', 'u', 'u.', 'uni', 'unidad'].includes(unitLower)) {
+            normalizedUnit = 'un';
+          } else if (unitLower === 'kilo' || unitLower === 'kilos') {
+            normalizedUnit = 'kg';
+          } else if (unitLower === 'litro' || unitLower === 'litros') {
+            normalizedUnit = 'L';
+          } else if (unitLower === 'gramo' || unitLower === 'gramos') {
+            normalizedUnit = 'g';
+          }
+
+          if (!VALID_UNITS.includes(normalizedUnit)) {
+            normalizedUnit = 'un';
+          }
+
+          if (normalizedUnit !== data.unit) {
+            updates.unit = normalizedUnit;
+            needsUpdate = true;
+          }
+        } else {
+          updates.unit = 'un';
+          needsUpdate = true;
+        }
+
+        // Fix category field
+        if (data.category) {
+          const categoryLower = String(data.category).toLowerCase().trim();
+          if (!VALID_CATEGORIES.includes(categoryLower)) {
+            updates.category = 'other';
+            needsUpdate = true;
+          }
+        } else {
+          updates.category = 'other';
+          needsUpdate = true;
+        }
+
+        // Ensure yieldFactor exists and is valid
+        if (typeof data.yieldFactor !== 'number' || data.yieldFactor <= 0 || data.yieldFactor > 1) {
+          updates.yieldFactor = 1;
+          needsUpdate = true;
+        }
+
+        // Ensure allergens is an array
+        if (!Array.isArray(data.allergens)) {
+          updates.allergens = [];
+          needsUpdate = true;
+        }
+
+        // Ensure isActive is boolean
+        if (typeof data.isActive !== 'boolean') {
+          updates.isActive = true;
+          needsUpdate = true;
+        }
+
+        // Ensure suppliers is an array
+        if (!Array.isArray(data.suppliers)) {
+          updates.suppliers = [];
+          needsUpdate = true;
+        }
+
+        if (needsUpdate) {
+          batch.update(docSnapshot.ref, {
+            ...updates,
+            updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+          });
+          fixed++;
+        } else {
+          skipped++;
+        }
+      }
+
+      await batch.commit();
+    }
+
+    return {
+      success: true,
+      total: snapshot.size,
+      fixed,
+      deleted,
+      skipped,
+    };
   }
 );

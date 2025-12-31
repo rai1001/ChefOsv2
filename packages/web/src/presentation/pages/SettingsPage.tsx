@@ -1,12 +1,41 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useStore } from '../store/useStore';
-import { Building2, UtensilsCrossed, Check } from 'lucide-react';
+import { Building2, UtensilsCrossed, Check, Wrench, Loader2 } from 'lucide-react';
+import { httpsCallable } from 'firebase/functions';
+import { functions } from '@/config/firebase';
 
 export const SettingsPage: React.FC = () => {
   const { settings, setSettings } = useStore();
+  const [isFixing, setIsFixing] = useState(false);
+  const [fixResult, setFixResult] = useState<any>(null);
 
   const handleModeChange = (mode: 'HOTEL' | 'RESTAURANT') => {
     setSettings({ businessType: mode });
+  };
+
+  const handleFixIngredients = async () => {
+    if (
+      !confirm(
+        '¿Estás seguro de que quieres limpiar y validar todos los ingredientes? Esta operación puede tardar un momento.'
+      )
+    ) {
+      return;
+    }
+
+    setIsFixing(true);
+    setFixResult(null);
+
+    try {
+      const fixIngredients = httpsCallable(functions, 'fixIngredientsData');
+      const result = await fixIngredients();
+      setFixResult(result.data);
+      alert('✅ Ingredientes limpiados correctamente. Recarga la página para ver los cambios.');
+    } catch (error: any) {
+      console.error('Error al limpiar ingredientes:', error);
+      alert('❌ Error al limpiar ingredientes: ' + error.message);
+    } finally {
+      setIsFixing(false);
+    }
   };
 
   return (
@@ -86,6 +115,56 @@ export const SettingsPage: React.FC = () => {
             <strong>Nota:</strong> Al cambiar el modo, la barra lateral y los widgets del dashboard
             se actualizarán automáticamente. No es necesario recargar.
           </p>
+        </div>
+      </div>
+
+      {/* Maintenance Section */}
+      <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
+        <div className="flex items-center gap-2 mb-4">
+          <Wrench className="text-gray-600 dark:text-gray-400" size={24} />
+          <h2 className="text-xl font-semibold text-gray-800 dark:text-white">
+            Mantenimiento del Sistema
+          </h2>
+        </div>
+        <p className="text-gray-500 dark:text-gray-400 mb-6">
+          Herramientas de administración para mantener la integridad de los datos.
+        </p>
+
+        <div className="space-y-4">
+          <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
+            <h3 className="font-semibold text-gray-900 dark:text-white mb-2">
+              Limpiar y Validar Ingredientes
+            </h3>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
+              Esta operación corrige ingredientes con datos mal formados, normaliza unidades y
+              categorías, y elimina registros inválidos.
+            </p>
+            <button
+              onClick={handleFixIngredients}
+              disabled={isFixing}
+              className="bg-primary hover:bg-primary/90 text-white px-4 py-2 rounded-lg font-semibold disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+            >
+              {isFixing ? (
+                <>
+                  <Loader2 className="animate-spin" size={16} />
+                  Limpiando...
+                </>
+              ) : (
+                <>
+                  <Wrench size={16} />
+                  Ejecutar Limpieza
+                </>
+              )}
+            </button>
+            {fixResult && (
+              <div className="mt-4 p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-md">
+                <p className="text-sm text-green-800 dark:text-green-200">
+                  <strong>✅ Completado:</strong> {fixResult.fixed} corregidos, {fixResult.deleted}{' '}
+                  eliminados, {fixResult.skipped} sin cambios
+                </p>
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>
