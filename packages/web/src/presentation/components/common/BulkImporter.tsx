@@ -1,0 +1,314 @@
+import React, { useState } from 'react';
+import Papa from 'papaparse';
+import { useStore } from '@/presentation/store/useStore';
+import { db } from '@/config/firebase';
+import { collection, writeBatch, doc } from 'firebase/firestore';
+import { Upload, Download, Loader2, CheckCircle, AlertCircle, FileSpreadsheet } from 'lucide-react';
+import { useToast } from '@/presentation/components/ui';
+
+interface BulkImporterProps {
+  buttonLabel?: string;
+  className?: string;
+}
+
+interface CSVRow {
+  name: string;
+  quantity: string;
+  unit: string;
+  category: string;
+  expiry_date?: string;
+}
+
+export const BulkImporter: React.FC<BulkImporterProps> = ({
+  buttonLabel = 'Importador Masivo CSV',
+  className = '',
+}) => {
+  const { currentUser, activeOutletId } = useStore();
+  const { addToast } = useToast();
+
+  const [isOpen, setIsOpen] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [progress, setProgress] = useState(0);
+  const [total, setTotal] = useState(0);
+  const [step, setStep] = useState<'upload' | 'processing' | 'success'>('upload');
+  const [result, setResult] = useState<{ imported: number } | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  const resetState = () => {
+    setStep('upload');
+    setLoading(false);
+    setProgress(0);
+    setTotal(0);
+    setResult(null);
+    setError(null);
+  };
+
+  const downloadTemplate = () => {
+    const csvContent =
+      'name,quantity,unit,category,expiry_date\n' +
+      'Tomates,10,kg,Verduras,2025-12-31\n' +
+      'Aceite de Oliva,5,L,Aceites,2026-06-30\n' +
+      'Sal,2,kg,Condimentos,';
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', 'plantilla_ingredientes.csv');
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const validateColumns = (headers: string[]): boolean => {
+    const required = ['name', 'quantity', 'unit', 'category'];
+    const normalized = headers.map((h) => h.toLowerCase().trim());
+
+    for (const req of required) {
+      if (!normalized.includes(req)) {
+        setError(`Columna requerida faltante: "${req}". Usa la plantilla CSV.`);
+        return false;
+      }
+    }
+    return true;
+  };
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !currentUser) return;
+
+    if (!file.name.endsWith('.csv')) {
+      setError('Solo se permiten archivos .csv');
+      e.target.value = '';
+      return;
+    }
+
+    resetState();
+    setLoading(true);
+    setStep('processing');
+
+    Papa.parse<CSVRow>(file, {
+      header: true,
+      skipEmptyLines: true,
+      complete: async (results) => {
+        try {
+          // Validate columns
+          if (!validateColumns(results.meta.fields || [])) {
+            setStep('upload');
+            setLoading(false);
+            e.target.value = '';
+            return;
+          }
+
+          const rows = results.data;
+          if (rows.length === 0) {
+            throw new Error('El archivo CSV está vacío');
+          }
+
+          setTotal(rows.length);
+
+          // Firestore batched writes (500 at a time)
+          const batchSize = 500;
+          let imported = 0;
+
+          for (let i = 0; i < rows.length; i += batchSize) {
+            const batch = writeBatch(db);
+            const chunk = rows.slice(i, i + batchSize);
+
+            chunk.forEach((row) => {
+              if (!row.name || !row.quantity || !row.unit || !row.category) {
+                return; // Skip invalid rows
+              }
+
+              const ingredientRef = doc(collection(db, 'ingredients'));
+              batch.set(ingredientRef, {
+                name: row.name.trim(),
+                currentStock: parseFloat(row.quantity) || 0,
+                unit: row.unit.trim(),
+                category: row.category.trim(),
+                expiryDate: row.expiry_date ? row.expiry_date.trim() : null,
+                outletId: activeOutletId || 'GLOBAL',
+                userId: currentUser.id,
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString(),
+              });
+
+              imported++;
+            });
+
+            await batch.commit();
+            setProgress(imported);
+          }
+
+          setResult({ imported });
+          setStep('success');
+          addToast(`${imported} ingredientes importados correctamente`, 'success');
+        } catch (err: any) {
+          console.error('CSV import error:', err);
+          setError(err.message || 'Error al procesar el archivo CSV');
+          setStep('upload');
+        } finally {
+          setLoading(false);
+          e.target.value = '';
+        }
+      },
+      error: (error) => {
+        console.error('CSV parse error:', error);
+        setError('Error al leer el archivo CSV: ' + error.message);
+        setStep('upload');
+        setLoading(false);
+        e.target.value = '';
+      },
+    });
+  };
+
+  return (
+    <div className={className}>
+      {/* Trigger Button */}
+      <button
+        onClick={() => setIsOpen(true)}
+        className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors shadow-lg active:scale-95 text-xs font-bold uppercase tracking-widest"
+        title="Importador CSV sin IA - Rápido y eficiente"
+      >
+        <FileSpreadsheet className="w-4 h-4" />
+        <span>{buttonLabel}</span>
+      </button>
+
+      {/* Modal */}
+      {isOpen && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-200">
+          <div className="relative w-full max-w-lg">
+            <div
+              className="absolute inset-0 -z-10"
+              onClick={() => !loading && (resetState(), setIsOpen(false))}
+            />
+
+            <div className="p-6 glass-card w-full overflow-hidden relative border border-white/10 shadow-2xl">
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-lg bg-blue-500/20 text-blue-400">
+                    <FileSpreadsheet className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <h2 className="text-xl font-bold text-white">Importador CSV Masivo</h2>
+                    <span className="text-[10px] uppercase tracking-widest text-slate-500 font-bold">
+                      Sin IA · Rápido · Eficiente
+                    </span>
+                  </div>
+                </div>
+
+                <button
+                  onClick={() => {
+                    resetState();
+                    setIsOpen(false);
+                  }}
+                  disabled={loading}
+                  className="p-1 hover:bg-white/10 rounded-full text-slate-400 hover:text-white transition-colors disabled:opacity-50"
+                >
+                  <AlertCircle className="w-5 h-5 rotate-45" />
+                </button>
+              </div>
+
+              <p className="text-slate-400 text-xs mb-4 leading-relaxed">
+                Importa ingredientes desde un archivo CSV. Procesamiento instantáneo en tu navegador
+                sin costes de servidor.
+              </p>
+
+              {/* Download Template Button */}
+              <button
+                onClick={downloadTemplate}
+                className="w-full mb-4 flex items-center justify-center gap-2 px-4 py-2 bg-slate-700 text-white rounded-lg hover:bg-slate-600 transition-colors text-xs font-semibold"
+              >
+                <Download className="w-4 h-4" />
+                Descargar Plantilla CSV
+              </button>
+
+              {step === 'upload' && (
+                <div className="relative border-2 border-dashed rounded-2xl p-8 text-center transition-all duration-300 bg-surface/30 hover:bg-surface/50 border-blue-600/40 hover:border-blue-500">
+                  <input
+                    type="file"
+                    accept=".csv"
+                    onChange={handleFileUpload}
+                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                    disabled={loading}
+                  />
+                  <div className="flex flex-col items-center gap-4 pointer-events-none">
+                    <div className="w-12 h-12 rounded-full flex items-center justify-center bg-blue-500/10 text-blue-400">
+                      <Upload className="w-6 h-6" />
+                    </div>
+                    <div>
+                      <p className="text-slate-200 font-bold text-sm">
+                        Arrastra tu archivo CSV aquí
+                      </p>
+                      <p className="text-slate-500 text-xs mt-1">o haz clic para seleccionar</p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {step === 'processing' && (
+                <div className="py-10 flex flex-col items-center gap-6 text-center">
+                  <div className="relative">
+                    <Loader2 className="w-12 h-12 text-blue-500 animate-spin" />
+                  </div>
+                  <div className="space-y-2 w-full">
+                    <p className="text-white font-black uppercase tracking-[0.2em] text-[10px]">
+                      Importando Datos
+                    </p>
+                    <div className="w-full bg-slate-700 rounded-full h-2 overflow-hidden">
+                      <div
+                        className="bg-blue-500 h-full transition-all duration-300"
+                        style={{ width: `${total > 0 ? (progress / total) * 100 : 0}%` }}
+                      />
+                    </div>
+                    <p className="text-slate-400 text-xs">
+                      {progress} / {total} ingredientes
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {step === 'success' && result && (
+                <div className="space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                  <div className="premium-glass p-4 rounded-2xl border-green-500/20 bg-green-500/5 space-y-3">
+                    <div className="flex items-center gap-3 text-green-400">
+                      <CheckCircle className="w-5 h-5" />
+                      <h3 className="font-bold text-sm">¡Importación Completada!</h3>
+                    </div>
+
+                    <div className="bg-black/40 p-3 rounded-xl border border-white/5">
+                      <span className="text-[10px] font-bold text-slate-500 uppercase block mb-1">
+                        Ingredientes Importados
+                      </span>
+                      <div className="flex items-baseline gap-2">
+                        <span className="text-2xl font-black text-white">{result.imported}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <button
+                    onClick={() => {
+                      resetState();
+                      setIsOpen(false);
+                    }}
+                    className="w-full bg-blue-600 text-white py-3 rounded-xl font-black text-xs uppercase tracking-widest hover:brightness-110 active:scale-[0.98] transition-all shadow-lg"
+                  >
+                    Cerrar
+                  </button>
+                </div>
+              )}
+
+              {error && (
+                <div className="mt-4 p-3 rounded-xl flex items-start gap-3 bg-red-400/10 border border-red-500/20 text-red-200">
+                  <AlertCircle className="w-4 h-4 shrink-0 text-red-500" />
+                  <p className="text-xs font-bold opacity-80">{error}</p>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
