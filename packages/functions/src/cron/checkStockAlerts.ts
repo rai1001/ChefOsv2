@@ -10,7 +10,7 @@ const db = admin.firestore();
 export const checkStockAlerts = onSchedule(
   {
     schedule: '0 8 * * *',
-    region: 'europe-west1',
+    region: 'europe-southwest1',
   },
   async (_event) => {
     console.log('Running checkStockAlerts...');

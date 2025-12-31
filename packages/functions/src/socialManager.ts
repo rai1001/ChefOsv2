@@ -37,7 +37,7 @@ export const generateSocialContent = onCall<SocialManagerData>(async (request) =
     }
 
     // 3. Initialize Vertex AI
-    const vertexAI = new VertexAI({ project: projectId, location: 'europe-west1' });
+    const vertexAI = new VertexAI({ project: projectId, location: 'europe-southwest1' });
     const model = vertexAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
 
     // 4. Construct Prompt
