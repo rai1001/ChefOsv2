@@ -14,19 +14,20 @@ import {
 } from 'firebase/firestore';
 import { IIngredientRepository } from '@/domain/interfaces/repositories/IIngredientRepository';
 import { LegacyIngredient } from '@/domain/entities/Ingredient';
+import type { Unit } from '@/types';
 
 @injectable()
 export class FirebaseIngredientRepository implements IIngredientRepository {
   private collectionName = 'ingredients';
 
   // Sanitize unit field - BUGFIX: some records have numbers instead of UnitType
-  private sanitizeUnit(rawUnit: any): string {
+  private sanitizeUnit(rawUnit: any): Unit {
     // If it's a number or invalid, default to 'un'
     if (typeof rawUnit === 'number' || !rawUnit || typeof rawUnit !== 'string') {
       console.warn(`Invalid unit type encountered: ${rawUnit}, defaulting to unitType.UNIT`);
-      return 'un';
+      return 'un' as Unit;
     }
-    return rawUnit;
+    return rawUnit as Unit;
   }
 
   async getIngredients(outletId: string): Promise<LegacyIngredient[]> {

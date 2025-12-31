@@ -44,7 +44,12 @@ export { generateSocialContent } from './socialManager';
 export { scanBEO } from './triggers/beoScanner';
 
 // Universal Ingestion (Mission 6)
-export { analyzeDocument, parseStructuredFile, commitImport } from './ingestion';
+export {
+  analyzeDocument,
+  parseStructuredFile,
+  commitImport,
+  classifyIngredients,
+} from './ingestion';
 
 // Invoice OCR (Priority Use Case)
 export { processRestaurantInvoice } from './triggers/invoiceUpload';

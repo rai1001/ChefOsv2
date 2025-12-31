@@ -139,7 +139,8 @@ export const processStructuredFile = async (
 export const confirmAndCommit = async (
   items: IngestionItem[],
   outletId: string,
-  defaultType?: string
+  defaultType?: string,
+  supplierId?: string
 ): Promise<{ success: boolean; count: number }> => {
   const commitImport = httpsCallable<any, { success: boolean; count: number }>(
     functions,
@@ -150,6 +151,7 @@ export const confirmAndCommit = async (
     items,
     outletId,
     defaultType,
+    supplierId,
   });
 
   return response.data;

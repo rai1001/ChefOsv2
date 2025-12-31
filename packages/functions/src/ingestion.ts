@@ -8,8 +8,8 @@ import { checkRateLimit } from './utils/rateLimiter';
 
 export const analyzeDocument = onCall(
   {
-    memory: '1GiB',
-    timeoutSeconds: 300,
+    memory: '2GiB',
+    timeoutSeconds: 540,
     cors: true,
   },
   async (request) => {
@@ -25,6 +25,17 @@ export const analyzeDocument = onCall(
 
     await checkRateLimit(uid, 'analyze_document');
 
+    // Check file size and warn if too large
+    const sizeInBytes = (base64Data.length * 3) / 4;
+    const sizeInMB = sizeInBytes / (1024 * 1024);
+
+    if (sizeInMB > 15) {
+      throw new HttpsError(
+        'invalid-argument',
+        `El archivo es demasiado grande (${sizeInMB.toFixed(1)}MB). Por favor, usa un archivo menor a 15MB o divide el documento en partes más pequeñas.`
+      );
+    }
+
     try {
       const vertexAI = new VertexAI({
         project: process.env.GCLOUD_PROJECT || admin.app().options.projectId || 'chefosv2',
@@ -35,29 +46,38 @@ export const analyzeDocument = onCall(
       });
 
       const prompt = `
-            Actúa como un experto en gestión de cocinas. Analiza este documento (${targetCollection || 'General'}).
-            Extrae datos estructurados y asigna un 'confidence_score' del 0 al 100 a cada campo.
-            
-            Si es una Ficha Técnica o Receta, extrae:
-            - name: Nombre de la receta.
-            - ingredients: [{ name: "Ingrediente", quantity: 0.0, unit: "kg/un" }]
-            
-            Si es un Listado de Ingredientes o Factura, extrae:
-            - name: Nombre del producto.
-            - price: Precio unitario.
-            - unit: Unidad de medida.
-            
-            Devuelve un JSON con este formato:
-            {
-                "items": [
-                    { 
-                        "data": { ...datos específicos... },
-                        "type": "recipe" | "ingredient",
-                        "confidence": 85
-                    }
-                ]
-            }
-            Solo retorna el JSON. Nada de texto extra.
+Eres un experto en gestión de cocinas. Analiza este documento y extrae SOLO los datos esenciales.
+
+**REGLAS CRÍTICAS:**
+1. NO extraigas headers, títulos de columnas, ni texto descriptivo
+2. NO dupliques información - cada ingrediente/receta una sola vez
+3. Normaliza unidades: "kg", "g", "L", "ml", "un" (unidades)
+4. Si el precio tiene "€" o "$", quítalo y deja solo el número
+5. Ignora totales, subtotales, y líneas de resumen
+
+**Si es FACTURA o LISTADO DE INGREDIENTES:**
+Extrae solo:
+- name: Nombre del producto (sin categorías ni descripciones extra)
+- price: Precio unitario como número (ej: 12.50, no "12,50€")
+- unit: Una de: "kg", "g", "L", "ml", "un"
+
+**Si es RECETA o FICHA TÉCNICA:**
+Extrae:
+- name: Nombre de la receta
+- ingredients: [{ name: "Ingrediente", quantity: número, unit: "kg/g/L/ml/un" }]
+
+**Formato de salida (JSON puro):**
+{
+  "items": [
+    {
+      "type": "ingredient",
+      "data": { "name": "Tomate", "price": 2.50, "unit": "kg" },
+      "confidence": 95
+    }
+  ]
+}
+
+IMPORTANTE: Solo JSON válido. Sin markdown, sin \`\`\`json, sin texto extra.
         `;
 
       const result = await generativeModel.generateContent({
@@ -155,18 +175,68 @@ export const parseStructuredFile = onCall(
 
           if (!hasData) return; // Skip empty rows
 
-          // Ensure row has a name field for ingredients/recipes
-          if (
-            (type === 'ingredient' || type === 'recipe') &&
-            !rowData.name &&
-            !rowData.Name &&
-            !rowData.NOMBRE
-          ) {
+          // Find name field (case-insensitive) - expanded to include more variants
+          const nameField =
+            rowData.name ||
+            rowData.Name ||
+            rowData.NAME ||
+            rowData.NOMBRE ||
+            rowData.nombre ||
+            rowData.Nombre ||
+            rowData.producto ||
+            rowData.Producto ||
+            rowData.PRODUCTO ||
+            rowData.Articulo ||
+            rowData.articulo ||
+            rowData.ARTICULO ||
+            rowData.Material ||
+            rowData.material ||
+            rowData.MATERIAL ||
+            rowData.Descripcion ||
+            rowData.descripcion ||
+            rowData.DESCRIPCION;
+
+          // Ensure row has a valid name field for ingredients/recipes
+          if ((type === 'ingredient' || type === 'recipe') && !nameField) {
             return; // Skip rows without name
           }
 
+          // Skip header rows (common header text)
+          const nameStr = String(nameField || '').toUpperCase();
+          if (
+            nameStr === 'NOMBRE' ||
+            nameStr === 'NAME' ||
+            nameStr === 'PRODUCTO' ||
+            nameStr === 'ARTICULO' ||
+            nameStr === 'MATERIAL' ||
+            nameStr === 'INGREDIENTE' ||
+            nameStr === 'DESCRIPCION' ||
+            nameStr === 'DESCRIPTION' ||
+            nameStr.length < 2
+          ) {
+            return; // Skip header rows
+          }
+
+          // Normalize data structure for better compatibility
+          const normalizedData: any = { ...rowData };
+
+          // Map common field names to standard names
+          if (!normalizedData.name) {
+            normalizedData.name = nameField;
+          }
+
+          // Map price fields
+          if (!normalizedData.price && (rowData.Precio || rowData.precio || rowData.PRECIO)) {
+            normalizedData.price = rowData.Precio || rowData.precio || rowData.PRECIO;
+          }
+
+          // Map unit fields
+          if (!normalizedData.unit && (rowData.Unidades || rowData.unidades || rowData.UNIDADES)) {
+            normalizedData.unit = rowData.Unidades || rowData.unidades || rowData.UNIDADES;
+          }
+
           results.push({
-            data: row,
+            data: normalizedData,
             type,
             sheetName,
             confidence: 100,
@@ -192,7 +262,7 @@ export const commitImport = onCall(
       throw new HttpsError('unauthenticated', 'User must be authenticated.');
     }
 
-    const { items, outletId, defaultType } = request.data;
+    const { items, outletId, defaultType, supplierId } = request.data;
     if (!Array.isArray(items)) {
       throw new HttpsError('invalid-argument', 'Items must be an array.');
     }
@@ -342,8 +412,19 @@ export const commitImport = onCall(
           if (collection === 'ingredients' && data.name) {
             const normalizedName = data.name.toLowerCase().trim();
 
+            // Use global supplier ID from request if provided
+            if (supplierId && !data.supplierId && !data.preferredSupplierId) {
+              updateData.supplierId = supplierId;
+              updateData.preferredSupplierId = supplierId;
+              if (!updateData.suppliers || !Array.isArray(updateData.suppliers)) {
+                updateData.suppliers = [supplierId];
+              } else if (!updateData.suppliers.includes(supplierId)) {
+                updateData.suppliers.push(supplierId);
+              }
+            }
+
             // Resolve supplier ID if supplier name is provided
-            if (data.supplierName && !data.supplierId && !data.preferredSupplierId) {
+            if (data.supplierName && !data.supplierId && !data.preferredSupplierId && !supplierId) {
               const supplierNormalized = data.supplierName.toLowerCase().trim();
               const foundSupplierId = supplierNameToId.get(supplierNormalized);
               if (foundSupplierId) {
@@ -352,8 +433,20 @@ export const commitImport = onCall(
               }
             }
 
-            const supplierId = updateData.supplierId || updateData.preferredSupplierId;
-            const key = supplierId ? `${normalizedName}|${supplierId}` : normalizedName;
+            // Apply category from AI classification if provided
+            if (data.category) {
+              updateData.category = data.category;
+            }
+
+            // Apply allergens from AI classification if provided
+            if (data.allergens && Array.isArray(data.allergens)) {
+              updateData.allergens = data.allergens;
+            }
+
+            const ingredientSupplierId = updateData.supplierId || updateData.preferredSupplierId;
+            const key = ingredientSupplierId
+              ? `${normalizedName}|${ingredientSupplierId}`
+              : normalizedName;
             const existingId = ingredientKeyToId.get(key);
 
             if (existingId) {
@@ -585,5 +678,89 @@ export const fixIngredientsData = onCall(
       deleted,
       skipped,
     };
+  }
+);
+
+export const classifyIngredients = onCall(
+  {
+    cors: true,
+    memory: '512MiB',
+    timeoutSeconds: 120,
+  },
+  async (request) => {
+    const uid = request.auth?.uid;
+    if (!uid) {
+      throw new HttpsError('unauthenticated', 'User must be authenticated.');
+    }
+
+    const { ingredients } = request.data;
+    if (!Array.isArray(ingredients) || ingredients.length === 0) {
+      throw new HttpsError('invalid-argument', 'Missing or invalid ingredients array.');
+    }
+
+    await checkRateLimit(uid, 'classify_ingredients');
+
+    try {
+      const vertexAI = new VertexAI({
+        project: process.env.GCLOUD_PROJECT || admin.app().options.projectId || 'chefosv2',
+        location: 'europe-west1',
+      });
+      const generativeModel = vertexAI.getGenerativeModel({
+        model: 'gemini-2.0-flash',
+      });
+
+      const prompt = `
+Eres un experto en clasificación de ingredientes de cocina. Clasifica cada ingrediente en las siguientes categorías y detecta alérgenos.
+
+**CATEGORÍAS VÁLIDAS:**
+- meat (carnes: ternera, cerdo, pollo, cordero, etc.)
+- fish (pescados y mariscos)
+- produce (verduras, hortalizas, frutas)
+- dairy (lácteos: leche, queso, yogur, mantequilla, nata)
+- dry (secos: arroz, pasta, legumbres, harinas, especias)
+- frozen (congelados)
+- canned (conservas y enlatados)
+- preparation (preparaciones: salsas, caldos, bases)
+- other (otros)
+
+**ALÉRGENOS COMUNES:**
+gluten, lactosa, huevo, frutos secos, soja, pescado, marisco, sésamo, apio, mostaza, sulfitos
+
+**INGREDIENTES A CLASIFICAR:**
+${ingredients.join('\n')}
+
+**FORMATO DE SALIDA (JSON):**
+{
+  "classifications": {
+    "Nombre Ingrediente": {
+      "category": "categoría_válida",
+      "allergens": ["alérgeno1", "alérgeno2"]
+    }
+  }
+}
+
+IMPORTANTE: Solo JSON válido. Sin markdown, sin explicaciones extra.
+`;
+
+      const result = await generativeModel.generateContent({
+        contents: [
+          {
+            role: 'user',
+            parts: [{ text: prompt }],
+          },
+        ],
+        generationConfig: {
+          responseMimeType: 'application/json',
+        } as any,
+      });
+
+      const responseText = result.response.candidates?.[0]?.content?.parts?.[0]?.text;
+      if (!responseText) throw new Error('No response from AI');
+
+      return JSON.parse(responseText);
+    } catch (error: any) {
+      logError('AI Classification Error:', error, { uid });
+      throw new HttpsError('internal', error.message);
+    }
   }
 );

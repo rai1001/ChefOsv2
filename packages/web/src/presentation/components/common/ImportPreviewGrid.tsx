@@ -2,12 +2,14 @@ import React, { useState, useMemo } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import { useStore } from '@/presentation/store/useStore';
 import type { IngestionItem } from '@/utils/excelImport';
-import { Check, Trash2, Link, Plus, Search, Box, Layers, X } from 'lucide-react';
+import { Check, Trash2, Link, Plus, Search, Box, Layers, X, Sparkles, Package } from 'lucide-react';
 import Fuse from 'fuse.js';
+import { httpsCallable } from 'firebase/functions';
+import { functions } from '@/config/firebase';
 
 interface ImportPreviewGridProps {
   items: IngestionItem[];
-  onConfirm: (finalItems: IngestionItem[]) => void;
+  onConfirm: (finalItems: IngestionItem[], selectedSupplier?: string) => void;
   onCancel: () => void;
 }
 
@@ -16,11 +18,13 @@ export const ImportPreviewGrid: React.FC<ImportPreviewGridProps> = ({
   onConfirm,
   onCancel,
 }) => {
-  const { ingredients: existingIngredients } = useStore();
+  const { ingredients: existingIngredients, suppliers } = useStore();
   const [items, setItems] = useState<IngestionItem[]>(initialItems);
   const [searchTerm, setSearchTerm] = useState('');
   const [searchingIdx, setSearchingIdx] = useState<number | null>(null);
   const [manualSearchTerm, setManualSearchTerm] = useState('');
+  const [selectedSupplier, setSelectedSupplier] = useState<string>('');
+  const [isClassifying, setIsClassifying] = useState(false);
 
   // Fuse.js for fuzzy matching
   const fuse = useMemo(
@@ -42,6 +46,53 @@ export const ImportPreviewGrid: React.FC<ImportPreviewGridProps> = ({
 
   const handleDeleteItem = (index: number) => {
     setItems(items.filter((_, i) => i !== index));
+  };
+
+  const handleAutoClassify = async () => {
+    setIsClassifying(true);
+    try {
+      // Get all ingredient names
+      const ingredientNames = items
+        .filter((item) => item.type === 'ingredient')
+        .map((item) => item.data.name);
+
+      if (ingredientNames.length === 0) {
+        alert('No hay ingredientes para clasificar');
+        return;
+      }
+
+      // Call AI function to classify
+      const classifyIngredients = httpsCallable(functions, 'classifyIngredients');
+      const result = await classifyIngredients({ ingredients: ingredientNames });
+      const classifications = (result.data as any).classifications;
+
+      // Update items with classifications
+      setItems((prevItems) =>
+        prevItems.map((item) => {
+          if (item.type === 'ingredient' && item.data.name) {
+            const classification = classifications[item.data.name];
+            if (classification) {
+              return {
+                ...item,
+                data: {
+                  ...item.data,
+                  category: classification.category,
+                  allergens: classification.allergens || [],
+                },
+              };
+            }
+          }
+          return item;
+        })
+      );
+
+      alert('✅ Clasificación automática completada');
+    } catch (error: any) {
+      console.error('Error clasificando:', error);
+      alert('❌ Error al clasificar: ' + error.message);
+    } finally {
+      setIsClassifying(false);
+    }
   };
 
   const filteredItems = items.filter(
@@ -70,6 +121,47 @@ export const ImportPreviewGrid: React.FC<ImportPreviewGridProps> = ({
         <div className="flex items-center gap-2 text-[10px] uppercase tracking-widest font-black text-slate-500">
           <Box size={14} className="text-primary" />
           <span>{items.length} detectados</span>
+        </div>
+      </div>
+
+      {/* Supplier Selection & Auto-Classify */}
+      <div className="flex gap-3 p-4 bg-black/40 rounded-xl border border-white/5">
+        <div className="flex-1">
+          <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2">
+            <Package size={12} className="inline mr-1" />
+            Proveedor para Todos los Items
+          </label>
+          <select
+            value={selectedSupplier}
+            onChange={(e) => setSelectedSupplier(e.target.value)}
+            className="w-full bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-primary/50 transition-all"
+          >
+            <option value="">Seleccionar proveedor...</option>
+            {suppliers.map((supplier) => (
+              <option key={supplier.id} value={supplier.id}>
+                {supplier.name}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div className="flex items-end">
+          <button
+            onClick={handleAutoClassify}
+            disabled={isClassifying || items.filter((i) => i.type === 'ingredient').length === 0}
+            className="px-4 py-2 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white rounded-lg font-bold text-xs uppercase tracking-widest transition-all shadow-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+          >
+            {isClassifying ? (
+              <>
+                <Sparkles size={14} className="animate-spin" />
+                Clasificando...
+              </>
+            ) : (
+              <>
+                <Sparkles size={14} />
+                Clasificar con IA
+              </>
+            )}
+          </button>
         </div>
       </div>
 
@@ -362,9 +454,10 @@ export const ImportPreviewGrid: React.FC<ImportPreviewGridProps> = ({
               return item;
             });
 
-            onConfirm(finalItems);
+            onConfirm(finalItems, selectedSupplier);
           }}
-          className="flex-[2] px-6 py-3 bg-primary text-white rounded-xl font-black text-xs uppercase tracking-widest shadow-[0_0_20px_rgba(59,130,246,0.5)] hover:bg-primary/90 active:scale-[0.98] transition-all flex items-center justify-center gap-2"
+          disabled={!selectedSupplier && items.some((i) => i.type === 'ingredient')}
+          className="flex-[2] px-6 py-3 bg-primary text-white rounded-xl font-black text-xs uppercase tracking-widest shadow-[0_0_20px_rgba(59,130,246,0.5)] hover:bg-primary/90 active:scale-[0.98] transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           <Check size={16} />
           Confirmar e Importar {items.length} Items

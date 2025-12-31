@@ -105,15 +105,21 @@ export const UniversalImporter: React.FC<UniversalImporterProps> = ({
     }
   };
 
-  const handleConfirmImport = async (finalItems: IngestionItem[]) => {
+  const handleConfirmImport = async (finalItems: IngestionItem[], selectedSupplier?: string) => {
     setLoading(true);
     setStep('processing');
     try {
       LoggingService.info('Confirming import', {
         itemsCount: finalItems.length,
         outletId: activeOutletId || 'GLOBAL',
+        supplierId: selectedSupplier,
       });
-      const result = await confirmAndCommit(finalItems, activeOutletId || 'GLOBAL', defaultType);
+      const result = await confirmAndCommit(
+        finalItems,
+        activeOutletId || 'GLOBAL',
+        defaultType,
+        selectedSupplier
+      );
       LoggingService.info('Import confirmed', { result });
       setImportResult({ count: result.count });
       setStep('success');
