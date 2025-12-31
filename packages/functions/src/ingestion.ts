@@ -303,7 +303,7 @@ export const commitImport = onCall(
             .limit(1)
             .get();
 
-          if (!existingSuppliers.empty) {
+          if (!existingSuppliers.empty && existingSuppliers.docs[0]) {
             const existingDoc = existingSuppliers.docs[0];
             supplierNameToId.set(name, existingDoc.id);
           }
@@ -760,6 +760,94 @@ IMPORTANTE: Solo JSON válido. Sin markdown, sin explicaciones extra.
       return JSON.parse(responseText);
     } catch (error: any) {
       logError('AI Classification Error:', error, { uid });
+      throw new HttpsError('internal', error.message);
+    }
+  }
+);
+
+/**
+ * DELETE ALL INGREDIENTS FROM DATABASE (MAINTENANCE ONLY)
+ * ⚠️ WARNING: This will delete ALL ingredients from the database
+ */
+export const deleteAllIngredients = onCall(
+  {
+    cors: true,
+    memory: '512MiB',
+    timeoutSeconds: 300,
+  },
+  async (request) => {
+    const uid = request.auth?.uid;
+    if (!uid) {
+      throw new HttpsError('unauthenticated', 'User must be authenticated.');
+    }
+
+    // Security check: require explicit confirmation
+    const { confirmation } = request.data;
+    if (confirmation !== 'DELETE_ALL_INGREDIENTS') {
+      throw new HttpsError(
+        'permission-denied',
+        'Invalid confirmation. Please provide exact confirmation text.'
+      );
+    }
+
+    try {
+      console.log('Starting deletion of all ingredients', { uid });
+
+      const db = admin.firestore();
+      const ingredientsRef = db.collection('ingredients');
+
+      // Get all ingredients
+      const snapshot = await ingredientsRef.get();
+      const totalCount = snapshot.size;
+
+      if (totalCount === 0) {
+        return {
+          success: true,
+          deleted: 0,
+          message: 'No ingredients found in database',
+        };
+      }
+
+      // Delete in batches of 500 (Firestore limit)
+      const batchSize = 500;
+      let deletedCount = 0;
+
+      while (true) {
+        const batch = db.batch();
+        const docs = await ingredientsRef.limit(batchSize).get();
+
+        if (docs.size === 0) break;
+
+        docs.forEach((doc) => {
+          batch.delete(doc.ref);
+        });
+
+        await batch.commit();
+        deletedCount += docs.size;
+
+        console.log(`Deleted batch of ${docs.size} ingredients`, {
+          deletedCount,
+          totalCount,
+        });
+
+        // Prevent infinite loop
+        if (deletedCount >= totalCount * 2) {
+          throw new Error('Deletion count exceeded expected total - aborting');
+        }
+      }
+
+      console.log('Completed deletion of all ingredients', {
+        uid,
+        deletedCount,
+      });
+
+      return {
+        success: true,
+        deleted: deletedCount,
+        message: `Successfully deleted ${deletedCount} ingredients from database`,
+      };
+    } catch (error: any) {
+      logError('Error deleting ingredients:', error, { uid });
       throw new HttpsError('internal', error.message);
     }
   }

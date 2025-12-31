@@ -55,7 +55,7 @@ export {
 export { processRestaurantInvoice } from './triggers/invoiceUpload';
 
 // Maintenance Functions
-export { fixIngredientsData } from './ingestion';
+export { fixIngredientsData, deleteAllIngredients } from './ingestion';
 
 // Legacy Triggers (Scheduled for removal)
 // export { processExcelImport } from "./triggers/excelProcessor";
