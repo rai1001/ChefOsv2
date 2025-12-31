@@ -125,32 +125,28 @@ export async function enrichIngredientWithAI(name: string) {
 
 ---
 
-### 3️⃣ USAR GEMINI FLASH 1.5 EN LUGAR DE 2.0 (Ahorro: ~30%)
+### 3️⃣ GEMINI 2.0 FLASH ES LA MEJOR OPCIÓN ACTUAL
 
-**Actualmente:**
+**Estado actual de modelos Gemini:**
+- ❌ **Gemini 1.5 Flash:** DEPRECADO (ya no disponible)
+- ✅ **Gemini 2.0 Flash:** Modelo actual recomendado
+- ⚠️ **Gemini 1.5 Pro:** Muy caro, solo para casos específicos
+
+**Tu configuración actual (ÓPTIMA):**
 ```typescript
-model: "gemini-2.0-flash"  // Más caro, más rápido
+model: "gemini-2.0-flash"  // ✅ Correcto
 ```
 
-**Alternativa más barata:**
-```typescript
-model: "gemini-1.5-flash"  // 30% más barato, ligeramente más lento
-```
+**Comparativa de precios actualizada:**
 
-**Comparativa de precios:**
+| Modelo | Input ($/1M tokens) | Output ($/1M tokens) | Velocidad | Calidad |
+|--------|---------------------|----------------------|-----------|---------|
+| Gemini 2.0 Flash | $0.10 | $0.40 | Muy rápida | Excelente |
+| Gemini 1.5 Pro | $1.25 | $5.00 | Media | Superior |
 
-| Modelo | Input ($/1M tokens) | Output ($/1M tokens) | Uso Recomendado |
-|--------|---------------------|----------------------|-----------------|
-| Gemini 2.0 Flash | $0.10 | $0.40 | Chat interactivo, latencia crítica |
-| Gemini 1.5 Flash | $0.075 | $0.30 | Batch processing, background tasks |
-| Gemini 1.5 Pro | $1.25 | $5.00 | Análisis complejo (NO usar) |
+**Veredicto:** Ya estás usando el modelo óptimo (Gemini 2.0 Flash). NO hay alternativa más barata en Gemini actualmente.
 
-**Recomendación:**
-- **Kitchen Copilot (chat):** Gemini 2.0 Flash (experiencia de usuario)
-- **Enriquecimiento ingredientes:** Gemini 1.5 Flash (background)
-- **Generación de menús:** Gemini 1.5 Flash (no es tiempo real)
-- **Social Manager:** Gemini 1.5 Flash (background)
-- **Zero Waste:** Gemini 1.5 Flash (background)
+**Optimización real:** El ahorro vendrá del **caché**, no de cambiar el modelo.
 
 ---
 
@@ -244,12 +240,12 @@ export const checkDailyCosts = onSchedule({
 **Costos optimizados:**
 ```
 Cloud Functions:        €0.10/mes (invocaciones + scheduler)
-Gemini 1.5 Flash:       €0.25/mes (con caché 50%)
+Gemini 2.0 Flash:       €0.30/mes (con caché agresivo 50% hit rate)
 Embeddings:             €0.05/mes
 Document AI:            €0.05/mes
-Networking:             €0.03/mes (región corregida)
+Networking:             €0.03/mes (región corregida ✅)
 ---------------------------------------------------------
-TOTAL:                  €0.48/mes (~26% ahorro)
+TOTAL:                  €0.53/mes (~18% ahorro)
 ```
 
 **Ventajas:**
@@ -306,15 +302,15 @@ TOTAL:                  €30/mes (4500% MÁS CARO)
 
 **Plan de acción:**
 
-1. ✅ **YA HECHO:** Corregir región de Vertex AI → Ahorro ~€0.03/mes
-2. 🔧 **SIGUIENTE:** Implementar caché de respuestas IA → Ahorro ~€0.25/mes
-3. 🔧 **SIGUIENTE:** Cambiar a Gemini 1.5 Flash en funciones background → Ahorro ~€0.10/mes
-4. 🔧 **SIGUIENTE:** Monitoreo de costos diario
+1. ✅ **YA HECHO:** Corregir región de Vertex AI → Ahorro ~€0.02/mes
+2. 🔧 **SIGUIENTE:** Implementar caché de respuestas IA → Ahorro ~€0.30/mes
+3. 🔧 **SIGUIENTE:** Rate limiting más estricto → Prevenir abusos
+4. 🔧 **SIGUIENTE:** Monitoreo de costos diario → Alertas tempranas
 
 **Resultado esperado:**
 - **Costo actual:** €0.65/mes
-- **Costo optimizado:** €0.27-0.35/mes
-- **Ahorro:** ~45-58%
+- **Costo optimizado:** €0.33-0.40/mes
+- **Ahorro:** ~38-49% (principalmente por caché)
 
 ---
 
@@ -380,9 +376,9 @@ Si el costo sube inesperadamente, revisa:
 
 ## ✅ CHECKLIST DE OPTIMIZACIÓN
 
-- [x] Corregir región Vertex AI (europe-southwest1)
-- [ ] Implementar caché de respuestas IA (7 días TTL)
-- [ ] Cambiar a Gemini 1.5 Flash en background tasks
+- [x] Corregir región Vertex AI (europe-southwest1) ✅ COMPLETADO
+- [x] Mantener Gemini 2.0 Flash (modelo óptimo actual) ✅ CORRECTO
+- [ ] Implementar caché de respuestas IA (7 días TTL) 🔥 MÁXIMA PRIORIDAD
 - [ ] Agregar monitoreo de costos diario
 - [ ] Rate limiting más estricto por usuario
 - [ ] Revisar índices de Firestore (evitar full scans)
