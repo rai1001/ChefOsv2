@@ -133,10 +133,18 @@ export const parseStructuredFile = onCall(
       const workbook = XLSX.read(buffer, { type: 'buffer' });
       const results: any[] = [];
 
+      console.log(`Processing Excel with ${workbook.SheetNames.length} sheets`);
+
       workbook.SheetNames.forEach((sheetName) => {
         const sheet = workbook.Sheets[sheetName];
         if (!sheet) return;
-        const json = XLSX.utils.sheet_to_json(sheet);
+        const json = XLSX.utils.sheet_to_json(sheet, { defval: null });
+
+        console.log(`Sheet "${sheetName}": ${json.length} rows`);
+        if (json.length > 0 && json[0]) {
+          console.log('First row keys:', Object.keys(json[0] as object));
+          console.log('First row sample:', json[0]);
+        }
 
         let type = hintType || 'unknown';
         const sn = sheetName.toUpperCase();
@@ -161,8 +169,11 @@ export const parseStructuredFile = onCall(
         ) {
           type = 'ingredient';
         } else if (json.length > 0 && type === 'unknown') {
-          type = 'recipe';
+          // If no type detected but we have data, default to ingredient
+          type = 'ingredient';
         }
+
+        console.log(`Detected type for sheet "${sheetName}": ${type}`);
 
         json.forEach((row) => {
           // Type assertion for row object
@@ -175,8 +186,8 @@ export const parseStructuredFile = onCall(
 
           if (!hasData) return; // Skip empty rows
 
-          // Find name field (case-insensitive) - expanded to include more variants
-          const nameField =
+          // Find name field - try exact matches first, then fuzzy match
+          let nameField =
             rowData.name ||
             rowData.Name ||
             rowData.NAME ||
@@ -194,10 +205,53 @@ export const parseStructuredFile = onCall(
             rowData.MATERIAL ||
             rowData.Descripcion ||
             rowData.descripcion ||
-            rowData.DESCRIPCION;
+            rowData.DESCRIPCION ||
+            rowData.Item ||
+            rowData.item ||
+            rowData.ITEM ||
+            rowData.Detalle ||
+            rowData.detalle ||
+            rowData.DETALLE;
+
+          // If still no name field, try to find ANY column that looks like a name
+          if (!nameField) {
+            const keys = Object.keys(rowData);
+            for (const key of keys) {
+              const keyUpper = key.toUpperCase();
+              // Look for columns with name-like keywords
+              if (
+                keyUpper.includes('NOMBRE') ||
+                keyUpper.includes('NAME') ||
+                keyUpper.includes('PRODUCTO') ||
+                keyUpper.includes('ARTICULO') ||
+                keyUpper.includes('MATERIAL') ||
+                keyUpper.includes('DESCRIPCION') ||
+                keyUpper.includes('DESCRIPTION') ||
+                keyUpper.includes('ITEM') ||
+                keyUpper.includes('DETALLE')
+              ) {
+                nameField = rowData[key];
+                console.log(`Found name in column "${key}": ${nameField}`);
+                break;
+              }
+            }
+
+            // If STILL no match, use the first non-numeric column
+            if (!nameField) {
+              for (const key of keys) {
+                const val = rowData[key];
+                if (val && typeof val === 'string' && val.trim() !== '' && isNaN(Number(val))) {
+                  nameField = val;
+                  console.log(`Using first text column "${key}" as name: ${nameField}`);
+                  break;
+                }
+              }
+            }
+          }
 
           // Ensure row has a valid name field for ingredients/recipes
           if ((type === 'ingredient' || type === 'recipe') && !nameField) {
+            console.log('Skipping row without name:', rowData);
             return; // Skip rows without name
           }
 
@@ -225,14 +279,82 @@ export const parseStructuredFile = onCall(
             normalizedData.name = nameField;
           }
 
-          // Map price fields
-          if (!normalizedData.price && (rowData.Precio || rowData.precio || rowData.PRECIO)) {
-            normalizedData.price = rowData.Precio || rowData.precio || rowData.PRECIO;
+          // Map price fields - try common price column names
+          if (!normalizedData.price) {
+            const priceField =
+              rowData.price ||
+              rowData.Price ||
+              rowData.PRICE ||
+              rowData.Precio ||
+              rowData.precio ||
+              rowData.PRECIO ||
+              rowData.Cost ||
+              rowData.cost ||
+              rowData.COST ||
+              rowData.Costo ||
+              rowData.costo ||
+              rowData.COSTO ||
+              rowData.Importe ||
+              rowData.importe ||
+              rowData.IMPORTE;
+
+            if (priceField) {
+              normalizedData.price = priceField;
+            } else {
+              // Search for any column with "precio", "price", "cost", or "importe" in name
+              const keys = Object.keys(rowData);
+              for (const key of keys) {
+                const keyUpper = key.toUpperCase();
+                if (
+                  keyUpper.includes('PRECIO') ||
+                  keyUpper.includes('PRICE') ||
+                  keyUpper.includes('COST') ||
+                  keyUpper.includes('IMPORTE')
+                ) {
+                  normalizedData.price = rowData[key];
+                  console.log(`Found price in column "${key}": ${rowData[key]}`);
+                  break;
+                }
+              }
+            }
           }
 
-          // Map unit fields
-          if (!normalizedData.unit && (rowData.Unidades || rowData.unidades || rowData.UNIDADES)) {
-            normalizedData.unit = rowData.Unidades || rowData.unidades || rowData.UNIDADES;
+          // Map unit fields - try common unit column names
+          if (!normalizedData.unit) {
+            const unitField =
+              rowData.unit ||
+              rowData.Unit ||
+              rowData.UNIT ||
+              rowData.Unidad ||
+              rowData.unidad ||
+              rowData.UNIDAD ||
+              rowData.Unidades ||
+              rowData.unidades ||
+              rowData.UNIDADES ||
+              rowData.UM ||
+              rowData.um ||
+              rowData.UdM ||
+              rowData.udm;
+
+            if (unitField) {
+              normalizedData.unit = unitField;
+            } else {
+              // Search for any column with "unidad" or "unit" in name
+              const keys = Object.keys(rowData);
+              for (const key of keys) {
+                const keyUpper = key.toUpperCase();
+                if (
+                  keyUpper.includes('UNIDAD') ||
+                  keyUpper.includes('UNIT') ||
+                  keyUpper === 'UM' ||
+                  keyUpper === 'UDM'
+                ) {
+                  normalizedData.unit = rowData[key];
+                  console.log(`Found unit in column "${key}": ${rowData[key]}`);
+                  break;
+                }
+              }
+            }
           }
 
           results.push({
