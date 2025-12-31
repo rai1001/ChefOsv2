@@ -26,19 +26,33 @@ import {
 import { db } from '@/config/firebase';
 
 const toDomain = (id: string, data: any): Ingredient => {
+  // Sanitize unit field - BUGFIX: algunos registros tienen números en vez de UnitType
+  const sanitizeUnit = (rawUnit: any): string => {
+    // Si es número o inválido, defaultear a 'ud'
+    if (typeof rawUnit === 'number' || !rawUnit || typeof rawUnit !== 'string') {
+      console.warn(`Invalid unit type encountered: ${rawUnit}, defaulting to unitType.UNIT`);
+      return 'ud'; // UnitType.UNIT
+    }
+    return rawUnit;
+  };
+
+  const sanitizedUnit = sanitizeUnit(data.unit);
+  const currentStockUnit = sanitizeUnit(data.currentStock?.unit || data.unit);
+  const minimumStockUnit = sanitizeUnit(data.minimumStock?.unit || data.unit);
+
   return {
     id,
     outletId: data.outletId,
     name: data.name,
     category: data.category,
-    unit: data.unit,
+    unit: sanitizedUnit,
     currentStock: new Quantity(
       data.currentStock?.value || 0,
-      new Unit(data.currentStock?.unit || data.unit)
+      new Unit(currentStockUnit)
     ),
     minimumStock: new Quantity(
       data.minimumStock?.value || 0,
-      new Unit(data.minimumStock?.unit || data.unit)
+      new Unit(minimumStockUnit)
     ),
     lastCost: data.lastCost ? new Money(data.lastCost.amount, data.lastCost.currency) : undefined,
     averageCost: data.averageCost
@@ -52,7 +66,7 @@ const toDomain = (id: string, data: any): Ingredient => {
               supplierId: data.supplier,
               name: 'Unknown',
               price: 0,
-              unit: data.unit,
+              unit: sanitizedUnit, // BUGFIX: usar sanitized unit
               isPrimary: true,
             },
           ]
