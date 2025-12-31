@@ -21,6 +21,9 @@ interface IngredientListProps {
   onSort: (key: any) => void;
 }
 
+// Version marker for cache busting
+export const INGREDIENT_LIST_VERSION = '2024-12-31-v2';
+
 export const IngredientList: React.FC<IngredientListProps> = React.memo(
   ({ ingredients, onEdit, onDelete, sortConfig, onSort }) => {
     const { suppliers, ingredients: allIngredients } = useStore();
@@ -120,6 +123,7 @@ export const IngredientList: React.FC<IngredientListProps> = React.memo(
             </tr>
           </thead>
           <tbody className="divide-y divide-white/5">
+            {/* Filter out malformed ingredients before rendering */}
             {ingredients
               .filter((ing) => ing && ing.id && ing.name)
               .map((ing) => (
