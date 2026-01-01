@@ -6,6 +6,7 @@ setGlobalOptions({ region: 'europe-southwest1' });
 admin.initializeApp();
 
 export { scanInvoice } from './scanners/invoiceScanner';
+export { scanInvoiceV2 } from './scanners/invoiceScannerV2'; // Cloud Vision OCR (1000 FREE/month)
 export { searchRecipes } from './search/recipeSearcher';
 export { chatWithCopilot } from './chat/kitchenCopilot';
 export { predictDemand } from './predictors/demandPredictor';

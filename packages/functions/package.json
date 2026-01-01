@@ -16,6 +16,7 @@
   "dependencies": {
     "@google-cloud/documentai": "^8.0.0",
     "@google-cloud/vertexai": "^1.10.0",
+    "@google-cloud/vision": "^5.3.4",
     "@slack/web-api": "^7.13.0",
     "cors": "^2.8.5",
     "date-fns": "^4.1.0",
