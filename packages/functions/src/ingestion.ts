@@ -362,6 +362,78 @@ export const parseStructuredFile = onCall(
             }
           }
 
+          // Map supplier/proveedor fields - try common supplier column names
+          if (!normalizedData.supplier && !normalizedData.supplierName) {
+            const supplierField =
+              rowData.supplier ||
+              rowData.Supplier ||
+              rowData.SUPPLIER ||
+              rowData.Proveedor ||
+              rowData.proveedor ||
+              rowData.PROVEEDOR ||
+              rowData.Suministrador ||
+              rowData.suministrador ||
+              rowData.SUMINISTRADOR;
+
+            if (supplierField) {
+              normalizedData.supplier = supplierField;
+              normalizedData.supplierName = supplierField;
+            } else {
+              // Search for any column with "proveedor" or "supplier" in name
+              const keys = Object.keys(rowData);
+              for (const key of keys) {
+                const keyUpper = key.toUpperCase();
+                if (
+                  keyUpper.includes('PROVEEDOR') ||
+                  keyUpper.includes('SUPPLIER') ||
+                  keyUpper.includes('SUMINISTRADOR')
+                ) {
+                  normalizedData.supplier = rowData[key];
+                  normalizedData.supplierName = rowData[key];
+                  console.log(`Found supplier in column "${key}": ${rowData[key]}`);
+                  break;
+                }
+              }
+            }
+          }
+
+          // Map category/type fields - try common category column names
+          if (!normalizedData.category && !normalizedData.type) {
+            const categoryField =
+              rowData.category ||
+              rowData.Category ||
+              rowData.CATEGORY ||
+              rowData.Categoria ||
+              rowData.categoria ||
+              rowData.CATEGORIA ||
+              rowData.Tipo ||
+              rowData.tipo ||
+              rowData.TIPO ||
+              rowData.Type ||
+              rowData.type ||
+              rowData.TYPE;
+
+            if (categoryField) {
+              normalizedData.category = categoryField;
+            } else {
+              // Search for any column with "categoria", "category", or "tipo" in name
+              const keys = Object.keys(rowData);
+              for (const key of keys) {
+                const keyUpper = key.toUpperCase();
+                if (
+                  keyUpper.includes('CATEGORIA') ||
+                  keyUpper.includes('CATEGORY') ||
+                  keyUpper.includes('TIPO') ||
+                  keyUpper === 'TYPE'
+                ) {
+                  normalizedData.category = rowData[key];
+                  console.log(`Found category in column "${key}": ${rowData[key]}`);
+                  break;
+                }
+              }
+            }
+          }
+
           results.push({
             data: normalizedData,
             type,
@@ -410,6 +482,7 @@ export const commitImport = onCall(
 
       // First pass: collect all suppliers and check for existing ones
       const suppliersToProcess: Array<{ item: any; normalizedName: string }> = [];
+      const supplierNamesFromIngredients = new Set<string>();
 
       for (const item of items) {
         const { type, data } = item;
@@ -419,13 +492,30 @@ export const commitImport = onCall(
           const normalizedName = data.name.toLowerCase().trim();
           suppliersToProcess.push({ item, normalizedName });
         }
+
+        // Also collect supplier names from ingredients
+        if (
+          (itemType === 'ingredient' || (data.name && (data.price || data.unit))) &&
+          (data.supplier || data.supplierName)
+        ) {
+          const supplierName = data.supplier || data.supplierName;
+          if (supplierName && typeof supplierName === 'string' && supplierName.trim().length > 0) {
+            supplierNamesFromIngredients.add(supplierName.toLowerCase().trim());
+          }
+        }
       }
 
-      // Query existing suppliers by name
-      if (suppliersToProcess.length > 0) {
-        const uniqueNames = [...new Set(suppliersToProcess.map((s) => s.normalizedName))];
+      // Merge all unique supplier names
+      const allSupplierNames = new Set([
+        ...suppliersToProcess.map((s) => s.normalizedName),
+        ...Array.from(supplierNamesFromIngredients),
+      ]);
 
-        for (const name of uniqueNames) {
+      console.log('[Commit] Found', allSupplierNames.size, 'unique suppliers to process');
+
+      // Query existing suppliers by name
+      if (allSupplierNames.size > 0) {
+        for (const name of allSupplierNames) {
           const existingSuppliers = await db
             .collection('suppliers')
             .where('name', '>=', name)
@@ -436,7 +526,44 @@ export const commitImport = onCall(
           if (!existingSuppliers.empty && existingSuppliers.docs[0]) {
             const existingDoc = existingSuppliers.docs[0];
             supplierNameToId.set(name, existingDoc.id);
+            console.log('[Commit] Found existing supplier:', name, '->', existingDoc.id);
           }
+        }
+      }
+
+      // Create missing suppliers
+      const suppliersToCreate = Array.from(allSupplierNames).filter(
+        (name) => !supplierNameToId.has(name)
+      );
+      if (suppliersToCreate.length > 0) {
+        console.log('[Commit] Creating', suppliersToCreate.length, 'new suppliers');
+
+        for (let i = 0; i < suppliersToCreate.length; i += batchSize) {
+          const batch = db.batch();
+          const chunk = suppliersToCreate.slice(i, i + batchSize);
+
+          for (const supplierName of chunk) {
+            const supplierId = uuidv4();
+            const supplierRef = db.collection('suppliers').doc(supplierId);
+
+            batch.set(supplierRef, {
+              id: supplierId,
+              name: supplierName.charAt(0).toUpperCase() + supplierName.slice(1), // Capitalize first letter
+              organizationId: outletId || 'GLOBAL',
+              outletId: outletId || 'GLOBAL',
+              category: ['FOOD'],
+              paymentTerms: 'NET_30',
+              isActive: true,
+              rating: 0,
+              createdAt: admin.firestore.FieldValue.serverTimestamp(),
+              updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+            });
+
+            supplierNameToId.set(supplierName, supplierId);
+            console.log('[Commit] Created supplier:', supplierName, '->', supplierId);
+          }
+
+          await batch.commit();
         }
       }
 
@@ -447,6 +574,9 @@ export const commitImport = onCall(
         supplierId?: string;
       }> = [];
 
+      // Collect ingredients that need classification
+      const ingredientsNeedingClassification: string[] = [];
+
       for (const item of items) {
         const { type, data } = item;
         const itemType = type === 'unknown' ? defaultType : type;
@@ -455,6 +585,121 @@ export const commitImport = onCall(
           const normalizedName = data.name.toLowerCase().trim();
           const supplierId = data.supplierId || data.preferredSupplierId;
           ingredientsToProcess.push({ item, normalizedName, supplierId });
+
+          // If ingredient doesn't have category, mark for AI classification
+          if (!data.category && !data.type) {
+            ingredientsNeedingClassification.push(data.name);
+          }
+        }
+      }
+
+      // AI Classification for ingredients without category
+      const classifications: Record<string, any> = {};
+      if (ingredientsNeedingClassification.length > 0) {
+        console.log(
+          '[Commit] Classifying',
+          ingredientsNeedingClassification.length,
+          'ingredients with AI'
+        );
+
+        try {
+          // Call the classification AI with caching
+          const vertexAI = new VertexAI({
+            project: process.env.GCLOUD_PROJECT || admin.app().options.projectId || 'chefosv2',
+            location: 'europe-southwest1',
+          });
+          const generativeModel = vertexAI.getGenerativeModel({
+            model: 'gemini-2.0-flash',
+          });
+
+          // Process in batches of 50 to avoid token limits
+          const classificationBatchSize = 50;
+          for (
+            let i = 0;
+            i < ingredientsNeedingClassification.length;
+            i += classificationBatchSize
+          ) {
+            const batch = ingredientsNeedingClassification.slice(i, i + classificationBatchSize);
+
+            // Check cache first for each ingredient
+            const uncachedIngredients: string[] = [];
+            for (const ingredientName of batch) {
+              const cached = await getCachedResult('ingredient_classification', ingredientName);
+              if (cached) {
+                console.log('[Commit] Cache HIT for:', ingredientName);
+                classifications[ingredientName] = cached;
+              } else {
+                uncachedIngredients.push(ingredientName);
+              }
+            }
+
+            // Only call AI for uncached ingredients
+            if (uncachedIngredients.length > 0) {
+              const prompt = `
+Eres un experto en clasificación de ingredientes de cocina. Clasifica cada ingrediente en las siguientes categorías:
+
+**CATEGORÍAS VÁLIDAS:**
+- Verduras (verduras, hortalizas, frutas)
+- Carnes (ternera, cerdo, pollo, cordero)
+- Pescados (pescados y mariscos)
+- Lácteos (leche, queso, yogur, mantequilla, nata)
+- Secos (arroz, pasta, legumbres, harinas, especias)
+- Congelados
+- Conservas
+- Aceites
+- Condimentos
+- Otros
+
+**INGREDIENTES A CLASIFICAR:**
+${uncachedIngredients.join('\n')}
+
+**FORMATO DE SALIDA (JSON):**
+{
+  "classifications": {
+    "Nombre Ingrediente": {
+      "category": "categoría_válida",
+      "allergens": []
+    }
+  }
+}
+
+IMPORTANTE: Solo JSON válido. Sin markdown, sin explicaciones extra.
+`;
+
+              const result = await generativeModel.generateContent({
+                contents: [{ role: 'user', parts: [{ text: prompt }] }],
+                generationConfig: { responseMimeType: 'application/json' } as any,
+              });
+
+              const responseText = result.response.candidates?.[0]?.content?.parts?.[0]?.text;
+              if (responseText) {
+                const aiResponse = JSON.parse(responseText);
+                if (aiResponse.classifications) {
+                  // Store classifications and cache them
+                  for (const [ingredientName, classification] of Object.entries(
+                    aiResponse.classifications
+                  )) {
+                    classifications[ingredientName] = classification;
+                    // Cache for 30 days
+                    await setCachedResult(
+                      'ingredient_classification',
+                      ingredientName,
+                      classification
+                    );
+                  }
+                }
+              }
+            }
+          }
+
+          console.log(
+            '[Commit] AI classification complete. Classified',
+            Object.keys(classifications).length,
+            'ingredients'
+          );
+        } catch (classificationError: any) {
+          console.error('[Commit] AI classification error:', classificationError);
+          // Continue without classification if AI fails
         }
       }
 
@@ -563,13 +808,22 @@ export const commitImport = onCall(
               }
             }
 
-            // Apply category from AI classification if provided
-            if (data.category) {
+            // Apply category from AI classification if not already set
+            if (!data.category && !data.type && classifications[data.name]) {
+              updateData.category = classifications[data.name].category;
+              console.log('[Commit] Applied AI category to', data.name, ':', updateData.category);
+            } else if (data.category) {
               updateData.category = data.category;
             }
 
-            // Apply allergens from AI classification if provided
-            if (data.allergens && Array.isArray(data.allergens)) {
+            // Apply allergens from AI classification if not already set
+            if (
+              (!data.allergens || data.allergens.length === 0) &&
+              classifications[data.name]?.allergens
+            ) {
+              updateData.allergens = classifications[data.name].allergens;
+              console.log('[Commit] Applied AI allergens to', data.name, ':', updateData.allergens);
+            } else if (data.allergens && Array.isArray(data.allergens)) {
               updateData.allergens = data.allergens;
             }
 
