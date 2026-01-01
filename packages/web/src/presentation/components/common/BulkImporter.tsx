@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import Papa from 'papaparse';
+import * as XLSX from 'xlsx';
 import { useStore } from '@/presentation/store/useStore';
 import { db } from '@/config/firebase';
 import { collection, writeBatch, doc, query, where, getDocs } from 'firebase/firestore';
@@ -30,7 +31,7 @@ interface CSVRow {
 }
 
 export const BulkImporter: React.FC<BulkImporterProps> = ({
-  buttonLabel = 'Importador Masivo CSV',
+  buttonLabel = 'Importador Masivo CSV/Excel',
   className = '',
 }) => {
   const { currentUser, activeOutletId } = useStore();
@@ -71,7 +72,7 @@ export const BulkImporter: React.FC<BulkImporterProps> = ({
     document.body.removeChild(link);
   };
 
-  // Normaliza una fila del CSV para que tenga el formato estándar
+  // Normaliza una fila del CSV/Excel para que tenga el formato estándar
   const normalizeRow = (
     row: CSVRow
   ): {
@@ -116,19 +117,193 @@ export const BulkImporter: React.FC<BulkImporterProps> = ({
 
     if (!hasStandardFormat && !hasExcelFormat) {
       setError(
-        'Formato de CSV no válido. Debe incluir las columnas: Articulo, Unidad, Tipo (o name, unit, category)'
+        'Formato no válido. Debe incluir las columnas: Articulo, Unidad, Tipo (o name, unit, category)'
       );
       return false;
     }
     return true;
   };
 
+  const processImport = async (rows: CSVRow[], inputElement: HTMLInputElement) => {
+    try {
+      if (rows.length === 0) {
+        throw new Error('El archivo está vacío');
+      }
+
+      setTotal(rows.length);
+
+      // Step 1: Collect unique supplier names
+      const uniqueSupplierNames = new Set<string>();
+      rows.forEach((row) => {
+        const normalized = normalizeRow(row);
+        if (normalized?.supplier) {
+          uniqueSupplierNames.add(normalized.supplier);
+        }
+      });
+
+      console.log('[Import] Found unique suppliers:', Array.from(uniqueSupplierNames));
+
+      // Step 2: Check which suppliers already exist in Firestore
+      const supplierMap = new Map<string, string>(); // name -> supplierId
+      let suppliersCreated = 0;
+
+      if (uniqueSupplierNames.size > 0) {
+        try {
+          // Query existing suppliers
+          const suppliersSnapshot = await getDocs(
+            query(collection(db, 'suppliers'), where('outletId', '==', activeOutletId || 'GLOBAL'))
+          );
+
+          console.log('[Import] Existing suppliers found:', suppliersSnapshot.size);
+
+          suppliersSnapshot.docs.forEach((doc) => {
+            const data = doc.data();
+            if (data.name) {
+              supplierMap.set(data.name, doc.id);
+              console.log('[Import] Mapped existing supplier:', data.name, '->', doc.id);
+            }
+          });
+
+          // Step 3: Create missing suppliers
+          const batch = writeBatch(db);
+          let batchCount = 0;
+
+          for (const supplierName of uniqueSupplierNames) {
+            if (!supplierMap.has(supplierName)) {
+              const supplierRef = doc(collection(db, 'suppliers'));
+              const supplierData = {
+                name: supplierName,
+                organizationId: activeOutletId || 'GLOBAL',
+                outletId: activeOutletId || 'GLOBAL',
+                category: ['FOOD'],
+                paymentTerms: 'NET_30',
+                isActive: true,
+                rating: 0,
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString(),
+              };
+
+              console.log('[Import] Creating supplier:', supplierName, supplierData);
+
+              batch.set(supplierRef, supplierData);
+              supplierMap.set(supplierName, supplierRef.id);
+              suppliersCreated++;
+              batchCount++;
+
+              // Commit batch if it reaches 500 operations
+              if (batchCount >= 500) {
+                await batch.commit();
+                console.log('[Import] Committed batch of suppliers');
+                batchCount = 0;
+              }
+            } else {
+              console.log('[Import] Supplier already exists:', supplierName);
+            }
+          }
+
+          // Commit remaining suppliers
+          if (batchCount > 0) {
+            console.log('[Import] Committing final suppliers batch:', batchCount);
+            await batch.commit();
+            console.log('[Import] Suppliers created successfully:', suppliersCreated);
+          }
+        } catch (supplierError: any) {
+          console.error('[Import] Error creating suppliers:', supplierError);
+          throw new Error('Error creando proveedores: ' + supplierError.message);
+        }
+      }
+
+      // Step 4: Import ingredients with supplier references
+      const batchSize = 500;
+      let imported = 0;
+
+      console.log(
+        '[Import] Starting ingredient import. Supplier map:',
+        Object.fromEntries(supplierMap)
+      );
+
+      for (let i = 0; i < rows.length; i += batchSize) {
+        const batch = writeBatch(db);
+        const chunk = rows.slice(i, i + batchSize);
+
+        chunk.forEach((row) => {
+          const normalized = normalizeRow(row);
+
+          if (!normalized) {
+            console.warn('[Import] Skipping invalid row:', row);
+            return; // Skip invalid rows
+          }
+
+          const ingredientData: any = {
+            name: normalized.name,
+            currentStock: parseFloat(normalized.quantity) || 1,
+            unit: normalized.unit,
+            category: normalized.category,
+            expiryDate: null,
+            outletId: activeOutletId || 'GLOBAL',
+            userId: currentUser!.id,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+          };
+
+          // Add supplier reference if provided
+          if (normalized.supplier) {
+            const supplierId = supplierMap.get(normalized.supplier);
+            if (supplierId) {
+              ingredientData.preferredSupplierId = supplierId;
+              console.log(
+                '[Import] Linked ingredient',
+                normalized.name,
+                'to supplier',
+                normalized.supplier,
+                '(',
+                supplierId,
+                ')'
+              );
+            } else {
+              console.warn('[Import] Supplier not found in map:', normalized.supplier);
+            }
+          }
+
+          const ingredientRef = doc(collection(db, 'ingredients'));
+          batch.set(ingredientRef, ingredientData);
+
+          imported++;
+        });
+
+        await batch.commit();
+        setProgress(imported);
+        console.log('[Import] Committed batch of', chunk.length, 'ingredients. Total:', imported);
+      }
+
+      setResult({ imported, suppliersCreated });
+      setStep('success');
+
+      const message =
+        suppliersCreated > 0
+          ? `${imported} ingredientes y ${suppliersCreated} proveedores creados`
+          : `${imported} ingredientes importados correctamente`;
+
+      addToast(message, 'success');
+    } catch (err: any) {
+      console.error('Import error:', err);
+      setError(err.message || 'Error al procesar el archivo');
+      setStep('upload');
+    } finally {
+      setLoading(false);
+      inputElement.value = '';
+    }
+  };
+
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file || !currentUser) return;
 
-    if (!file.name.endsWith('.csv')) {
-      setError('Solo se permiten archivos .csv');
+    const isExcel = file.name.endsWith('.xlsx') || file.name.endsWith('.xls');
+    const isCSV = file.name.endsWith('.csv');
+
+    if (!isExcel && !isCSV) {
+      setError('Solo se permiten archivos .csv, .xlsx o .xls');
       e.target.value = '';
       return;
     }
@@ -137,204 +312,100 @@ export const BulkImporter: React.FC<BulkImporterProps> = ({
     setLoading(true);
     setStep('processing');
 
-    Papa.parse<CSVRow>(file, {
-      header: true,
-      skipEmptyLines: true,
-      complete: async (results) => {
-        try {
-          // Validate columns
-          if (!validateColumns(results.meta.fields || [])) {
-            setStep('upload');
-            setLoading(false);
-            e.target.value = '';
-            return;
-          }
+    try {
+      let rows: CSVRow[] = [];
+      let headers: string[] = [];
 
-          const rows = results.data;
-          if (rows.length === 0) {
-            throw new Error('El archivo CSV está vacío');
-          }
+      if (isExcel) {
+        // Parse Excel file
+        console.log('[Excel Import] Reading Excel file:', file.name);
+        const arrayBuffer = await file.arrayBuffer();
+        const workbook = XLSX.read(arrayBuffer, { type: 'array' });
+        const firstSheetName = workbook.SheetNames[0];
+        if (!firstSheetName) {
+          throw new Error('El archivo Excel no contiene hojas');
+        }
+        const worksheet = workbook.Sheets[firstSheetName];
+        if (!worksheet) {
+          throw new Error('No se pudo leer la hoja de Excel');
+        }
+        const jsonData: any[] = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
 
-          setTotal(rows.length);
+        if (jsonData.length === 0) {
+          throw new Error('El archivo Excel está vacío');
+        }
 
-          // Step 1: Collect unique supplier names from CSV
-          const uniqueSupplierNames = new Set<string>();
-          rows.forEach((row) => {
-            const normalized = normalizeRow(row);
-            if (normalized?.supplier) {
-              uniqueSupplierNames.add(normalized.supplier);
-            }
-          });
+        // First row is headers
+        headers = jsonData[0] as string[];
+        console.log('[Excel Import] Headers:', headers);
 
-          console.log('[CSV Import] Found unique suppliers:', Array.from(uniqueSupplierNames));
-
-          // Step 2: Check which suppliers already exist in Firestore
-          const supplierMap = new Map<string, string>(); // name -> supplierId
-          let suppliersCreated = 0;
-
-          if (uniqueSupplierNames.size > 0) {
-            try {
-              // Query existing suppliers
-              const suppliersSnapshot = await getDocs(
-                query(
-                  collection(db, 'suppliers'),
-                  where('outletId', '==', activeOutletId || 'GLOBAL')
-                )
-              );
-
-              console.log('[CSV Import] Existing suppliers found:', suppliersSnapshot.size);
-
-              suppliersSnapshot.docs.forEach((doc) => {
-                const data = doc.data();
-                if (data.name) {
-                  supplierMap.set(data.name, doc.id);
-                  console.log('[CSV Import] Mapped existing supplier:', data.name, '->', doc.id);
-                }
-              });
-
-              // Step 3: Create missing suppliers
-              const batch = writeBatch(db);
-              let batchCount = 0;
-
-              for (const supplierName of uniqueSupplierNames) {
-                if (!supplierMap.has(supplierName)) {
-                  const supplierRef = doc(collection(db, 'suppliers'));
-                  const supplierData = {
-                    name: supplierName,
-                    organizationId: activeOutletId || 'GLOBAL',
-                    outletId: activeOutletId || 'GLOBAL',
-                    category: ['FOOD'],
-                    paymentTerms: 'NET_30',
-                    isActive: true,
-                    rating: 0,
-                    createdAt: new Date().toISOString(),
-                    updatedAt: new Date().toISOString(),
-                  };
-
-                  console.log('[CSV Import] Creating supplier:', supplierName, supplierData);
-
-                  batch.set(supplierRef, supplierData);
-                  supplierMap.set(supplierName, supplierRef.id);
-                  suppliersCreated++;
-                  batchCount++;
-
-                  // Commit batch if it reaches 500 operations
-                  if (batchCount >= 500) {
-                    await batch.commit();
-                    console.log('[CSV Import] Committed batch of suppliers');
-                    batchCount = 0;
-                  }
-                } else {
-                  console.log('[CSV Import] Supplier already exists:', supplierName);
-                }
-              }
-
-              // Commit remaining suppliers
-              if (batchCount > 0) {
-                console.log('[CSV Import] Committing final suppliers batch:', batchCount);
-                await batch.commit();
-                console.log('[CSV Import] Suppliers created successfully:', suppliersCreated);
-              }
-            } catch (supplierError: any) {
-              console.error('[CSV Import] Error creating suppliers:', supplierError);
-              throw new Error('Error creando proveedores: ' + supplierError.message);
-            }
-          }
-
-          // Step 4: Import ingredients with supplier references
-          const batchSize = 500;
-          let imported = 0;
-
-          console.log(
-            '[CSV Import] Starting ingredient import. Supplier map:',
-            Object.fromEntries(supplierMap)
-          );
-
-          for (let i = 0; i < rows.length; i += batchSize) {
-            const batch = writeBatch(db);
-            const chunk = rows.slice(i, i + batchSize);
-
-            chunk.forEach((row) => {
-              const normalized = normalizeRow(row);
-
-              if (!normalized) {
-                console.warn('[CSV Import] Skipping invalid row:', row);
-                return; // Skip invalid rows
-              }
-
-              const ingredientData: any = {
-                name: normalized.name,
-                currentStock: parseFloat(normalized.quantity) || 1,
-                unit: normalized.unit,
-                category: normalized.category,
-                expiryDate: null,
-                outletId: activeOutletId || 'GLOBAL',
-                userId: currentUser.id,
-                createdAt: new Date().toISOString(),
-                updatedAt: new Date().toISOString(),
-              };
-
-              // Add supplier reference if provided
-              if (normalized.supplier) {
-                const supplierId = supplierMap.get(normalized.supplier);
-                if (supplierId) {
-                  ingredientData.preferredSupplierId = supplierId;
-                  console.log(
-                    '[CSV Import] Linked ingredient',
-                    normalized.name,
-                    'to supplier',
-                    normalized.supplier,
-                    '(',
-                    supplierId,
-                    ')'
-                  );
-                } else {
-                  console.warn('[CSV Import] Supplier not found in map:', normalized.supplier);
-                }
-              }
-
-              const ingredientRef = doc(collection(db, 'ingredients'));
-              batch.set(ingredientRef, ingredientData);
-
-              imported++;
-            });
-
-            await batch.commit();
-            setProgress(imported);
-            console.log(
-              '[CSV Import] Committed batch of',
-              chunk.length,
-              'ingredients. Total:',
-              imported
-            );
-          }
-
-          setResult({ imported, suppliersCreated });
-          setStep('success');
-
-          const message =
-            suppliersCreated > 0
-              ? `${imported} ingredientes y ${suppliersCreated} proveedores creados`
-              : `${imported} ingredientes importados correctamente`;
-
-          addToast(message, 'success');
-        } catch (err: any) {
-          console.error('CSV import error:', err);
-          setError(err.message || 'Error al procesar el archivo CSV');
+        // Validate columns
+        if (!validateColumns(headers)) {
           setStep('upload');
-        } finally {
           setLoading(false);
           e.target.value = '';
+          return;
         }
-      },
-      error: (error) => {
-        console.error('CSV parse error:', error);
-        setError('Error al leer el archivo CSV: ' + error.message);
-        setStep('upload');
-        setLoading(false);
-        e.target.value = '';
-      },
-    });
+
+        // Convert remaining rows to objects
+        rows = jsonData
+          .slice(1)
+          .map((row: any) => {
+            const obj: any = {};
+            headers.forEach((header, index) => {
+              if (row[index] !== undefined && row[index] !== null && row[index] !== '') {
+                obj[header] = String(row[index]);
+              }
+            });
+            return obj as CSVRow;
+          })
+          .filter((row) => {
+            // Filter out completely empty rows
+            const normalized = normalizeRow(row);
+            return normalized !== null;
+          });
+
+        console.log('[Excel Import] Parsed', rows.length, 'valid rows from Excel');
+      } else {
+        // Parse CSV file
+        console.log('[CSV Import] Reading CSV file:', file.name);
+        await new Promise<void>((resolve, reject) => {
+          Papa.parse<CSVRow>(file, {
+            header: true,
+            skipEmptyLines: true,
+            complete: (results) => {
+              rows = results.data;
+              headers = results.meta.fields || [];
+              console.log('[CSV Import] Headers:', headers);
+              console.log('[CSV Import] Parsed', rows.length, 'rows from CSV');
+
+              // Validate columns
+              if (!validateColumns(headers)) {
+                setStep('upload');
+                setLoading(false);
+                e.target.value = '';
+                reject(new Error('Invalid columns'));
+                return;
+              }
+
+              resolve();
+            },
+            error: (parseError) => {
+              reject(new Error('Error al leer el archivo CSV: ' + parseError.message));
+            },
+          });
+        });
+      }
+
+      // Process the import with the parsed rows
+      await processImport(rows, e.target);
+    } catch (parseError: any) {
+      console.error('File parsing error:', parseError);
+      setError(parseError.message || 'Error al leer el archivo');
+      setStep('upload');
+      setLoading(false);
+      e.target.value = '';
+    }
   };
 
   return (
@@ -343,7 +414,7 @@ export const BulkImporter: React.FC<BulkImporterProps> = ({
       <button
         onClick={() => setIsOpen(true)}
         className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors shadow-lg active:scale-95 text-xs font-bold uppercase tracking-widest"
-        title="Importador CSV sin IA - Rápido y eficiente"
+        title="Importador CSV/Excel sin IA - Rápido y eficiente"
       >
         <FileSpreadsheet className="w-4 h-4" />
         <span>{buttonLabel}</span>
@@ -365,7 +436,7 @@ export const BulkImporter: React.FC<BulkImporterProps> = ({
                     <FileSpreadsheet className="w-6 h-6" />
                   </div>
                   <div>
-                    <h2 className="text-xl font-bold text-white">Importador CSV Masivo</h2>
+                    <h2 className="text-xl font-bold text-white">Importador CSV/Excel Masivo</h2>
                     <span className="text-[10px] uppercase tracking-widest text-slate-500 font-bold">
                       Sin IA · Rápido · Eficiente
                     </span>
@@ -385,8 +456,8 @@ export const BulkImporter: React.FC<BulkImporterProps> = ({
               </div>
 
               <p className="text-slate-400 text-xs mb-4 leading-relaxed">
-                Importa ingredientes desde un archivo CSV. Procesamiento instantáneo en tu navegador
-                sin costes de servidor.
+                Importa ingredientes desde un archivo CSV o Excel. Procesamiento instantáneo en tu
+                navegador sin costes de servidor.
               </p>
 
               {/* Download Template Button */}
@@ -402,7 +473,7 @@ export const BulkImporter: React.FC<BulkImporterProps> = ({
                 <div className="relative border-2 border-dashed rounded-2xl p-8 text-center transition-all duration-300 bg-surface/30 hover:bg-surface/50 border-blue-600/40 hover:border-blue-500">
                   <input
                     type="file"
-                    accept=".csv"
+                    accept=".csv,.xlsx,.xls"
                     onChange={handleFileUpload}
                     className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
                     disabled={loading}
@@ -413,9 +484,11 @@ export const BulkImporter: React.FC<BulkImporterProps> = ({
                     </div>
                     <div>
                       <p className="text-slate-200 font-bold text-sm">
-                        Arrastra tu archivo CSV aquí
+                        Arrastra tu archivo CSV o Excel aquí
                       </p>
-                      <p className="text-slate-500 text-xs mt-1">o haz clic para seleccionar</p>
+                      <p className="text-slate-500 text-xs mt-1">
+                        o haz clic para seleccionar (.csv, .xlsx, .xls)
+                      </p>
                     </div>
                   </div>
                 </div>

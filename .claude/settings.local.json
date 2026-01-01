@@ -46,7 +46,8 @@
       "Bash(pnpm add:*)",
       "Bash(npx pnpm add papaparse @types/papaparse --filter @culinaryos/web)",
       "Bash(npx pnpm -r build)",
-      "Bash(npx pnpm:*)"
+      "Bash(npx pnpm:*)",
+      "Bash(git checkout:*)"
     ]
   }
 }
