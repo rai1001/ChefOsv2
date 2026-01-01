@@ -12,12 +12,21 @@ interface BulkImporterProps {
 }
 
 interface CSVRow {
-  name: string;
-  quantity: string;
-  unit: string;
-  category: string;
+  // Formato estándar
+  name?: string;
+  quantity?: string;
+  unit?: string;
+  category?: string;
   supplier?: string;
   expiry_date?: string;
+
+  // Formato Excel alternativo
+  Proveedor?: string;
+  Articulo?: string;
+  Precio?: string;
+  Unidad?: string;
+  Tipo?: string;
+  Observaciones?: string;
 }
 
 export const BulkImporter: React.FC<BulkImporterProps> = ({
@@ -46,10 +55,10 @@ export const BulkImporter: React.FC<BulkImporterProps> = ({
 
   const downloadTemplate = () => {
     const csvContent =
-      'name,quantity,unit,category,supplier,expiry_date\n' +
-      'Tomates,10,kg,Verduras,Proveedores García,2025-12-31\n' +
-      'Aceite de Oliva,5,L,Aceites,Distribuciones Martínez,2026-06-30\n' +
-      'Sal,2,kg,Condimentos,Proveedores García,';
+      'Proveedor,Articulo,Precio,Unidad,Tipo,Observaciones\n' +
+      'Proveedores García,Tomates,2.50,kg,Verduras,\n' +
+      'Distribuciones Martínez,Aceite de Oliva,5.00,L,Aceites,\n' +
+      'Proveedores García,Sal,1.00,kg,Condimentos,';
 
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');
@@ -62,15 +71,54 @@ export const BulkImporter: React.FC<BulkImporterProps> = ({
     document.body.removeChild(link);
   };
 
+  // Normaliza una fila del CSV para que tenga el formato estándar
+  const normalizeRow = (
+    row: CSVRow
+  ): {
+    name: string;
+    quantity: string;
+    unit: string;
+    category: string;
+    supplier?: string;
+  } | null => {
+    // Mapeo de columnas Excel -> formato estándar
+    const name = row.name || row.Articulo;
+    const unit = row.unit || row.Unidad;
+    const category = row.category || row.Tipo;
+    const supplier = row.supplier || row.Proveedor;
+
+    // quantity puede venir como "Precio" en el Excel o como cantidad directa
+    let quantity = row.quantity;
+    if (!quantity && row.Precio) {
+      // Si solo tenemos precio, usar 1 como cantidad por defecto
+      quantity = '1';
+    }
+
+    if (!name || !unit || !category) {
+      return null;
+    }
+
+    return {
+      name: name.trim(),
+      quantity: quantity || '1',
+      unit: unit.trim(),
+      category: category.trim(),
+      supplier: supplier?.trim(),
+    };
+  };
+
   const validateColumns = (headers: string[]): boolean => {
-    const required = ['name', 'quantity', 'unit', 'category'];
     const normalized = headers.map((h) => h.toLowerCase().trim());
 
-    for (const req of required) {
-      if (!normalized.includes(req)) {
-        setError(`Columna requerida faltante: "${req}". Usa la plantilla CSV.`);
-        return false;
-      }
+    // Acepta formato estándar O formato Excel
+    const hasStandardFormat = ['name', 'unit', 'category'].every((col) => normalized.includes(col));
+    const hasExcelFormat = ['articulo', 'unidad', 'tipo'].every((col) => normalized.includes(col));
+
+    if (!hasStandardFormat && !hasExcelFormat) {
+      setError(
+        'Formato de CSV no válido. Debe incluir las columnas: Articulo, Unidad, Tipo (o name, unit, category)'
+      );
+      return false;
     }
     return true;
   };
@@ -112,64 +160,84 @@ export const BulkImporter: React.FC<BulkImporterProps> = ({
           // Step 1: Collect unique supplier names from CSV
           const uniqueSupplierNames = new Set<string>();
           rows.forEach((row) => {
-            if (row.supplier && row.supplier.trim()) {
-              uniqueSupplierNames.add(row.supplier.trim());
+            const normalized = normalizeRow(row);
+            if (normalized?.supplier) {
+              uniqueSupplierNames.add(normalized.supplier);
             }
           });
+
+          console.log('[CSV Import] Found unique suppliers:', Array.from(uniqueSupplierNames));
 
           // Step 2: Check which suppliers already exist in Firestore
           const supplierMap = new Map<string, string>(); // name -> supplierId
           let suppliersCreated = 0;
 
           if (uniqueSupplierNames.size > 0) {
-            // Query existing suppliers
-            const suppliersSnapshot = await getDocs(
-              query(
-                collection(db, 'suppliers'),
-                where('outletId', '==', activeOutletId || 'GLOBAL')
-              )
-            );
+            try {
+              // Query existing suppliers
+              const suppliersSnapshot = await getDocs(
+                query(
+                  collection(db, 'suppliers'),
+                  where('outletId', '==', activeOutletId || 'GLOBAL')
+                )
+              );
 
-            suppliersSnapshot.docs.forEach((doc) => {
-              const data = doc.data();
-              if (data.name) {
-                supplierMap.set(data.name, doc.id);
-              }
-            });
+              console.log('[CSV Import] Existing suppliers found:', suppliersSnapshot.size);
 
-            // Step 3: Create missing suppliers
-            const batch = writeBatch(db);
-            let batchCount = 0;
+              suppliersSnapshot.docs.forEach((doc) => {
+                const data = doc.data();
+                if (data.name) {
+                  supplierMap.set(data.name, doc.id);
+                  console.log('[CSV Import] Mapped existing supplier:', data.name, '->', doc.id);
+                }
+              });
 
-            for (const supplierName of uniqueSupplierNames) {
-              if (!supplierMap.has(supplierName)) {
-                const supplierRef = doc(collection(db, 'suppliers'));
-                batch.set(supplierRef, {
-                  name: supplierName,
-                  organizationId: activeOutletId || 'GLOBAL',
-                  outletId: activeOutletId || 'GLOBAL',
-                  category: ['FOOD'],
-                  paymentTerms: 'NET_30',
-                  isActive: true,
-                  rating: 0,
-                  createdAt: new Date().toISOString(),
-                  updatedAt: new Date().toISOString(),
-                });
-                supplierMap.set(supplierName, supplierRef.id);
-                suppliersCreated++;
-                batchCount++;
+              // Step 3: Create missing suppliers
+              const batch = writeBatch(db);
+              let batchCount = 0;
 
-                // Commit batch if it reaches 500 operations
-                if (batchCount >= 500) {
-                  await batch.commit();
-                  batchCount = 0;
+              for (const supplierName of uniqueSupplierNames) {
+                if (!supplierMap.has(supplierName)) {
+                  const supplierRef = doc(collection(db, 'suppliers'));
+                  const supplierData = {
+                    name: supplierName,
+                    organizationId: activeOutletId || 'GLOBAL',
+                    outletId: activeOutletId || 'GLOBAL',
+                    category: ['FOOD'],
+                    paymentTerms: 'NET_30',
+                    isActive: true,
+                    rating: 0,
+                    createdAt: new Date().toISOString(),
+                    updatedAt: new Date().toISOString(),
+                  };
+
+                  console.log('[CSV Import] Creating supplier:', supplierName, supplierData);
+
+                  batch.set(supplierRef, supplierData);
+                  supplierMap.set(supplierName, supplierRef.id);
+                  suppliersCreated++;
+                  batchCount++;
+
+                  // Commit batch if it reaches 500 operations
+                  if (batchCount >= 500) {
+                    await batch.commit();
+                    console.log('[CSV Import] Committed batch of suppliers');
+                    batchCount = 0;
+                  }
+                } else {
+                  console.log('[CSV Import] Supplier already exists:', supplierName);
                 }
               }
-            }
 
-            // Commit remaining suppliers
-            if (batchCount > 0) {
-              await batch.commit();
+              // Commit remaining suppliers
+              if (batchCount > 0) {
+                console.log('[CSV Import] Committing final suppliers batch:', batchCount);
+                await batch.commit();
+                console.log('[CSV Import] Suppliers created successfully:', suppliersCreated);
+              }
+            } catch (supplierError: any) {
+              console.error('[CSV Import] Error creating suppliers:', supplierError);
+              throw new Error('Error creando proveedores: ' + supplierError.message);
             }
           }
 
@@ -177,21 +245,29 @@ export const BulkImporter: React.FC<BulkImporterProps> = ({
           const batchSize = 500;
           let imported = 0;
 
+          console.log(
+            '[CSV Import] Starting ingredient import. Supplier map:',
+            Object.fromEntries(supplierMap)
+          );
+
           for (let i = 0; i < rows.length; i += batchSize) {
             const batch = writeBatch(db);
             const chunk = rows.slice(i, i + batchSize);
 
             chunk.forEach((row) => {
-              if (!row.name || !row.quantity || !row.unit || !row.category) {
+              const normalized = normalizeRow(row);
+
+              if (!normalized) {
+                console.warn('[CSV Import] Skipping invalid row:', row);
                 return; // Skip invalid rows
               }
 
               const ingredientData: any = {
-                name: row.name.trim(),
-                currentStock: parseFloat(row.quantity) || 0,
-                unit: row.unit.trim(),
-                category: row.category.trim(),
-                expiryDate: row.expiry_date ? row.expiry_date.trim() : null,
+                name: normalized.name,
+                currentStock: parseFloat(normalized.quantity) || 1,
+                unit: normalized.unit,
+                category: normalized.category,
+                expiryDate: null,
                 outletId: activeOutletId || 'GLOBAL',
                 userId: currentUser.id,
                 createdAt: new Date().toISOString(),
@@ -199,10 +275,21 @@ export const BulkImporter: React.FC<BulkImporterProps> = ({
               };
 
               // Add supplier reference if provided
-              if (row.supplier && row.supplier.trim()) {
-                const supplierId = supplierMap.get(row.supplier.trim());
+              if (normalized.supplier) {
+                const supplierId = supplierMap.get(normalized.supplier);
                 if (supplierId) {
                   ingredientData.preferredSupplierId = supplierId;
+                  console.log(
+                    '[CSV Import] Linked ingredient',
+                    normalized.name,
+                    'to supplier',
+                    normalized.supplier,
+                    '(',
+                    supplierId,
+                    ')'
+                  );
+                } else {
+                  console.warn('[CSV Import] Supplier not found in map:', normalized.supplier);
                 }
               }
 
@@ -214,6 +301,12 @@ export const BulkImporter: React.FC<BulkImporterProps> = ({
 
             await batch.commit();
             setProgress(imported);
+            console.log(
+              '[CSV Import] Committed batch of',
+              chunk.length,
+              'ingredients. Total:',
+              imported
+            );
           }
 
           setResult({ imported, suppliersCreated });
