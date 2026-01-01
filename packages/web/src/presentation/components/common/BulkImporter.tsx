@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import Papa from 'papaparse';
 import { useStore } from '@/presentation/store/useStore';
 import { db } from '@/config/firebase';
-import { collection, writeBatch, doc } from 'firebase/firestore';
+import { collection, writeBatch, doc, query, where, getDocs } from 'firebase/firestore';
 import { Upload, Download, Loader2, CheckCircle, AlertCircle, FileSpreadsheet } from 'lucide-react';
 import { useToast } from '@/presentation/components/ui';
 
@@ -16,6 +16,7 @@ interface CSVRow {
   quantity: string;
   unit: string;
   category: string;
+  supplier?: string;
   expiry_date?: string;
 }
 
@@ -31,7 +32,7 @@ export const BulkImporter: React.FC<BulkImporterProps> = ({
   const [progress, setProgress] = useState(0);
   const [total, setTotal] = useState(0);
   const [step, setStep] = useState<'upload' | 'processing' | 'success'>('upload');
-  const [result, setResult] = useState<{ imported: number } | null>(null);
+  const [result, setResult] = useState<{ imported: number; suppliersCreated: number } | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const resetState = () => {
@@ -45,10 +46,10 @@ export const BulkImporter: React.FC<BulkImporterProps> = ({
 
   const downloadTemplate = () => {
     const csvContent =
-      'name,quantity,unit,category,expiry_date\n' +
-      'Tomates,10,kg,Verduras,2025-12-31\n' +
-      'Aceite de Oliva,5,L,Aceites,2026-06-30\n' +
-      'Sal,2,kg,Condimentos,';
+      'name,quantity,unit,category,supplier,expiry_date\n' +
+      'Tomates,10,kg,Verduras,Proveedores García,2025-12-31\n' +
+      'Aceite de Oliva,5,L,Aceites,Distribuciones Martínez,2026-06-30\n' +
+      'Sal,2,kg,Condimentos,Proveedores García,';
 
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');
@@ -108,7 +109,71 @@ export const BulkImporter: React.FC<BulkImporterProps> = ({
 
           setTotal(rows.length);
 
-          // Firestore batched writes (500 at a time)
+          // Step 1: Collect unique supplier names from CSV
+          const uniqueSupplierNames = new Set<string>();
+          rows.forEach((row) => {
+            if (row.supplier && row.supplier.trim()) {
+              uniqueSupplierNames.add(row.supplier.trim());
+            }
+          });
+
+          // Step 2: Check which suppliers already exist in Firestore
+          const supplierMap = new Map<string, string>(); // name -> supplierId
+          let suppliersCreated = 0;
+
+          if (uniqueSupplierNames.size > 0) {
+            // Query existing suppliers
+            const suppliersSnapshot = await getDocs(
+              query(
+                collection(db, 'suppliers'),
+                where('outletId', '==', activeOutletId || 'GLOBAL')
+              )
+            );
+
+            suppliersSnapshot.docs.forEach((doc) => {
+              const data = doc.data();
+              if (data.name) {
+                supplierMap.set(data.name, doc.id);
+              }
+            });
+
+            // Step 3: Create missing suppliers
+            const batch = writeBatch(db);
+            let batchCount = 0;
+
+            for (const supplierName of uniqueSupplierNames) {
+              if (!supplierMap.has(supplierName)) {
+                const supplierRef = doc(collection(db, 'suppliers'));
+                batch.set(supplierRef, {
+                  name: supplierName,
+                  organizationId: activeOutletId || 'GLOBAL',
+                  outletId: activeOutletId || 'GLOBAL',
+                  category: ['FOOD'],
+                  paymentTerms: 'NET_30',
+                  isActive: true,
+                  rating: 0,
+                  createdAt: new Date().toISOString(),
+                  updatedAt: new Date().toISOString(),
+                });
+                supplierMap.set(supplierName, supplierRef.id);
+                suppliersCreated++;
+                batchCount++;
+
+                // Commit batch if it reaches 500 operations
+                if (batchCount >= 500) {
+                  await batch.commit();
+                  batchCount = 0;
+                }
+              }
+            }
+
+            // Commit remaining suppliers
+            if (batchCount > 0) {
+              await batch.commit();
+            }
+          }
+
+          // Step 4: Import ingredients with supplier references
           const batchSize = 500;
           let imported = 0;
 
@@ -121,8 +186,7 @@ export const BulkImporter: React.FC<BulkImporterProps> = ({
                 return; // Skip invalid rows
               }
 
-              const ingredientRef = doc(collection(db, 'ingredients'));
-              batch.set(ingredientRef, {
+              const ingredientData: any = {
                 name: row.name.trim(),
                 currentStock: parseFloat(row.quantity) || 0,
                 unit: row.unit.trim(),
@@ -132,7 +196,18 @@ export const BulkImporter: React.FC<BulkImporterProps> = ({
                 userId: currentUser.id,
                 createdAt: new Date().toISOString(),
                 updatedAt: new Date().toISOString(),
-              });
+              };
+
+              // Add supplier reference if provided
+              if (row.supplier && row.supplier.trim()) {
+                const supplierId = supplierMap.get(row.supplier.trim());
+                if (supplierId) {
+                  ingredientData.preferredSupplierId = supplierId;
+                }
+              }
+
+              const ingredientRef = doc(collection(db, 'ingredients'));
+              batch.set(ingredientRef, ingredientData);
 
               imported++;
             });
@@ -141,9 +216,15 @@ export const BulkImporter: React.FC<BulkImporterProps> = ({
             setProgress(imported);
           }
 
-          setResult({ imported });
+          setResult({ imported, suppliersCreated });
           setStep('success');
-          addToast(`${imported} ingredientes importados correctamente`, 'success');
+
+          const message =
+            suppliersCreated > 0
+              ? `${imported} ingredientes y ${suppliersCreated} proveedores creados`
+              : `${imported} ingredientes importados correctamente`;
+
+          addToast(message, 'success');
         } catch (err: any) {
           console.error('CSV import error:', err);
           setError(err.message || 'Error al procesar el archivo CSV');
@@ -277,13 +358,28 @@ export const BulkImporter: React.FC<BulkImporterProps> = ({
                       <h3 className="font-bold text-sm">¡Importación Completada!</h3>
                     </div>
 
-                    <div className="bg-black/40 p-3 rounded-xl border border-white/5">
-                      <span className="text-[10px] font-bold text-slate-500 uppercase block mb-1">
-                        Ingredientes Importados
-                      </span>
-                      <div className="flex items-baseline gap-2">
-                        <span className="text-2xl font-black text-white">{result.imported}</span>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="bg-black/40 p-3 rounded-xl border border-white/5">
+                        <span className="text-[10px] font-bold text-slate-500 uppercase block mb-1">
+                          Ingredientes
+                        </span>
+                        <div className="flex items-baseline gap-2">
+                          <span className="text-2xl font-black text-white">{result.imported}</span>
+                        </div>
                       </div>
+
+                      {result.suppliersCreated > 0 && (
+                        <div className="bg-black/40 p-3 rounded-xl border border-white/5">
+                          <span className="text-[10px] font-bold text-slate-500 uppercase block mb-1">
+                            Proveedores
+                          </span>
+                          <div className="flex items-baseline gap-2">
+                            <span className="text-2xl font-black text-white">
+                              {result.suppliersCreated}
+                            </span>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </div>
 
