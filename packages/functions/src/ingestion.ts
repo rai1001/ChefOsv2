@@ -500,7 +500,17 @@ export const commitImport = onCall(
         ) {
           const supplierName = data.supplier || data.supplierName;
           if (supplierName && typeof supplierName === 'string' && supplierName.trim().length > 0) {
-            supplierNamesFromIngredients.add(supplierName.toLowerCase().trim());
+            const normalized = supplierName.toLowerCase().trim();
+            supplierNamesFromIngredients.add(normalized);
+            console.log(
+              '[Commit] Found supplier from ingredient:',
+              data.name,
+              '->',
+              supplierName,
+              '(normalized:',
+              normalized,
+              ')'
+            );
           }
         }
       }
@@ -513,20 +523,36 @@ export const commitImport = onCall(
 
       console.log('[Commit] Found', allSupplierNames.size, 'unique suppliers to process');
 
-      // Query existing suppliers by name
+      // Query existing suppliers by name (case-insensitive match)
       if (allSupplierNames.size > 0) {
-        for (const name of allSupplierNames) {
-          const existingSuppliers = await db
-            .collection('suppliers')
-            .where('name', '>=', name)
-            .where('name', '<=', name + '\uf8ff')
-            .limit(1)
-            .get();
+        // First, get ALL suppliers for this outlet to do case-insensitive matching
+        const allSuppliersSnapshot = await db
+          .collection('suppliers')
+          .where('outletId', '==', outletId || 'GLOBAL')
+          .get();
 
-          if (!existingSuppliers.empty && existingSuppliers.docs[0]) {
-            const existingDoc = existingSuppliers.docs[0];
-            supplierNameToId.set(name, existingDoc.id);
-            console.log('[Commit] Found existing supplier:', name, '->', existingDoc.id);
+        console.log(
+          '[Commit] Fetched',
+          allSuppliersSnapshot.size,
+          'existing suppliers for matching'
+        );
+
+        // Build a map of normalized names to supplier IDs
+        const existingSuppliersByName = new Map<string, string>();
+        allSuppliersSnapshot.docs.forEach((doc) => {
+          const data = doc.data();
+          if (data.name) {
+            const normalizedName = data.name.toLowerCase().trim();
+            existingSuppliersByName.set(normalizedName, doc.id);
+          }
+        });
+
+        // Match supplier names
+        for (const name of allSupplierNames) {
+          const existingSupplierId = existingSuppliersByName.get(name);
+          if (existingSupplierId) {
+            supplierNameToId.set(name, existingSupplierId);
+            console.log('[Commit] Found existing supplier:', name, '->', existingSupplierId);
           }
         }
       }
@@ -535,8 +561,17 @@ export const commitImport = onCall(
       const suppliersToCreate = Array.from(allSupplierNames).filter(
         (name) => !supplierNameToId.has(name)
       );
+
+      console.log('[Commit] Suppliers to create:', suppliersToCreate);
+      console.log('[Commit] Existing supplier map:', Object.fromEntries(supplierNameToId));
+
       if (suppliersToCreate.length > 0) {
-        console.log('[Commit] Creating', suppliersToCreate.length, 'new suppliers');
+        console.log(
+          '[Commit] Creating',
+          suppliersToCreate.length,
+          'new suppliers:',
+          suppliersToCreate
+        );
 
         for (let i = 0; i < suppliersToCreate.length; i += batchSize) {
           const batch = db.batch();
@@ -546,9 +581,15 @@ export const commitImport = onCall(
             const supplierId = uuidv4();
             const supplierRef = db.collection('suppliers').doc(supplierId);
 
-            batch.set(supplierRef, {
+            // Capitalize each word properly
+            const capitalizedName = supplierName
+              .split(' ')
+              .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+              .join(' ');
+
+            const supplierData = {
               id: supplierId,
-              name: supplierName.charAt(0).toUpperCase() + supplierName.slice(1), // Capitalize first letter
+              name: capitalizedName,
               organizationId: outletId || 'GLOBAL',
               outletId: outletId || 'GLOBAL',
               category: ['FOOD'],
@@ -557,14 +598,21 @@ export const commitImport = onCall(
               rating: 0,
               createdAt: admin.firestore.FieldValue.serverTimestamp(),
               updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-            });
+            };
+
+            console.log('[Commit] Creating supplier with data:', supplierData);
+
+            batch.set(supplierRef, supplierData);
 
             supplierNameToId.set(supplierName, supplierId);
-            console.log('[Commit] Created supplier:', supplierName, '->', supplierId);
+            console.log('[Commit] Mapped supplier:', supplierName, '->', supplierId);
           }
 
           await batch.commit();
+          console.log('[Commit] Successfully committed', chunk.length, 'suppliers');
         }
+      } else {
+        console.log('[Commit] No new suppliers to create');
       }
 
       // Second pass: collect all ingredients and check for existing ones
@@ -799,12 +847,29 @@ IMPORTANTE: Solo JSON válido. Sin markdown, sin explicaciones extra.
             }
 
             // Resolve supplier ID if supplier name is provided
-            if (data.supplierName && !data.supplierId && !data.preferredSupplierId && !supplierId) {
-              const supplierNormalized = data.supplierName.toLowerCase().trim();
+            const supplierNameField = data.supplierName || data.supplier;
+            if (supplierNameField && !data.supplierId && !data.preferredSupplierId && !supplierId) {
+              const supplierNormalized = supplierNameField.toLowerCase().trim();
               const foundSupplierId = supplierNameToId.get(supplierNormalized);
               if (foundSupplierId) {
                 updateData.supplierId = foundSupplierId;
                 updateData.preferredSupplierId = foundSupplierId;
+                console.log(
+                  '[Commit] Linked ingredient',
+                  data.name,
+                  'to supplier',
+                  supplierNameField,
+                  '(ID:',
+                  foundSupplierId,
+                  ')'
+                );
+              } else {
+                console.warn(
+                  '[Commit] WARNING: Could not find supplier ID for',
+                  supplierNameField,
+                  'in ingredient',
+                  data.name
+                );
               }
             }
 

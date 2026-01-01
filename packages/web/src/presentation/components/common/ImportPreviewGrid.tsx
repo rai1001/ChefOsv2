@@ -129,14 +129,14 @@ export const ImportPreviewGrid: React.FC<ImportPreviewGridProps> = ({
         <div className="flex-1">
           <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2">
             <Package size={12} className="inline mr-1" />
-            Proveedor para Todos los Items
+            Proveedor Global (Opcional - sobreescribe proveedores individuales)
           </label>
           <select
             value={selectedSupplier}
             onChange={(e) => setSelectedSupplier(e.target.value)}
             className="w-full bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-primary/50 transition-all"
           >
-            <option value="">Seleccionar proveedor...</option>
+            <option value="">Sin proveedor global - usar proveedores individuales</option>
             {suppliers.map((supplier) => (
               <option key={supplier.id} value={supplier.id}>
                 {supplier.name}
@@ -175,6 +175,9 @@ export const ImportPreviewGrid: React.FC<ImportPreviewGridProps> = ({
               </th>
               <th className="px-4 py-3 text-[10px] font-black text-slate-500 uppercase tracking-widest border-b border-white/5">
                 Nombre
+              </th>
+              <th className="px-4 py-3 text-[10px] font-black text-slate-500 uppercase tracking-widest border-b border-white/5">
+                Proveedor
               </th>
               <th className="px-4 py-3 text-[10px] font-black text-slate-500 uppercase tracking-widest border-b border-white/5 text-center">
                 IA
@@ -216,6 +219,16 @@ export const ImportPreviewGrid: React.FC<ImportPreviewGridProps> = ({
                         value={item.data.name || ''}
                         onChange={(e) => handleUpdateItem(idx, { name: e.target.value })}
                       />
+                    </td>
+                    <td className="px-4 py-3">
+                      {item.type === 'ingredient' &&
+                      (item.data.supplier || item.data.supplierName) ? (
+                        <span className="text-xs text-slate-400 font-mono">
+                          {item.data.supplier || item.data.supplierName}
+                        </span>
+                      ) : (
+                        <span className="text-xs text-slate-600 italic">-</span>
+                      )}
                     </td>
                     <td className="px-4 py-3 text-center">
                       <div
@@ -454,9 +467,9 @@ export const ImportPreviewGrid: React.FC<ImportPreviewGridProps> = ({
               return item;
             });
 
-            onConfirm(finalItems, selectedSupplier);
+            onConfirm(finalItems, selectedSupplier || undefined);
           }}
-          disabled={!selectedSupplier && items.some((i) => i.type === 'ingredient')}
+          disabled={items.length === 0}
           className="flex-[2] px-6 py-3 bg-primary text-white rounded-xl font-black text-xs uppercase tracking-widest shadow-[0_0_20px_rgba(59,130,246,0.5)] hover:bg-primary/90 active:scale-[0.98] transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           <Check size={16} />
