@@ -175,7 +175,7 @@ export const RecipesPage: React.FC = () => {
     } else {
       result = result.filter(
         (r) =>
-          r.name.toLowerCase().includes(searchTerm.toLowerCase()) &&
+          r.name?.toLowerCase().includes(searchTerm.toLowerCase()) &&
           (subCategory === 'all' || r.category === subCategory)
       );
     }
