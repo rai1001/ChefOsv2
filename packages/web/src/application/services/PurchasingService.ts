@@ -201,7 +201,7 @@ export const PurchasingService = {
   getAll: async (outletId: string): Promise<PurchaseOrder[]> => {
     const q = collection(db, COLLECTIONS.PURCHASE_ORDERS);
     const orders = await firestoreService.query<PurchaseOrder>(
-      q as CollectionReference,
+      q as CollectionReference<PurchaseOrder>,
       where('outletId', '==', outletId)
     );
     return orders;
@@ -223,7 +223,7 @@ export const PurchasingService = {
   ): Promise<PurchaseOrder[]> => {
     const q = collection(db, COLLECTIONS.PURCHASE_ORDERS);
     const orders = await firestoreService.query<PurchaseOrder>(
-      q as CollectionReference,
+      q as CollectionReference<PurchaseOrder>,
       where('outletId', '==', outletId),
       where('status', 'in', statuses)
     );

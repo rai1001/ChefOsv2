@@ -12,9 +12,10 @@ import { HistorialVersiones } from './HistorialVersiones';
 import { ComparadorVersiones } from './ComparadorVersiones';
 import { generarPDFFicha } from '@/services/pdfService';
 import type { FichaTecnica, VersionFicha } from '@/types';
-import { SocialChefButton } from '../social-chef/SocialChefButton';
-import { SocialChefModal } from '../social-chef/SocialChefModal';
-import { generateMarketingContent } from '@/services/socialChef';
+// TODO FASE 3: Restore when social-chef components are re-implemented
+// import { SocialChefButton } from '../social-chef/SocialChefButton';
+// import { SocialChefModal } from '../social-chef/SocialChefModal';
+// import { generateMarketingContent } from '@/services/socialChef';
 
 interface Props {
   initialData?: Partial<FichaTecnica>;
@@ -42,7 +43,8 @@ export const FichaTecnicaForm: React.FC<Props> = ({ initialData, userId, onClose
   const [activeTab, setActiveTab] = useState<TabType>('general');
   const [newStep, setNewStep] = useState('');
   const [selectedVersion, setSelectedVersion] = useState<VersionFicha | null>(null);
-  const [socialChefOpen, setSocialChefOpen] = useState(false);
+  // TODO FASE 3: Restore when SocialChef is re-implemented
+  // const [socialChefOpen, setSocialChefOpen] = useState(false);
 
   const handleSave = async () => {
     const success = await save();
@@ -79,9 +81,10 @@ export const FichaTecnicaForm: React.FC<Props> = ({ initialData, userId, onClose
               <FileText className="w-5 h-5" />
             </button>
           )}
-          {initialData?.id && initialData?.foto && (
+          {/* TODO FASE 3: Restore SocialChefButton */}
+          {/* {initialData?.id && initialData?.foto && (
             <SocialChefButton onClick={() => setSocialChefOpen(true)} />
-          )}
+          )} */}
           <button
             onClick={onClose}
             className="px-4 py-2 text-sm text-slate-400 hover:text-white transition-colors"
@@ -300,7 +303,8 @@ export const FichaTecnicaForm: React.FC<Props> = ({ initialData, userId, onClose
           </span>
         )}
       </footer>
-      {initialData?.foto && (
+      {/* TODO FASE 3: Restore SocialChefModal */}
+      {/* {initialData?.foto && (
         <SocialChefModal
           isOpen={socialChefOpen}
           onClose={() => setSocialChefOpen(false)}
@@ -310,7 +314,7 @@ export const FichaTecnicaForm: React.FC<Props> = ({ initialData, userId, onClose
             generateMarketingContent(initialData.nombre || 'Plato', initialData.foto!, 'HOTEL')
           }
         />
-      )}
+      )} */}
     </div>
   );
 };

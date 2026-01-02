@@ -147,7 +147,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
             {user?.photoURL ? (
               <img
                 src={user.photoURL}
-                alt={user.displayName || 'User'}
+                alt={user.name || 'User'}
                 className="w-full h-full object-cover"
               />
             ) : (
@@ -158,7 +158,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
           </div>
           <div>
             <p className="text-sm font-medium truncate max-w-[100px]">
-              {user?.displayName || user?.email?.split('@')[0]}
+              {user?.name || user?.email?.split('@')[0]}
             </p>
             <p className="text-xs text-slate-500 capitalize">{user?.role || 'User'}</p>
           </div>
