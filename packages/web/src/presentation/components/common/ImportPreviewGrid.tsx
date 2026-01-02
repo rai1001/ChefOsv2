@@ -89,7 +89,9 @@ export const ImportPreviewGrid: React.FC<ImportPreviewGridProps> = ({
       alert('✅ Clasificación automática completada');
     } catch (error: any) {
       console.error('Error clasificando:', error);
-      alert('❌ Error al clasificar: ' + error.message);
+      alert(
+        '⚠️ No se pudo conectar con el servicio de IA para clasificar. Los ítems se importarán con categoría "Otros". Puedes categorizarlos manualmente más tarde.'
+      );
     } finally {
       setIsClassifying(false);
     }

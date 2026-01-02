@@ -8,19 +8,37 @@ import { getDatabase, connectDatabaseEmulator, Database } from 'firebase/databas
 import { getMessaging, Messaging } from 'firebase/messaging';
 
 const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || 'AIzaSyBovdKOOGTuN0vIRHUTmQ5JFqKwQUoBfkc',
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || 'chefosv2.firebaseapp.com',
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || 'chefosv2',
-  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || 'chefosv2.firebasestorage.app',
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || '462911840752',
-  appId: import.meta.env.VITE_FIREBASE_APP_ID || '1:462911840752:web:13284f498bbf5045507d35',
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || 'AIzaSyC2Ne6AoEZlOa6glHtVki67CkJSbWey5Lg',
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || 'culinaryos-6794e.firebaseapp.com',
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || 'culinaryos-6794e',
+  storageBucket:
+    import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || 'culinaryos-6794e.firebasestorage.app',
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || '585939402630',
+  appId: import.meta.env.VITE_FIREBASE_APP_ID || '1:585939402630:web:1bf233f537399bc466f607',
+  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID || 'G-7F9M9E09B9',
   databaseURL:
     import.meta.env.VITE_FIREBASE_DATABASE_URL ||
-    'https://chefosv2.europe-west1.firebasedatabase.app',
+    'https://culinaryos-6794e-default-rtdb.europe-west1.firebasedatabase.app/',
 };
+
+// Validar si la configuración es real
+export const IS_FIREBASE_CONFIGURED =
+  firebaseConfig.apiKey &&
+  firebaseConfig.apiKey !== 'your-api-key' &&
+  !firebaseConfig.apiKey.includes('MISSING');
 
 // Detectar si estamos en modo emulator
 const USE_EMULATOR = import.meta.env.VITE_USE_FIREBASE_EMULATOR === 'true';
+
+// DEBUG CONFIGURATION
+if (typeof window !== 'undefined') {
+  console.log('[Firebase Config]', {
+    projectId: firebaseConfig.projectId,
+    authDomain: firebaseConfig.authDomain,
+    apiKeyLength: firebaseConfig.apiKey?.length,
+    useEmulator: USE_EMULATOR,
+  });
+}
 
 // Inicializar Firebase
 export const app: FirebaseApp = initializeApp(firebaseConfig);
@@ -32,7 +50,9 @@ export const functions: Functions = getFunctions(app, 'europe-southwest1');
 // AI functions (Gemini) are in europe-west1
 export const functionsAI: Functions = getFunctions(app, 'europe-west1');
 export const perf: FirebasePerformance | null =
-  typeof window !== 'undefined' && !USE_EMULATOR ? getPerformance(app) : null;
+  typeof window !== 'undefined' && IS_FIREBASE_CONFIGURED && !USE_EMULATOR
+    ? getPerformance(app)
+    : null;
 export const rtdb: Database = getDatabase(app);
 // Initialize Messaging safely (may fail in test/SSR environments)
 let _messaging: Messaging | null = null;

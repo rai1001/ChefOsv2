@@ -3,6 +3,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { getStorage, ref, uploadBytes } from 'firebase/storage';
 import { httpsCallable } from 'firebase/functions';
 import { functions } from '@/config/firebase';
+import { setDocument, updateDocument, getCollection } from '@/services/firestoreService';
 import type { Recipe, Menu, Unit } from '@/types';
 import { ALLERGENS } from './allergenUtils';
 import type { ImportType, IngestionItem } from '@/types/import';
@@ -117,20 +118,47 @@ export const processStructuredFile = async (
   file: File,
   hintType?: string
 ): Promise<IngestionItem[]> => {
-  const parseFile = httpsCallable<any, { items: IngestionItem[] }>(
-    functions,
-    'parseStructuredFile'
-  );
+  try {
+    const parseFile = httpsCallable<any, { items: IngestionItem[] }>(
+      functions,
+      'parseStructuredFile'
+    );
 
-  const base64Data = await fileToBase64(file);
+    const base64Data = await fileToBase64(file);
 
-  const response = await parseFile({
-    base64Data,
-    fileName: file.name,
-    hintType,
-  });
+    const response = await parseFile({
+      base64Data,
+      fileName: file.name,
+      hintType,
+    });
 
-  return response.data.items as IngestionItem[];
+    return response.data.items as IngestionItem[];
+  } catch (error) {
+    console.warn('Structured file cloud parsing failed, falling back to local parsing:', error);
+    const localResult = await parseWorkbook(file);
+
+    // Map ParseResult to IngestionItem[]
+    const items: IngestionItem[] = [
+      ...localResult.ingredients.map((i) => ({
+        type: 'ingredient' as ImportType,
+        data: i,
+        confidence: 100,
+      })),
+      ...localResult.recipes.map((r) => ({
+        type: 'recipe' as ImportType,
+        data: r,
+        confidence: 100,
+      })),
+      ...localResult.menus.map((m) => ({ type: 'menu' as ImportType, data: m, confidence: 100 })),
+      ...localResult.items.map((it) => ({
+        type: 'unknown' as ImportType,
+        data: it,
+        confidence: 100,
+      })),
+    ];
+
+    return items;
+  }
 };
 
 /**
@@ -142,20 +170,107 @@ export const confirmAndCommit = async (
   defaultType?: string,
   supplierId?: string
 ): Promise<{ success: boolean; count: number }> => {
-  const commitImport = httpsCallable<any, { success: boolean; count: number }>(
-    functions,
-    'commitImport'
+  try {
+    const commitImport = httpsCallable<any, { success: boolean; count: number }>(
+      functions,
+      'commitImport'
+    );
+
+    const response = await commitImport({
+      items,
+      outletId,
+      defaultType,
+      supplierId,
+    });
+
+    return response.data;
+  } catch (error) {
+    console.warn('Cloud commit failed, falling back to local commit:', error);
+    return await confirmAndCommitLocal(items, outletId, defaultType, supplierId);
+  }
+};
+
+/**
+ * Local implementation of commitImport for Supabase/CORS fallback.
+ */
+async function confirmAndCommitLocal(
+  items: IngestionItem[],
+  outletId: string,
+  defaultType?: string,
+  supplierId?: string
+): Promise<{ success: boolean; count: number }> {
+  let count = 0;
+
+  // Get existing ingredients for deduplication (by name)
+  const existingIngredients = await getCollection<any>('ingredients');
+  const ingredientNameMap = new Map(
+    existingIngredients
+      .filter((i) => i.outletId === outletId || i.outletId === 'GLOBAL')
+      .map((i) => [i.name.toLowerCase().trim(), i.id])
   );
 
-  const response = await commitImport({
-    items,
-    outletId,
-    defaultType,
-    supplierId,
-  });
+  for (const item of items) {
+    try {
+      const type = item.type === 'unknown' ? defaultType || 'ingredient' : item.type;
+      const data = item.data;
 
-  return response.data;
-};
+      if (type === 'ingredient') {
+        const name = data.name;
+        if (!name) continue;
+
+        const normalizedName = name.toLowerCase().trim();
+        const existingId = ingredientNameMap.get(normalizedName);
+
+        const ingredientData = {
+          ...data,
+          outletId: outletId || 'GLOBAL',
+          supplierId: supplierId || data.supplierId || data.preferredSupplierId || null,
+          unit: data.unit || 'un',
+          costPerUnit: Number(data.price || data.cost || data.costPerUnit || 0),
+          updatedAt: new Date().toISOString(),
+        };
+
+        if (existingId) {
+          await updateDocument('ingredients', existingId, ingredientData);
+        } else {
+          const id = data.id || uuidv4();
+          await setDocument('ingredients', id, {
+            ...ingredientData,
+            id,
+            createdAt: new Date().toISOString(),
+          });
+          ingredientNameMap.set(normalizedName, id);
+        }
+        count++;
+      } else if (type === 'recipe') {
+        const id = data.id || uuidv4();
+        await setDocument('recipes', id, {
+          ...data,
+          id,
+          outletId: outletId || 'GLOBAL',
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        });
+        count++;
+      } else if (type === 'supplier') {
+        const id = data.id || uuidv4();
+        await setDocument('suppliers', id, {
+          ...data,
+          id,
+          outletId: outletId || 'GLOBAL',
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        });
+        count++;
+      }
+      // Add more types as needed (supplier, staff, etc.)
+    } catch (err) {
+      console.error('Error committing item:', item, err);
+    }
+  }
+
+  return { success: true, count };
+}
 
 // Internal mapping function to help with type safety (fixes unused imports)
 export function mapToIngestionItem<

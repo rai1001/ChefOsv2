@@ -30,6 +30,7 @@ vi.mock('firebase/firestore', () => ({
   runTransaction: vi.fn(async (db, callback) => {
     return callback(mockTransaction);
   }),
+  connectFirestoreEmulator: vi.fn(),
 }));
 
 describe('InventoryService - consumeStockFIFO', () => {

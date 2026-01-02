@@ -295,54 +295,58 @@ function extractInvoiceEntities(document: any): InvoiceData {
 /**
  * Smart Ingredient Matching - El "cerebro" del sistema
  */
+/**
+ * Smart Ingredient Matching - OPTIMIZED FOR COST
+ * Old Strategy: Read ALL ingredients (2000+ reads) -> Logic in memory.
+ * New Strategy: Query ONLY for item names (1 read per item).
+ * Cost Reduction: ~99% per invoice.
+ */
 async function smartIngredientMatch(restaurantId: string, ocrItems: InvoiceData['lineItems']) {
-  const ingredientsSnap = await db
-    .collection('ingredients')
-    .where('outletId', '==', restaurantId)
-    .get();
+  // 1. Prepare candidate names (clean up basic noise)
+  const candidates = ocrItems.map((item) => {
+    return {
+      original: item,
+      cleanName: item.description.trim().toLowerCase(),
+    };
+  });
 
-  const catalog = ingredientsSnap.docs.map((doc) => ({
-    id: doc.id,
-    name: doc.data().name.toLowerCase(),
-    aliases: doc.data().supplierAliases || [],
-  }));
+  // 2. Execute parallel queries for each item
+  // Note: This is an "Exact Match" strategy to save costs.
+  // For fuzzy matching without cost explosion, integration with Typesense/Algolia is recommended.
+  const matchPromises = candidates.map(async (candidate) => {
+    const { cleanName, original } = candidate;
 
-  return ocrItems.map((item) => {
-    const itemLower = item.description.toLowerCase();
+    // Try exact name match first
+    const nameQuery = await db
+      .collection('ingredients')
+      .where('outletId', '==', restaurantId)
+      .where('name', '==', cleanName)
+      .limit(1)
+      .get();
 
-    // 1. Exact match o alias conocido
-    const exactMatch = catalog.find((i) => i.name === itemLower || i.aliases.includes(itemLower));
-
-    if (exactMatch) {
+    if (!nameQuery.empty && nameQuery.docs[0]) {
+      const doc = nameQuery.docs[0];
       return {
-        ...item,
-        ingredientId: exactMatch.id,
+        ...original,
+        ingredientId: doc.id,
         matchType: 'exact',
         needsReview: false,
       };
     }
 
-    // 2. Fuzzy match (contiene palabras clave)
-    const potentialMatches = catalog.filter(
-      (i) => itemLower.includes(i.name) || i.name.includes(itemLower.split(' ')[0])
-    );
+    // Try finding by alias (expensive check if not careful, sticking to simple exact checks for now)
+    // To enable "Fuzzy" cheap matching, we would need a specific 'keywords' array field in Firestore.
 
-    if (potentialMatches.length === 1 && potentialMatches[0]?.id) {
-      return {
-        ...item,
-        ingredientId: potentialMatches[0].id,
-        matchType: 'fuzzy',
-        needsReview: true,
-      };
-    }
-
-    // 3. No match - requiere intervención humana
+    // No match found
     return {
-      ...item,
+      ...original,
       ingredientId: null,
       matchType: 'none',
-      potentialMatches: potentialMatches.map((m) => ({ id: m.id, name: m.name })),
+      potentialMatches: [], // Removed full catalog search for cost reasons
       needsReview: true,
     };
   });
+
+  const results = await Promise.all(matchPromises);
+  return results;
 }

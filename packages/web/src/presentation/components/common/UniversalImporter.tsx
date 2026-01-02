@@ -21,6 +21,7 @@ import { ImportPreviewGrid } from './ImportPreviewGrid';
 
 import { ImportType, ImportMode } from '@/types/import';
 import { parseICS } from '@/utils/icsParser';
+import { IS_FIREBASE_CONFIGURED } from '@/config/firebase';
 
 interface UniversalImporterProps {
   buttonLabel?: string;
@@ -75,9 +76,20 @@ export const UniversalImporter: React.FC<UniversalImporterProps> = ({
           data: { ...e, status: 'confirmed' },
           confidence: 100,
         }));
-      } else if (isSmartMode) {
-        items = await processFileForAnalysis(file, template ? JSON.stringify(template) : undefined);
+      } else if (isSmartMode && IS_FIREBASE_CONFIGURED) {
+        try {
+          items = await processFileForAnalysis(
+            file,
+            template ? JSON.stringify(template) : undefined
+          );
+        } catch (aiError: any) {
+          console.error('Smart AI Error:', aiError);
+          throw new Error(
+            'El análisis de IA falló. Por favor, desactiva "Smart AI" e intenta subir un archivo Excel o CSV estándar.'
+          );
+        }
       } else {
+        // Use processStructuredFile which now has internal fallback to local parseWorkbook
         items = await processStructuredFile(file, defaultType);
       }
 
@@ -186,8 +198,14 @@ export const UniversalImporter: React.FC<UniversalImporterProps> = ({
                     Smart AI
                   </span>
                   <button
-                    onClick={() => setIsSmartMode(!isSmartMode)}
-                    className={`relative w-10 h-5 rounded-full transition-colors duration-200 outline-none ${isSmartMode ? 'bg-primary' : 'bg-slate-700'}`}
+                    onClick={() => IS_FIREBASE_CONFIGURED && setIsSmartMode(!isSmartMode)}
+                    disabled={!IS_FIREBASE_CONFIGURED}
+                    className={`relative w-10 h-5 rounded-full transition-colors duration-200 outline-none ${isSmartMode ? 'bg-primary' : 'bg-slate-700'} ${!IS_FIREBASE_CONFIGURED ? 'opacity-50 cursor-not-allowed' : ''}`}
+                    title={
+                      !IS_FIREBASE_CONFIGURED
+                        ? 'IA requiere configuración de Firebase'
+                        : 'Activar IA'
+                    }
                   >
                     <div
                       className={`absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full transition-transform duration-200 ${isSmartMode ? 'translate-x-5' : ''}`}

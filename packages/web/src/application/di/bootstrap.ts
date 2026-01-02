@@ -1,15 +1,20 @@
 import { container } from './Container';
 import { TYPES } from './types';
 import { IAuthRepository } from '@/domain/interfaces/repositories/IAuthRepository';
-import { FirebaseAuthRepository } from '@/infrastructure/repositories/FirebaseAuthRepository';
+// import { FirebaseAuthRepository } from '@/infrastructure/repositories/FirebaseAuthRepository'; // Replaced by Supabase
+import { SupabaseAuthRepository } from '@/infrastructure/repositories/SupabaseAuthRepository';
 import { LoginUseCase } from '../use-cases/auth/LoginUseCase';
 import { LoginWithEmailUseCase } from '../use-cases/auth/LoginWithEmailUseCase';
 
 // Ingredients Module Imports
 import { IIngredientRepository } from '@/domain/interfaces/repositories/IIngredientRepository';
 import { FirebaseIngredientRepository } from '@/infrastructure/repositories/FirebaseIngredientRepository';
+import { SupabaseIngredientRepository } from '@/infrastructure/repositories/SupabaseIngredientRepository';
+import { HybridIngredientRepository } from '@/infrastructure/repositories/HybridIngredientRepository';
 import { IAIService } from '@/domain/interfaces/services/IAIService';
 import { GeminiAdapter } from '@/services/adapters/GeminiAdapter';
+import { OpenAIAdapter } from '@/services/adapters/OpenAIAdapter';
+import { aiConfig } from '@/config/aiConfig';
 import { IImportService } from '@/domain/interfaces/services/IImportService';
 import { ExcelImportService } from '@/infrastructure/services/ExcelImportService';
 import { GetIngredientsUseCase } from '../use-cases/ingredients/GetIngredientsUseCase';
@@ -21,35 +26,58 @@ import { ScanDocumentUseCase } from '../use-cases/ingredients/ScanDocumentUseCas
 import { ImportIngredientsUseCase } from '../use-cases/ingredients/ImportIngredientsUseCase';
 import { CoreIngredientRepositoryAdapter } from '@/adapters/repositories/CoreIngredientRepositoryAdapter';
 
+// Core Interfaces & Use Cases
+// Core Interfaces & Use Cases
 import {
-  CalculateFichaCostUseCase as CoreCalculateRecipeCostUseCase,
+  // Interfaces
   IFichaTecnicaRepository as ICoreRecipeRepository,
   IIngredientRepository as ICoreIngredientRepository,
-  IBatchRepository as ICoreBatchRepository,
+  IBatchRepository,
   ITransactionManager,
+  IStockTransactionRepository as ICoreStockTransactionRepository,
+
+  // Use Cases
   ProcessStockMovementUseCase as CoreProcessStockMovementUseCase,
   PerformAuditUseCase as CorePerformAuditUseCase,
-  AdjustStockUseCase as CoreAdjustStockUseCase,
+  GetInventoryStatusUseCase as CoreGetInventoryStatusUseCase,
+  CalculateFichaCostUseCase as CoreCalculateRecipeCostUseCase,
   AddBatchUseCase as CoreAddBatchUseCase,
+  AdjustStockUseCase as CoreAdjustStockUseCase,
   ConsumeFIFOUseCase as CoreConsumeFIFOUseCase,
+
+  // Recipe Use Cases
   GetFichasTecnicasUseCase as CoreGetRecipesUseCase,
   CreateFichaTecnicaUseCase as CoreCreateRecipeUseCase,
   UpdateFichaTecnicaUseCase as CoreUpdateRecipeUseCase,
   DeleteFichaTecnicaUseCase as CoreDeleteRecipeUseCase,
+  // Removed failing GetFichaTecnicaUseCase if not exists, or replace with GetFichaByIdUseCase if guessed
+
+  // Ingredient Use Cases
   GetIngredientsUseCase as CoreGetIngredientsUseCase,
   CreateIngredientUseCase as CoreCreateIngredientUseCase,
   UpdateIngredientUseCase as CoreUpdateIngredientUseCase,
   DeleteIngredientUseCase as CoreDeleteIngredientUseCase,
-  GetInventoryStatusUseCase as CoreGetInventoryStatusUseCase,
-  IStockTransactionRepository as ICoreStockTransactionRepository,
+
+  // Analytics
   CalculateBCGMatrixUseCase,
   GenerateProfitabilityReportUseCase,
 } from '@culinaryos/core';
 
 import { IRecipeRepository } from '@/domain/interfaces/repositories/IRecipeRepository';
 import { FirebaseRecipeRepository } from '@/infrastructure/repositories/FirebaseRecipeRepository';
+import { SupabaseRecipeRepository } from '@/infrastructure/repositories/SupabaseRecipeRepository'; // NEW IMPORT
 import { CoreRecipeRepositoryAdapter } from '@/adapters/repositories/CoreRecipeRepositoryAdapter';
 import { CalculateRecipeCostUseCase } from '../use-cases/recipes/CalculateRecipeCostUseCase';
+import { SupabasePurchasingRepository } from '@/infrastructure/repositories/SupabasePurchasingRepository';
+import { SupabaseProductionRepository } from '@/infrastructure/repositories/SupabaseProductionRepository';
+import {
+  FirebaseProductionRepository,
+  IProductionRepository,
+} from '@/infrastructure/repositories/FirebaseProductionRepository';
+import {
+  FirebasePurchasingRepository,
+  IPurchasingRepository,
+} from '@/infrastructure/repositories/FirebasePurchasingRepository';
 import { GetRecipesUseCase } from '../use-cases/recipes/GetRecipesUseCase';
 import { CreateRecipeUseCase } from '../use-cases/recipes/CreateRecipeUseCase';
 import { UpdateRecipeUseCase } from '../use-cases/recipes/UpdateRecipeUseCase';
@@ -59,7 +87,10 @@ import { IInventoryRepository } from '@/domain/repositories/IInventoryRepository
 import { FirebaseInventoryRepository } from '@/infrastructure/repositories/FirebaseInventoryRepository';
 import { FirestoreBatchRepository } from '@/infrastructure/firebase/repositories/FirestoreBatchRepository';
 import { FirestoreTransactionManager } from '@/infrastructure/firebase/repositories/FirestoreTransactionManager';
-import { CoreStockTransactionRepositoryAdapter } from '@/adapters/repositories/CoreStockTransactionRepositoryAdapter';
+import { SupabaseStockTransactionRepository } from '@/infrastructure/repositories/SupabaseStockTransactionRepository'; // FIXED IMPORT
+import { ISupplierRepository } from '@/domain/interfaces/repositories/ISupplierRepository';
+import { SupabaseSupplierRepository } from '@/infrastructure/repositories/SupabaseSupplierRepository';
+
 import { RegisterStockMovementUseCase } from '../use-cases/inventory/RegisterStockMovementUseCase';
 import { GetInventoryStatusUseCase } from '../use-cases/inventory/GetInventoryStatusUseCase';
 import { PerformAuditUseCase } from '../use-cases/inventory/PerformAuditUseCase';
@@ -73,14 +104,6 @@ import { ParseServiceSheetUseCase } from '../use-cases/schedule/ParseServiceShee
 import { ScanSportsMenuUseCase } from '../use-cases/schedule/ScanSportsMenuUseCase';
 import { CalculateRequirementsUseCase } from '../use-cases/schedule/CalculateRequirementsUseCase';
 import { SyncSportsMenuUseCase } from '../use-cases/schedule/SyncSportsMenuUseCase';
-import {
-  IProductionRepository,
-  FirebaseProductionRepository,
-} from '@/infrastructure/repositories/FirebaseProductionRepository';
-import {
-  IPurchasingRepository,
-  FirebasePurchasingRepository,
-} from '@/infrastructure/repositories/FirebasePurchasingRepository';
 import { GetScheduleUseCase } from '../use-cases/schedule/GetScheduleUseCase';
 import { GetEventsUseCase } from '../use-cases/schedule/GetEventsUseCase';
 import { ImportEventsUseCase } from '../use-cases/schedule/ImportEventsUseCase';
@@ -116,8 +139,14 @@ export function bootstrap() {
   // Auth
   container
     .bind<IAuthRepository>(TYPES.AuthRepository)
-    .to(FirebaseAuthRepository)
+    .to(SupabaseAuthRepository) // SWITCHED TO SUPABASE
     .inSingletonScope();
+
+  container
+    .bind<IAuthRepository>(TYPES.SupabaseAuthRepository)
+    .to(SupabaseAuthRepository)
+    .inSingletonScope();
+
   container.bind<LoginUseCase>(TYPES.LoginUseCase).to(LoginUseCase).inTransientScope();
   container
     .bind<LoginWithEmailUseCase>(TYPES.LoginWithEmailUseCase)
@@ -125,24 +154,52 @@ export function bootstrap() {
     .inTransientScope();
 
   // Repositories
+  // Ingredients
   container
     .bind<IIngredientRepository>(TYPES.IngredientRepository)
+    .to(HybridIngredientRepository)
+    .inSingletonScope();
+
+  // Bind Named Implementations for Hybrid Repository
+  container
+    .bind<IIngredientRepository>(TYPES.FirebaseIngredientRepository)
     .to(FirebaseIngredientRepository)
+    .inSingletonScope();
+
+  container
+    .bind<IIngredientRepository>(TYPES.SupabaseIngredientRepository)
+    .to(SupabaseIngredientRepository)
+    .inSingletonScope();
+  container
+    .bind<IIngredientRepository>(TYPES.HybridIngredientRepository)
+    .to(HybridIngredientRepository)
     .inSingletonScope();
   container
     .bind<ICoreIngredientRepository>(TYPES.CoreIngredientRepository)
     .to(CoreIngredientRepositoryAdapter)
     .inSingletonScope();
+
+  // Recipes
   container
     .bind<IRecipeRepository>(TYPES.RecipeRepository)
     .to(FirebaseRecipeRepository)
     .inSingletonScope();
   container
+    .bind<IRecipeRepository>(TYPES.FirebaseRecipeRepository)
+    .to(FirebaseRecipeRepository)
+    .inSingletonScope();
+  container
+    .bind<IRecipeRepository>(TYPES.SupabaseRecipeRepository)
+    .to(SupabaseRecipeRepository)
+    .inSingletonScope();
+  container
     .bind<ICoreRecipeRepository>(TYPES.CoreRecipeRepository)
     .to(CoreRecipeRepositoryAdapter)
     .inSingletonScope();
+
+  // Inventory & Stock
   container
-    .bind<ICoreBatchRepository>(TYPES.BatchRepository as any)
+    .bind<IBatchRepository>(TYPES.BatchRepository)
     .to(FirestoreBatchRepository)
     .inSingletonScope();
   container
@@ -151,16 +208,35 @@ export function bootstrap() {
     .inSingletonScope();
   container
     .bind<IInventoryRepository>(TYPES.InventoryRepository)
-    .to(FirebaseInventoryRepository)
+    .to(FirebaseInventoryRepository) // Partial migration: Inventory legacy still Firebase
     .inSingletonScope();
   container
     .bind<ICoreStockTransactionRepository>(TYPES.StockTransactionRepository)
-    .to(CoreStockTransactionRepositoryAdapter)
+    .to(SupabaseStockTransactionRepository) // SWITCHED TO SUPABASE
+    .inSingletonScope();
+
+  container
+    .bind<ICoreStockTransactionRepository>(TYPES.SupabaseStockTransactionRepository)
+    .to(SupabaseStockTransactionRepository)
     .inSingletonScope();
 
   // Services
-  container.bind<IAIService>(TYPES.AIService).to(GeminiAdapter).inSingletonScope();
+  if (aiConfig.provider === 'openai') {
+    container.bind<IAIService>(TYPES.AIService).to(OpenAIAdapter).inSingletonScope();
+  } else {
+    container.bind<IAIService>(TYPES.AIService).to(GeminiAdapter).inSingletonScope();
+  }
   container.bind<IImportService>(TYPES.ImportService).to(ExcelImportService).inSingletonScope();
+
+  // Suppliers
+  container
+    .bind<ISupplierRepository>(TYPES.SupplierRepository)
+    .to(SupabaseSupplierRepository) // SWITCHED TO SUPABASE
+    .inSingletonScope();
+  container
+    .bind<ISupplierRepository>(TYPES.SupabaseSupplierRepository)
+    .to(SupabaseSupplierRepository)
+    .inSingletonScope();
 
   // Use Cases - Ingredients
   container
@@ -405,8 +481,27 @@ export function bootstrap() {
     .to(FirebaseProductionRepository)
     .inSingletonScope();
   container
+    .bind<IProductionRepository>(TYPES.SupabaseProductionRepository)
+    .to(SupabaseProductionRepository)
+    .inSingletonScope();
+
+  container
     .bind<IPurchasingRepository>(TYPES.PURCHASING_REPOSITORY)
     .to(FirebasePurchasingRepository)
+    .inSingletonScope();
+  container
+    .bind<IPurchasingRepository>(TYPES.SupabasePurchasingRepository)
+    .to(SupabasePurchasingRepository)
+    .inSingletonScope();
+
+  // Suppliers
+  container
+    .bind<ISupplierRepository>(TYPES.SupplierRepository)
+    .to(SupabaseSupplierRepository)
+    .inSingletonScope();
+  container
+    .bind<ISupplierRepository>(TYPES.SupabaseSupplierRepository)
+    .to(SupabaseSupplierRepository)
     .inSingletonScope();
   container
     .bind<GetScheduleUseCase>(TYPES.GetScheduleUseCase)

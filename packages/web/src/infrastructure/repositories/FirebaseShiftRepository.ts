@@ -1,50 +1,59 @@
-
 import { injectable } from 'inversify';
-import { db } from '@/config/firebase';
-import { collection, query, where, getDocs, doc, setDoc, deleteDoc, writeBatch } from 'firebase/firestore';
+import {
+  getCollection,
+  setDocument,
+  deleteDocument,
+  batchSetDocuments,
+  batchDeleteDocuments,
+} from '@/services/firestoreService';
 import { IShiftRepository } from '@/domain/interfaces/repositories/IShiftRepository';
 import { Shift } from '@/domain/entities/Shift';
 
 @injectable()
 export class FirebaseShiftRepository implements IShiftRepository {
-    private readonly collectionName = 'shifts';
+  private readonly collectionName = 'shifts';
 
-    async getShifts(filters: { dateStart?: string; dateEnd?: string; employeeId?: string; outletId?: string }): Promise<Shift[]> {
-        const constraints = [];
-        if (filters.outletId) constraints.push(where('outletId', '==', filters.outletId));
-        if (filters.employeeId) constraints.push(where('employeeId', '==', filters.employeeId));
-        if (filters.dateStart) constraints.push(where('date', '>=', filters.dateStart));
-        if (filters.dateEnd) constraints.push(where('date', '<=', filters.dateEnd));
+  async getShifts(filters: {
+    dateStart?: string;
+    dateEnd?: string;
+    employeeId?: string;
+    outletId?: string;
+  }): Promise<Shift[]> {
+    const shifts = await getCollection<Shift>(this.collectionName);
 
-        const q = query(collection(db, this.collectionName), ...constraints);
-        const snapshot = await getDocs(q);
-        return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Shift));
+    return shifts.filter((s) => {
+      if (filters.outletId && s.outletId !== filters.outletId) return false;
+      if (filters.employeeId && (s as any).employeeId !== filters.employeeId) return false;
+      if (filters.dateStart && s.date < filters.dateStart) return false;
+      if (filters.dateEnd && s.date > filters.dateEnd) return false;
+      return true;
+    });
+  }
+
+  async saveShift(shift: Shift): Promise<void> {
+    await setDocument(this.collectionName, shift.id, shift as any);
+  }
+
+  async saveShifts(shifts: Shift[]): Promise<void> {
+    const docs = shifts.map((s) => ({ id: s.id, data: s }));
+    await batchSetDocuments(this.collectionName, docs);
+  }
+
+  async deleteShift(shiftId: string): Promise<void> {
+    await deleteDocument(this.collectionName, shiftId);
+  }
+
+  async deleteShiftsByDate(date: string, outletId?: string): Promise<void> {
+    const shifts = await getCollection<Shift>(this.collectionName);
+    const toDelete = shifts.filter(
+      (s) => s.date === date && (!outletId || s.outletId === outletId)
+    );
+
+    if (toDelete.length > 0) {
+      await batchDeleteDocuments(
+        this.collectionName,
+        toDelete.map((s) => s.id)
+      );
     }
-
-    async saveShift(shift: Shift): Promise<void> {
-        await setDoc(doc(db, this.collectionName, shift.id), shift);
-    }
-
-    async saveShifts(shifts: Shift[]): Promise<void> {
-        const batch = writeBatch(db);
-        shifts.forEach(s => {
-            const ref = doc(db, this.collectionName, s.id);
-            batch.set(ref, s);
-        });
-        await batch.commit();
-    }
-
-    async deleteShift(shiftId: string): Promise<void> {
-        await deleteDoc(doc(db, this.collectionName, shiftId));
-    }
-
-    async deleteShiftsByDate(date: string, outletId?: string): Promise<void> {
-        const constraints = [where('date', '==', date)];
-        if (outletId) constraints.push(where('outletId', '==', outletId));
-        const q = query(collection(db, this.collectionName), ...constraints);
-        const snapshot = await getDocs(q);
-        const batch = writeBatch(db);
-        snapshot.docs.forEach(doc => batch.delete(doc.ref));
-        await batch.commit();
-    }
+  }
 }

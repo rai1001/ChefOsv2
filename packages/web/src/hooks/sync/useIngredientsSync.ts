@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { query } from 'firebase/firestore';
+import { query, where } from 'firebase/firestore';
 import { onSnapshotMockable } from '@/services/mockSnapshot';
 import { collections } from '@/config/collections';
 import { useStore } from '@/presentation/store/useStore';
@@ -8,17 +8,24 @@ import type { Ingredient } from '@/types';
 import { Quantity, Money, Unit } from '@culinaryos/core';
 
 export const useIngredientsSync = () => {
-  const { setIngredients } = useStore();
+  const { setIngredients, activeOutletId } = useStore();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
 
   useEffect(() => {
+    if (!activeOutletId) {
+      setIngredients([]);
+      setLoading(false);
+      return;
+    }
+
     setLoading(true);
-    const q = query(collections.ingredients);
+    // OPTIMIZED: Query only ingredients for the active outlet
+    const q = query(collections.ingredients, where('outletId', '==', activeOutletId));
 
     const unsubscribe = onSnapshotMockable(
       q,
-      'ingredients',
+      `ingredients-${activeOutletId}`,
       (snapshot) => {
         const data: Ingredient[] = [];
 
