@@ -1,5 +1,5 @@
 {
-  "buildCommand": "pnpm install && pnpm -r build",
+  "buildCommand": "pnpm -r build",
   "outputDirectory": "packages/web/dist",
   "framework": "vite",
   "installCommand": "npm install -g pnpm@9.15.0 && pnpm install --frozen-lockfile",
