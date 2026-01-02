@@ -1,39 +1,43 @@
-
 import { injectable } from 'inversify';
-import { db } from '@/config/firebase';
-import { collection, query, where, getDocs, doc, setDoc, deleteDoc, writeBatch } from 'firebase/firestore';
+import {
+  getCollection,
+  setDocument,
+  deleteDocument,
+  batchSetDocuments,
+} from '@/services/firestoreService';
 import { IEventRepository } from '@/domain/interfaces/repositories/IEventRepository';
 import { Event } from '@/domain/entities/Event';
 
 @injectable()
 export class FirebaseEventRepository implements IEventRepository {
-    private readonly collectionName = 'events';
+  private readonly collectionName = 'events';
 
-    async getEvents(filters: { dateStart?: string; dateEnd?: string; outletId?: string }): Promise<Event[]> {
-        const constraints = [];
-        if (filters.outletId) constraints.push(where('outletId', '==', filters.outletId));
-        if (filters.dateStart) constraints.push(where('date', '>=', filters.dateStart));
-        if (filters.dateEnd) constraints.push(where('date', '<=', filters.dateEnd));
+  async getEvents(filters: {
+    dateStart?: string;
+    dateEnd?: string;
+    outletId?: string;
+  }): Promise<Event[]> {
+    // We use the delegated getCollection which honors Supabase if active
+    const events = await getCollection<Event>(this.collectionName);
 
-        const q = query(collection(db, this.collectionName), ...constraints);
-        const snapshot = await getDocs(q);
-        return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Event));
-    }
+    return events.filter((e) => {
+      if (filters.outletId && e.outletId !== filters.outletId) return false;
+      if (filters.dateStart && e.date < filters.dateStart) return false;
+      if (filters.dateEnd && e.date > filters.dateEnd) return false;
+      return true;
+    });
+  }
 
-    async saveEvent(event: Event): Promise<void> {
-        await setDoc(doc(db, this.collectionName, event.id), event);
-    }
+  async saveEvent(event: Event): Promise<void> {
+    await setDocument(this.collectionName, event.id, event as any);
+  }
 
-    async saveEvents(events: Event[]): Promise<void> {
-        const batch = writeBatch(db);
-        events.forEach(e => {
-            const ref = doc(db, this.collectionName, e.id);
-            batch.set(ref, e);
-        });
-        await batch.commit();
-    }
+  async saveEvents(events: Event[]): Promise<void> {
+    const docs = events.map((e) => ({ id: e.id, data: e }));
+    await batchSetDocuments(this.collectionName, docs);
+  }
 
-    async deleteEvent(eventId: string): Promise<void> {
-        await deleteDoc(doc(db, this.collectionName, eventId));
-    }
+  async deleteEvent(eventId: string): Promise<void> {
+    await deleteDocument(this.collectionName, eventId);
+  }
 }

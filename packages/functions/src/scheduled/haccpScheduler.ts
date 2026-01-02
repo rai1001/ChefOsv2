@@ -10,7 +10,7 @@ import { format, subMonths, startOfMonth, endOfMonth } from 'date-fns';
 export const generateMonthlyHACCPReport = onSchedule(
   {
     schedule: '1 of month 08:00',
-    region: 'europe-southwest1',
+    region: 'europe-west1',
   },
   async (_event) => {
     const db = admin.firestore();

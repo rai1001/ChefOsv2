@@ -9,7 +9,6 @@ import {
   Scan,
   Filter,
   Sparkles,
-  Upload,
   Package,
   Package2,
   DollarSign,
@@ -17,7 +16,7 @@ import {
 import type { Ingredient, InventoryItem, IngredientBatch } from '@/types';
 import { BarcodeScanner } from '@/presentation/components/scanner/BarcodeScanner';
 import { ExpiryDateScanner } from '@/presentation/components/scanner/ExpiryDateScanner';
-import { DataImportModal, type ImportType } from '@/presentation/components/common/DataImportModal';
+import { UniversalImporter } from '@/presentation/components/common/UniversalImporter';
 import { updateDocument } from '@/services/firestoreService';
 import { COLLECTIONS } from '@/config/collections';
 import { lookupProductByBarcode, type ProductLookupResult } from '@/services/productLookupService';
@@ -106,7 +105,6 @@ export const InventoryPage: React.FC = () => {
 
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
   const [activeFilter, setActiveFilter] = useState<FilterTab>('all');
-  const [importType, setImportType] = useState<ImportType | null>(null);
 
   // Scanner Workflow State
   const [scanStep, setScanStep] = useState<ScanStep>('idle');
@@ -468,7 +466,6 @@ export const InventoryPage: React.FC = () => {
         alert(`No se encontraron coincidencias para ${missedCount} productos.`);
       }
     }
-    setImportType(null);
   };
 
   return (
@@ -493,13 +490,12 @@ export const InventoryPage: React.FC = () => {
             <Sparkles size={16} />
             AI Advisor
           </button>
-          <button
-            onClick={() => setImportType('inventory')}
-            className="bg-white/5 text-slate-300 border border-white/10 px-5 py-3 rounded-xl font-black text-xs uppercase tracking-widest flex items-center gap-2 hover:bg-white/10 transition-all active:scale-95"
-          >
-            <Upload size={16} />
-            Importar
-          </button>
+          <UniversalImporter
+            buttonLabel="Importar"
+            defaultType="inventory"
+            onCompleted={handleImportComplete}
+            className="flex items-center"
+          />
           <button
             onClick={handleClearData}
             disabled={isDeleting}
@@ -1191,14 +1187,6 @@ export const InventoryPage: React.FC = () => {
         </div>
       )}
 
-      {importType && (
-        <DataImportModal
-          isOpen={!!importType}
-          onClose={() => setImportType(null)}
-          onImportComplete={handleImportComplete}
-          type={importType}
-        />
-      )}
       {isAIAdvisorOpen && (
         <AIInventoryAdvisor
           outletId={activeOutletId || ''}

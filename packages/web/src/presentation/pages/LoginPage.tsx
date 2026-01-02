@@ -8,7 +8,7 @@ import {
   isLoadingAtom,
   errorAtom,
 } from '@/presentation/store/authAtoms';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 
 export const LoginPage: React.FC = () => {
   const navigate = useNavigate();
@@ -159,6 +159,15 @@ export const LoginPage: React.FC = () => {
       <p className="mt-8 text-slate-600 text-[10px] font-bold uppercase tracking-[0.2em] relative z-10">
         &copy; 2025 Antigravity Lab. Todos los derechos reservados.
       </p>
+
+      <div className="mt-4 relative z-10">
+        <Link
+          to="/supabase-test"
+          className="text-xs text-slate-500 hover:text-white transition-colors"
+        >
+          🧪 Probar Supabase (PoC)
+        </Link>
+      </div>
     </div>
   );
 };

@@ -16,6 +16,7 @@ import { IngredientList } from '@/presentation/components/lists/IngredientList';
 import { IngredientForm } from '@/presentation/components/ingredients/IngredientForm';
 import { deleteDocument } from '@/services/firestoreService';
 import { UniversalImporter } from '@/presentation/components/common/UniversalImporter';
+import { BulkImporter } from '@/presentation/components/common/BulkImporter';
 import { useToast } from '@/presentation/components/ui';
 import { COLLECTIONS } from '@/config/collections';
 import { Ingredient } from '@/domain/entities/Ingredient';
@@ -63,6 +64,8 @@ export const IngredientsPage: React.FC = () => {
   const filteredIngredients = useMemo(() => {
     const result = ingredients.filter(
       (i) =>
+        i &&
+        i.name &&
         i.name.toLowerCase().includes(searchTerm.toLowerCase()) &&
         (activeCategory === 'all' || i.category === activeCategory)
     );
@@ -152,6 +155,7 @@ export const IngredientsPage: React.FC = () => {
         </div>
 
         <div className="flex flex-wrap gap-3">
+          <BulkImporter buttonLabel="CSV Masivo" />
           <UniversalImporter
             buttonLabel="Importar / Escanear"
             defaultType="ingredient"

@@ -22,6 +22,8 @@ import type {
   QueryConstraint,
 } from 'firebase/firestore';
 import { db } from '@/config/firebase';
+import { supabase } from '@/config/supabase';
+import { supabasePersistenceService } from './supabasePersistenceService';
 import type {
   PurchaseOrder,
   Event,
@@ -52,6 +54,9 @@ export const getAllDocuments = async <T>(collectionRef: CollectionReference<T>):
 };
 
 export const getCollection = async <T>(collectionName: string): Promise<T[]> => {
+  if (await shouldUseSupabase()) {
+    return supabasePersistenceService.getAll(collectionName);
+  }
   const colRef = collection(db, collectionName) as CollectionReference<T>;
   return getAllDocuments(colRef);
 };
@@ -99,11 +104,21 @@ const dispatchMockUpdate = (collectionName: string) => {
   }
 };
 
+// Helper to check if we should use Supabase
+const shouldUseSupabase = async () => {
+  // Check if there is an active Supabase session
+  const { data } = await supabase.auth.getSession();
+  return !!data.session;
+};
+
 export const setDocument = async <T extends DocumentData>(
   collectionName: string,
   id: string,
   data: WithFieldValue<T>
 ): Promise<void> => {
+  if (await shouldUseSupabase()) {
+    return supabasePersistenceService.set(collectionName, id, data);
+  }
   const mockDB = getMockDB();
   if (mockDB) {
     if (!mockDB[collectionName]) mockDB[collectionName] = [];
@@ -146,6 +161,9 @@ export const updateDocument = async <T extends DocumentData>(
   id: string,
   data: UpdateData<T>
 ): Promise<void> => {
+  if (await shouldUseSupabase()) {
+    return supabasePersistenceService.update(collectionName, id, data);
+  }
   const mockDB = getMockDB();
   if (mockDB) {
     if (!mockDB[collectionName]) return;
@@ -165,6 +183,9 @@ export const updateDocument = async <T extends DocumentData>(
 };
 
 export const deleteDocument = async (collectionName: string, id: string): Promise<void> => {
+  if (await shouldUseSupabase()) {
+    return supabasePersistenceService.delete(collectionName, id);
+  }
   const mockDB = getMockDB();
   if (mockDB) {
     if (mockDB[collectionName]) {
@@ -182,6 +203,9 @@ export const batchSetDocuments = async <T extends DocumentData>(
   collectionName: string,
   documents: { id: string; data: T }[]
 ): Promise<void> => {
+  if (await shouldUseSupabase()) {
+    return supabasePersistenceService.batchSet(collectionName, documents);
+  }
   const mockDB = getMockDB();
   if (mockDB) {
     if (!mockDB[collectionName]) mockDB[collectionName] = [];
@@ -274,6 +298,15 @@ export const getPurchaseOrdersPage = async ({
   pageSize: number;
   cursor: PageCursor | null;
 }): Promise<PaginatedResult<PurchaseOrder>> => {
+  if (await shouldUseSupabase()) {
+    // For now, simpler fetch from Supabase. In production we'd want proper pagination.
+    const orders = await supabasePersistenceService.getAll<PurchaseOrder>('purchase_orders');
+    return {
+      items: orders.filter((o) => o.outletId === outletId).slice(0, pageSize),
+      nextCursor: null,
+      hasMore: false,
+    };
+  }
   const mockDB = getMockDB();
   if (mockDB) {
     let items = mockDB.purchaseOrders || [];
@@ -373,6 +406,16 @@ export const getEventsRange = async ({
   startDate: string;
   endDate: string;
 }): Promise<Event[]> => {
+  if (await shouldUseSupabase()) {
+    const { data, error } = await supabase
+      .from('events')
+      .select('*')
+      .eq('outlet_id', outletId)
+      .gte('date', startDate)
+      .lte('date', endDate);
+    if (error) throw error;
+    return (data || []) as Event[];
+  }
   const mockDB = getMockDB();
   if (mockDB) {
     const events = mockDB.events || [];
@@ -382,7 +425,7 @@ export const getEventsRange = async ({
   }
 
   const constraints: QueryConstraint[] = [
-    where('outletId', '==', outletId),
+    where('outletId', 'in', [outletId, 'GLOBAL']),
     where('date', '>=', startDate),
     where('date', '<=', endDate),
     orderBy('date', 'asc'),

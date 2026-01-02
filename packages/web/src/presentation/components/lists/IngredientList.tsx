@@ -21,6 +21,9 @@ interface IngredientListProps {
   onSort: (key: any) => void;
 }
 
+// Version marker for cache busting
+export const INGREDIENT_LIST_VERSION = '2024-12-31-v2';
+
 export const IngredientList: React.FC<IngredientListProps> = React.memo(
   ({ ingredients, onEdit, onDelete, sortConfig, onSort }) => {
     const { suppliers, ingredients: allIngredients } = useStore();
@@ -30,6 +33,11 @@ export const IngredientList: React.FC<IngredientListProps> = React.memo(
     const priceComparisonMap = useMemo(() => {
       const map = new Map<string, Ingredient[]>();
       allIngredients.forEach((ing) => {
+        // Defensive: Skip malformed or undefined ingredients
+        if (!ing || !ing.name) {
+          console.warn('Skipping malformed ingredient:', ing);
+          return;
+        }
         const key = ing.name.toLowerCase();
         if (!map.has(key)) {
           map.set(key, []);
@@ -115,134 +123,137 @@ export const IngredientList: React.FC<IngredientListProps> = React.memo(
             </tr>
           </thead>
           <tbody className="divide-y divide-white/5">
-            {ingredients.map((ing) => (
-              <tr key={ing.id} className="hover:bg-white/[0.02] transition-colors group">
-                <td className="p-4 font-medium text-white group-hover:text-primary transition-colors">
-                  {ing.name}
-                </td>
-                <td className="p-4">
-                  {ing.isTrackedInInventory !== false ? (
-                    <span className="flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 w-fit">
-                      <Package size={10} /> Inventario
-                    </span>
-                  ) : (
-                    <span className="flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] bg-amber-500/10 text-amber-400 border border-amber-500/20 w-fit">
-                      <Zap size={10} /> Directo
-                    </span>
-                  )}
-                </td>
-                <td className="p-4 opacity-70">{ing.unit}</td>
-                <td
-                  className={`p-4 text-right font-medium ${(ing.currentStock?.value || 0) < (ing.minimumStock?.value || 0) ? 'text-red-400' : 'text-slate-300'}`}
-                >
-                  {ing.currentStock?.value || 0}
-                </td>
-                <td className="p-4 text-right opacity-50">{ing.minimumStock?.value || 0}</td>
-                <td className="p-4 text-right font-mono text-emerald-400">
-                  <div className="flex items-center justify-end gap-2 group/price relative">
-                    {ing.lastCost?.amount.toFixed(2)}€
-                    {getPriceComparison(ing) && (
-                      <div className="relative cursor-help">
-                        <Swords size={14} className="text-amber-400 animate-pulse" />
-                        <div className="absolute right-0 bottom-full mb-2 hidden group-hover/price:block z-50">
-                          <div className="glass-card p-3 border-amber-500/30 min-w-[200px] text-left shadow-xl shadow-amber-900/20">
-                            <p className="text-[10px] font-bold text-amber-400 mb-2 uppercase tracking-widest">
-                              Guerra de Precios
-                            </p>
-                            <div className="space-y-1.5">
-                              {[
-                                ...allIngredients.filter(
-                                  (i) =>
-                                    i.name.toLowerCase() === ing.name.toLowerCase() &&
-                                    i.id !== ing.id
-                                ),
-                              ].map((match) => {
-                                const supplierName =
-                                  suppliers.find((s) => s.id === match.suppliers?.[0]?.supplierId)
-                                    ?.name || 'Desconocido';
-                                const matchPrice = match.lastCost?.amount || 0;
-                                const ingPrice = ing.lastCost?.amount || 0;
-                                return (
-                                  <div
-                                    key={match.id}
-                                    className={`flex justify-between items-center text-[11px] p-1 rounded`}
-                                  >
-                                    <div className="flex flex-col">
-                                      <span className="font-bold text-white truncate max-w-[100px]">
-                                        {supplierName}
-                                      </span>
+            {/* Filter out malformed ingredients before rendering */}
+            {ingredients
+              .filter((ing) => ing && ing.id && ing.name)
+              .map((ing) => (
+                <tr key={ing.id} className="hover:bg-white/[0.02] transition-colors group">
+                  <td className="p-4 font-medium text-white group-hover:text-primary transition-colors">
+                    {ing.name}
+                  </td>
+                  <td className="p-4">
+                    {ing.isTrackedInInventory !== false ? (
+                      <span className="flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 w-fit">
+                        <Package size={10} /> Inventario
+                      </span>
+                    ) : (
+                      <span className="flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] bg-amber-500/10 text-amber-400 border border-amber-500/20 w-fit">
+                        <Zap size={10} /> Directo
+                      </span>
+                    )}
+                  </td>
+                  <td className="p-4 opacity-70">{ing.unit}</td>
+                  <td
+                    className={`p-4 text-right font-medium ${(ing.currentStock?.value || 0) < (ing.minimumStock?.value || 0) ? 'text-red-400' : 'text-slate-300'}`}
+                  >
+                    {ing.currentStock?.value || 0}
+                  </td>
+                  <td className="p-4 text-right opacity-50">{ing.minimumStock?.value || 0}</td>
+                  <td className="p-4 text-right font-mono text-emerald-400">
+                    <div className="flex items-center justify-end gap-2 group/price relative">
+                      {ing.lastCost?.amount.toFixed(2)}€
+                      {getPriceComparison(ing) && (
+                        <div className="relative cursor-help">
+                          <Swords size={14} className="text-amber-400 animate-pulse" />
+                          <div className="absolute right-0 bottom-full mb-2 hidden group-hover/price:block z-50">
+                            <div className="glass-card p-3 border-amber-500/30 min-w-[200px] text-left shadow-xl shadow-amber-900/20">
+                              <p className="text-[10px] font-bold text-amber-400 mb-2 uppercase tracking-widest">
+                                Guerra de Precios
+                              </p>
+                              <div className="space-y-1.5">
+                                {[
+                                  ...allIngredients.filter(
+                                    (i) =>
+                                      i.name.toLowerCase() === ing.name.toLowerCase() &&
+                                      i.id !== ing.id
+                                  ),
+                                ].map((match) => {
+                                  const supplierName =
+                                    suppliers.find((s) => s.id === match.suppliers?.[0]?.supplierId)
+                                      ?.name || 'Desconocido';
+                                  const matchPrice = match.lastCost?.amount || 0;
+                                  const ingPrice = ing.lastCost?.amount || 0;
+                                  return (
+                                    <div
+                                      key={match.id}
+                                      className={`flex justify-between items-center text-[11px] p-1 rounded`}
+                                    >
+                                      <div className="flex flex-col">
+                                        <span className="font-bold text-white truncate max-w-[100px]">
+                                          {supplierName}
+                                        </span>
+                                      </div>
+                                      <div className="flex items-center gap-1">
+                                        <span
+                                          className={`font-mono ${matchPrice <= ingPrice ? 'text-emerald-400' : 'text-red-400'}`}
+                                        >
+                                          {matchPrice.toFixed(2)}€
+                                        </span>
+                                        {matchPrice < ingPrice ? (
+                                          <TrendingDown size={10} className="text-emerald-400" />
+                                        ) : matchPrice > ingPrice ? (
+                                          <TrendingUp size={10} className="text-red-400" />
+                                        ) : null}
+                                      </div>
                                     </div>
-                                    <div className="flex items-center gap-1">
-                                      <span
-                                        className={`font-mono ${matchPrice <= ingPrice ? 'text-emerald-400' : 'text-red-400'}`}
-                                      >
-                                        {matchPrice.toFixed(2)}€
-                                      </span>
-                                      {matchPrice < ingPrice ? (
-                                        <TrendingDown size={10} className="text-emerald-400" />
-                                      ) : matchPrice > ingPrice ? (
-                                        <TrendingUp size={10} className="text-red-400" />
-                                      ) : null}
-                                    </div>
-                                  </div>
-                                );
-                              })}
+                                  );
+                                })}
+                              </div>
                             </div>
                           </div>
                         </div>
-                      </div>
-                    )}
-                  </div>
-                </td>
-                <td className="p-4 text-left">
-                  <div className="flex flex-wrap gap-1">
-                    {ing.allergens?.map((a) => {
-                      if (!a || typeof a !== 'string') return null;
-                      return (
-                        <span
-                          key={a}
-                          className="px-1.5 py-0.5 bg-red-500/10 text-red-400 text-[10px] rounded border border-red-500/20"
-                          title={a}
-                        >
-                          {a.substring(0, 3)}
-                        </span>
-                      );
-                    })}
-                    {(!ing.allergens || ing.allergens.length === 0) && (
-                      <span className="text-slate-600">-</span>
-                    )}
-                  </div>
-                </td>
-                <td className="p-4 text-right opacity-70">
-                  {((ing.yieldFactor || 1) * 100).toFixed(0)}%
-                </td>
-                <td className="p-4 text-center">
-                  <div className="flex justify-center gap-1">
-                    <button
-                      onClick={() => onEdit(ing)}
-                      className="p-2 hover:bg-white/10 rounded-lg text-slate-400 hover:text-white transition-colors"
-                      title="Editar"
-                    >
-                      <Edit2 size={18} />
-                    </button>
-                    <button
-                      onClick={() => printLabel(formatLabelData(ing, 'INGREDIENT'))}
-                      className="p-2 hover:bg-white/10 rounded-lg text-slate-400 hover:text-white transition-colors"
-                      title="Imprimir Etiqueta"
-                    >
-                      <Printer size={18} />
-                    </button>
-                    <button
-                      onClick={() => onDelete(ing.id)}
-                      className="p-2 hover:bg-red-500/20 rounded-lg text-slate-400 hover:text-red-400 transition-colors"
-                      title="Eliminar"
-                    >
-                      <Trash2 size={18} />
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            ))}
+                      )}
+                    </div>
+                  </td>
+                  <td className="p-4 text-left">
+                    <div className="flex flex-wrap gap-1">
+                      {ing.allergens?.map((a) => {
+                        if (!a || typeof a !== 'string') return null;
+                        return (
+                          <span
+                            key={a}
+                            className="px-1.5 py-0.5 bg-red-500/10 text-red-400 text-[10px] rounded border border-red-500/20"
+                            title={a}
+                          >
+                            {a.substring(0, 3)}
+                          </span>
+                        );
+                      })}
+                      {(!ing.allergens || ing.allergens.length === 0) && (
+                        <span className="text-slate-600">-</span>
+                      )}
+                    </div>
+                  </td>
+                  <td className="p-4 text-right opacity-70">
+                    {((ing.yieldFactor || 1) * 100).toFixed(0)}%
+                  </td>
+                  <td className="p-4 text-center">
+                    <div className="flex justify-center gap-1">
+                      <button
+                        onClick={() => onEdit(ing)}
+                        className="p-2 hover:bg-white/10 rounded-lg text-slate-400 hover:text-white transition-colors"
+                        title="Editar"
+                      >
+                        <Edit2 size={18} />
+                      </button>
+                      <button
+                        onClick={() => printLabel(formatLabelData(ing, 'INGREDIENT'))}
+                        className="p-2 hover:bg-white/10 rounded-lg text-slate-400 hover:text-white transition-colors"
+                        title="Imprimir Etiqueta"
+                      >
+                        <Printer size={18} />
+                      </button>
+                      <button
+                        onClick={() => onDelete(ing.id)}
+                        className="p-2 hover:bg-red-500/20 rounded-lg text-slate-400 hover:text-red-400 transition-colors"
+                        title="Eliminar"
+                      >
+                        <Trash2 size={18} />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
             {ingredients.length === 0 && (
               <tr>
                 <td colSpan={7} className="p-8 text-center opacity-50">

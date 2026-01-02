@@ -12,6 +12,7 @@ export interface CostRecord {
   user?: string;
   outletId?: string;
   feature?: string;
+  provider?: string;
 }
 
 /**
@@ -27,10 +28,14 @@ export class CostTracker {
 
   static logUsage(
     usage: { promptTokens: number; completionTokens: number; totalTokens: number },
-    context: { user?: string; outletId?: string; feature?: string }
+    context: { user?: string; outletId?: string; feature?: string; provider?: string }
   ): void {
-    const inputCost = (usage.promptTokens / 1000) * COST_PER_1K_INPUT_TOKENS;
-    const outputCost = (usage.completionTokens / 1000) * COST_PER_1K_OUTPUT_TOKENS;
+    const isOpenAI = context.provider === 'openai';
+    const inputRate = isOpenAI ? 0.005 : COST_PER_1K_INPUT_TOKENS; // OpenAI GPT-4o estimate
+    const outputRate = isOpenAI ? 0.015 : COST_PER_1K_OUTPUT_TOKENS;
+
+    const inputCost = (usage.promptTokens / 1000) * inputRate;
+    const outputCost = (usage.completionTokens / 1000) * outputRate;
     const estimatedCost = inputCost + outputCost;
 
     const record: CostRecord = {

@@ -94,9 +94,32 @@ export class Unit {
    * Crea una unidad desde un string
    */
   static from(value: string): Unit {
+    // Normalize Spanish variations
+    const normalized = value.toLowerCase().trim();
+    const mappings: Record<string, UnitType> = {
+      ud: UnitType.UNIT,
+      un: UnitType.UNIT,
+      unidad: UnitType.UNIT,
+      unidades: UnitType.UNIT,
+      kg: UnitType.KG,
+      kilo: UnitType.KG,
+      kilogramo: UnitType.KG,
+      g: UnitType.G,
+      gramo: UnitType.G,
+      l: UnitType.L,
+      litro: UnitType.L,
+      ml: UnitType.ML,
+      mililitro: UnitType.ML,
+    };
+
+    const mapped = mappings[normalized];
+    if (mapped) return new Unit(mapped);
+
     const unitType = Object.values(UnitType).find((u) => u === value);
     if (!unitType) {
-      throw new Error(`Invalid unit type: ${value}`);
+      // Return default unit instead of throwing if we want to be resilient in UI
+      console.warn(`Invalid unit type encountered: ${value}, defaulting to UnitType.UNIT`);
+      return new Unit(UnitType.UNIT);
     }
     return new Unit(unitType as UnitType);
   }

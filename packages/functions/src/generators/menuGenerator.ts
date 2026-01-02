@@ -10,25 +10,32 @@ interface MenuGeneratorData {
   restrictions?: string[];
 }
 
-export const generateMenu = onCall(async (request: CallableRequest<MenuGeneratorData>) => {
-  const uid = request.auth?.uid;
-  if (!uid) {
-    throw new HttpsError('unauthenticated', 'Must be authenticated.');
-  }
+export const generateMenu = onCall(
+  {
+    timeoutSeconds: 90, // COST CONTROL: 1.5 minutes for menu generation
+    memory: '1GiB',
+    maxInstances: 2, // COST CONTROL: Max 2 concurrent menu generations
+    cors: true,
+  },
+  async (request: CallableRequest<MenuGeneratorData>) => {
+    const uid = request.auth?.uid;
+    if (!uid) {
+      throw new HttpsError('unauthenticated', 'Must be authenticated.');
+    }
 
-  await checkRateLimit(uid, 'generate_menu');
+    await checkRateLimit(uid, 'generate_menu');
 
-  const data = request.data;
-  const projectId = process.env.GCLOUD_PROJECT;
-  if (!projectId) {
-    logError('GCLOUD_PROJECT not set.');
-    throw new HttpsError('internal', 'Server configuration error.');
-  }
+    const data = request.data;
+    const projectId = process.env.GCLOUD_PROJECT;
+    if (!projectId) {
+      logError('GCLOUD_PROJECT not set.');
+      throw new HttpsError('internal', 'Server configuration error.');
+    }
 
-  const vertexAI = new VertexAI({ project: projectId, location: 'europe-west1' });
-  const model = vertexAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
+    const vertexAI = new VertexAI({ project: projectId, location: 'europe-southwest1' });
+    const model = vertexAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
 
-  const prompt = `
+    const prompt = `
     Create a professional menu for a catering event.
     
     Event Details:
@@ -48,19 +55,20 @@ export const generateMenu = onCall(async (request: CallableRequest<MenuGenerator
     }
   `;
 
-  try {
-    const result = await model.generateContent(prompt);
-    let text = result.response.candidates?.[0]?.content?.parts?.[0]?.text;
+    try {
+      const result = await model.generateContent(prompt);
+      let text = result.response.candidates?.[0]?.content?.parts?.[0]?.text;
 
-    if (!text) throw new Error('No response from AI');
+      if (!text) throw new Error('No response from AI');
 
-    text = text
-      .replace(/```json/g, '')
-      .replace(/```/g, '')
-      .trim();
-    return JSON.parse(text);
-  } catch (error: any) {
-    logError('Menu Gen Error:', error, { uid, eventType: data.eventType });
-    throw new HttpsError('internal', 'Menu generation failed');
+      text = text
+        .replace(/```json/g, '')
+        .replace(/```/g, '')
+        .trim();
+      return JSON.parse(text);
+    } catch (error: any) {
+      logError('Menu Gen Error:', error, { uid, eventType: data.eventType });
+      throw new HttpsError('internal', 'Menu generation failed');
+    }
   }
-});
+);

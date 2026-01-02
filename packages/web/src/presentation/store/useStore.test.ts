@@ -2,6 +2,13 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import { useStore } from './useStore';
 import type { Ingredient, Event } from '@/types';
 
+// Mock firestoreService to prevent actual network calls/timeouts
+vi.mock('@/services/firestoreService', () => ({
+  setDocument: vi.fn(),
+  updateDocument: vi.fn(),
+  getCollection: vi.fn(() => Promise.resolve([])),
+}));
+
 describe('useStore', () => {
   // Reset store before each test to ensure isolation
   beforeEach(() => {

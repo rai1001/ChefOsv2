@@ -1,13 +1,23 @@
 export const TYPES = {
   AuthRepository: Symbol.for('AuthRepository'),
+  SupabaseAuthRepository: Symbol.for('SupabaseAuthRepository'),
   LoginUseCase: Symbol.for('LoginUseCase'),
   LoginWithEmailUseCase: Symbol.for('LoginWithEmailUseCase'),
 
   // Ingredients Module
   IngredientRepository: Symbol.for('IngredientRepository'),
+  FirebaseIngredientRepository: Symbol.for('FirebaseIngredientRepository'),
+  SupabaseIngredientRepository: Symbol.for('SupabaseIngredientRepository'),
+  HybridIngredientRepository: Symbol.for('HybridIngredientRepository'),
   CoreIngredientRepository: Symbol.for('CoreIngredientRepository'), // Core interface
   RecipeRepository: Symbol.for('RecipeRepository'),
+  FirebaseRecipeRepository: Symbol.for('FirebaseRecipeRepository'),
+  SupabaseRecipeRepository: Symbol.for('SupabaseRecipeRepository'),
   CoreRecipeRepository: Symbol.for('CoreRecipeRepository'),
+  SupplierRepository: Symbol.for('SupplierRepository'),
+  SupabaseSupplierRepository: Symbol.for('SupabaseSupplierRepository'),
+  SupabasePurchasingRepository: Symbol.for('SupabasePurchasingRepository'),
+  SupabaseProductionRepository: Symbol.for('SupabaseProductionRepository'),
   AIService: Symbol.for('AIService'),
   ImportService: Symbol.for('ImportService'),
 
@@ -39,6 +49,7 @@ export const TYPES = {
   InventoryRepository: Symbol.for('InventoryRepository'),
   BatchRepository: Symbol.for('BatchRepository'),
   StockTransactionRepository: Symbol.for('StockTransactionRepository'),
+  SupabaseStockTransactionRepository: Symbol.for('SupabaseStockTransactionRepository'),
   TransactionManager: Symbol.for('TransactionManager'),
   RegisterStockMovementUseCase: Symbol.for('RegisterStockMovementUseCase'),
   CoreProcessStockMovementUseCase: Symbol.for('CoreProcessStockMovementUseCase'),

@@ -1,46 +1,44 @@
 import { injectable } from 'inversify';
-import { db } from '@/config/firebase';
 import {
-  collection,
-  doc,
-  getDoc,
-  getDocs,
-  setDoc,
-  deleteDoc,
-  updateDoc,
-  query,
-  where,
-  runTransaction,
-} from 'firebase/firestore';
+  getCollection,
+  getDocumentById,
+  setDocument,
+  updateDocument,
+  deleteDocument,
+} from '@/services/firestoreService';
 import { IIngredientRepository } from '@/domain/interfaces/repositories/IIngredientRepository';
 import { LegacyIngredient } from '@/domain/entities/Ingredient';
+import type { Unit } from '@/types';
 
 @injectable()
 export class FirebaseIngredientRepository implements IIngredientRepository {
   private collectionName = 'ingredients';
 
+  // Sanitize unit field - BUGFIX: some records have numbers instead of UnitType
+  private sanitizeUnit(rawUnit: any): Unit {
+    // If it's a number or invalid, default to 'un'
+    if (typeof rawUnit === 'number' || !rawUnit || typeof rawUnit !== 'string') {
+      console.warn(`Invalid unit type encountered: ${rawUnit}, defaulting to unitType.UNIT`);
+      return 'un' as Unit;
+    }
+    return rawUnit as Unit;
+  }
+
   async getIngredients(outletId: string): Promise<LegacyIngredient[]> {
-    // Query by outletId if provided, or logic for global ingredients
-    // For now, let's assume all ingredients are accessible or filtered by validation if needed.
-    // Legacy system often fetched all ingredients. Let's filter by outletId if user is restricted?
-    // But for master library, usually it's "ingredients" collection directly.
-    // Let's assume fetching all for now to match 'useStore' behavior essentially.
+    const recipes = await getCollection<any>(this.collectionName);
 
-    const q = outletId
-      ? query(collection(db, this.collectionName), where('outletId', '==', outletId))
-      : collection(db, this.collectionName);
-    const snapshot = await getDocs(q);
+    let filtered = recipes;
+    if (outletId && outletId !== 'GLOBAL') {
+      filtered = recipes.filter((r) => r.outletId === outletId || r.outletId === 'GLOBAL');
+    }
 
-    return snapshot.docs.map((doc) => {
-      const data = doc.data();
+    return filtered.map((data) => {
       return new LegacyIngredient(
-        doc.id,
+        data.id,
         data.name,
-        data.unit,
+        this.sanitizeUnit(data.unit),
         data.costPerUnit,
-        data.yield || 1, // field renamed to yieldVal in class but logic maps to yield in DB?
-        // Wait, Firestore data has 'yield'. Entity has 'yieldVal'.
-        // I should map it correctly.
+        data.yield || 1,
         data.allergens || [],
         data.category || 'other',
         data.stock || 0,
@@ -68,16 +66,13 @@ export class FirebaseIngredientRepository implements IIngredientRepository {
   }
 
   async getIngredientById(id: string): Promise<LegacyIngredient | null> {
-    const docRef = doc(db, this.collectionName, id);
-    const snapshot = await getDoc(docRef);
+    const data = await getDocumentById<any>(this.collectionName, id);
+    if (!data) return null;
 
-    if (!snapshot.exists()) return null;
-
-    const data = snapshot.data();
     return new LegacyIngredient(
-      snapshot.id,
+      id,
       data.name,
-      data.unit,
+      this.sanitizeUnit(data.unit),
       data.costPerUnit,
       data.yield || 1,
       data.allergens || [],
@@ -106,16 +101,13 @@ export class FirebaseIngredientRepository implements IIngredientRepository {
   }
 
   async createIngredient(ingredient: LegacyIngredient): Promise<void> {
-    // Map Class to Plain Object for Firestore
     const data = { ...ingredient };
-    // Handle renaming if needed (yieldVal -> yield)
     // @ts-expect-error Intentionally ignoring property rename logic
     data.yield = ingredient.yieldVal;
     // @ts-expect-error Intentionally ignoring property deletion logic
     delete data.yieldVal;
 
-    const sanitizedData = this.sanitizeData(data);
-    await setDoc(doc(db, this.collectionName, ingredient.id), sanitizedData);
+    await setDocument(this.collectionName, ingredient.id, data as any);
   }
 
   async updateIngredient(id: string, ingredient: Partial<LegacyIngredient>): Promise<void> {
@@ -125,40 +117,27 @@ export class FirebaseIngredientRepository implements IIngredientRepository {
       delete data.yieldVal;
     }
 
-    const sanitizedData = this.sanitizeData(data);
-    await updateDoc(doc(db, this.collectionName, id), sanitizedData);
-  }
-
-  private sanitizeData(data: any): any {
-    return JSON.parse(
-      JSON.stringify(data, (_key, value) => {
-        return value === undefined ? null : value;
-      })
-    );
+    await updateDocument(this.collectionName, id, data as any);
   }
 
   async deleteIngredient(id: string): Promise<void> {
-    await deleteDoc(doc(db, this.collectionName, id));
+    await deleteDocument(this.collectionName, id);
   }
 
   async updateStock(id: string, quantityChange: number): Promise<void> {
-    const docRef = doc(db, this.collectionName, id);
+    const ingredient = await getDocumentById<any>(this.collectionName, id);
+    if (!ingredient) throw new Error('Ingredient not found');
 
-    await runTransaction(db, async (transaction) => {
-      const snapshot = await transaction.get(docRef);
-      if (!snapshot.exists()) {
-        throw new Error('Ingredient not found');
-      }
-
-      const currentStock = snapshot.data().stock || 0;
-      transaction.update(docRef, { stock: currentStock + quantityChange });
-    });
+    await updateDocument(this.collectionName, id, {
+      stock: (ingredient.stock || 0) + quantityChange,
+      updatedAt: new Date().toISOString(),
+    } as any);
   }
 
   async updateCost(id: string, newCost: number): Promise<void> {
-    await updateDoc(doc(db, this.collectionName, id), {
+    await updateDocument(this.collectionName, id, {
       costPerUnit: newCost,
       updatedAt: new Date().toISOString(),
-    });
+    } as any);
   }
 }

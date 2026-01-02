@@ -11,6 +11,9 @@ import {
 import { doc, setDoc, onSnapshot } from 'firebase/firestore';
 import { db } from '@/config/firebase';
 import { useStore } from '@/presentation/store/useStore';
+import { useSetAtom } from 'jotai';
+import { userAtom } from '@/presentation/store/authAtoms';
+import { User as DomainUser } from '@/domain/entities/User'; // Alias to avoid collision with Firebase User
 import { ShieldCheck, Lock, LogOut, Store } from 'lucide-react';
 
 interface AuthWrapperProps {
@@ -37,6 +40,7 @@ export const AuthWrapper: React.FC<AuthWrapperProps> = ({ children }) => {
   const [authLoading, setAuthLoading] = useState(false);
 
   const { setActiveOutletId, setCurrentUser } = useStore();
+  const setUserAtom = useSetAtom(userAtom);
 
   useEffect(() => {
     // E2E Bypass for Testing - Only allowed if environment variable is set
@@ -44,6 +48,46 @@ export const AuthWrapper: React.FC<AuthWrapperProps> = ({ children }) => {
     // If not set or false, localStorage variable is ignored for security.
     const e2eUserStr = localStorage.getItem('E2E_TEST_USER');
     const isE2EAllowed = import.meta.env.VITE_ALLOW_E2E_BYPASS === 'true';
+
+    // SUPABASE HYBRID AUTH CHECK
+    const checkSupabaseAuth = async () => {
+      try {
+        // Dynamic import to avoid top-level DI issues in component
+        const { container } = await import('@/application/di/Container');
+        const { TYPES } = await import('@/application/di/types');
+        const repo = container.get<any>(TYPES.SupabaseAuthRepository);
+
+        repo.onAuthStateChanged((domainUser: any) => {
+          if (domainUser) {
+            console.log('Supabase User Detected:', domainUser);
+            // Map to Firebase-like User for UI compatibility
+            setUser({
+              uid: domainUser.id,
+              email: domainUser.email,
+              displayName: domainUser.displayName,
+              photoURL: domainUser.photoURL,
+              getIdToken: async () => 'mock-supabase-token',
+            } as any);
+
+            // Map to UserProfile
+            setUserProfile({
+              uid: domainUser.id,
+              email: domainUser.email,
+              role: domainUser.role || 'user',
+              active: true, // Supabase users active by default?
+              allowedOutlets: [], // Need to fetch assignments?
+              defaultOutletId: undefined,
+            });
+
+            setCurrentUser(domainUser); // Set Domain User directly
+            setLoading(false);
+          }
+        });
+      } catch (e) {
+        console.error('Supabase Auth Init Failed', e);
+      }
+    };
+    checkSupabaseAuth();
 
     if (e2eUserStr && isE2EAllowed) {
       try {
@@ -105,15 +149,29 @@ export const AuthWrapper: React.FC<AuthWrapperProps> = ({ children }) => {
               }
             }
 
-            // Sync to global store
-            setCurrentUser({
+            const updatedUser = {
               id: data.uid,
               email: data.email,
               role: data.role as any,
               name: (data as any).displayName || data.email.split('@')[0],
               photoURL: (data as any).photoURL || currentUser.photoURL || undefined,
               allowedOutlets: data.allowedOutlets,
+            };
+
+            // Sync to global store (Zustand)
+            setCurrentUser(updatedUser);
+
+            // Sync to Atom (Jotai) - Critical for Sidebar visibility
+            const mappedUserForAtom = new DomainUser({
+              id: data.uid,
+              email: data.email,
+              displayName: (data as any).displayName || data.email.split('@')[0],
+              photoURL: (data as any).photoURL || currentUser.photoURL || undefined,
+              role: data.role as any,
+              createdAt: new Date(), // Approximate, strictly for UI role check
+              updatedAt: new Date(),
             });
+            setUserAtom(mappedUserForAtom);
 
             // AUTO-FIX 1: Auto-Activate for Testing Phase
             if (!data.active) {
@@ -247,6 +305,11 @@ export const AuthWrapper: React.FC<AuthWrapperProps> = ({ children }) => {
   }
 
   // State 1: Not Authenticated
+  // BYPASS: Allow specific public routes to bypass the global auth lock
+  if (window.location.pathname.startsWith('/supabase-test')) {
+    return <>{children}</>;
+  }
+
   if (!user) {
     return (
       <div className="h-screen w-screen bg-slate-900 flex flex-col items-center justify-center p-4">
@@ -330,6 +393,45 @@ export const AuthWrapper: React.FC<AuthWrapperProps> = ({ children }) => {
               {isRegistering ? 'Inicia Sesión' : 'Regístrate'}
             </button>
           </p>
+
+          {/* Dev Bypass Button */}
+          <button
+            onClick={() => {
+              localStorage.setItem(
+                'E2E_TEST_USER',
+                JSON.stringify({
+                  id: 'test-admin-uid',
+                  email: 'admin@chefos.com',
+                  role: 'admin',
+                  active: true,
+                  name: 'Admin Tester',
+                  activeOutletId: '51f84de3-62e1-44c3-a6f8-b347285aca03', // Seeded Supabase Outlet
+                  allowedOutlets: ['51f84de3-62e1-44c3-a6f8-b347285aca03'],
+                })
+              );
+              window.location.reload();
+            }}
+            className="mt-4 w-full py-2 bg-gray-800 hover:bg-gray-700 text-gray-400 rounded-lg text-xs uppercase font-mono border border-gray-700"
+          >
+            🔑 Modo Desarrollador (Bypass Auth)
+          </button>
+
+          <button
+            onClick={async () => {
+              try {
+                const { container } = await import('@/application/di/Container');
+                const { TYPES } = await import('@/application/di/types');
+                const repo = container.get<any>(TYPES.SupabaseAuthRepository);
+                await repo.signInWithGoogle();
+              } catch (e) {
+                console.error('Supabase Login Error', e);
+                setError('Error Supabase: ' + e);
+              }
+            }}
+            className="mt-2 w-full py-2 bg-emerald-900/50 hover:bg-emerald-800/50 text-emerald-400 rounded-lg text-xs uppercase font-mono border border-emerald-800"
+          >
+            ⚡ Entrar con Supabase (Beta)
+          </button>
         </div>
       </div>
     );

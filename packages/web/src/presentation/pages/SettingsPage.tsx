@@ -1,12 +1,74 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useStore } from '../store/useStore';
-import { Building2, UtensilsCrossed, Check } from 'lucide-react';
+import { Building2, UtensilsCrossed, Check, Wrench, Loader2, Trash2 } from 'lucide-react';
+import { httpsCallable } from 'firebase/functions';
+import { functions } from '@/config/firebase';
 
 export const SettingsPage: React.FC = () => {
   const { settings, setSettings } = useStore();
+  const [isFixing, setIsFixing] = useState(false);
+  const [fixResult, setFixResult] = useState<any>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [deleteResult, setDeleteResult] = useState<any>(null);
 
   const handleModeChange = (mode: 'HOTEL' | 'RESTAURANT') => {
     setSettings({ businessType: mode });
+  };
+
+  const handleFixIngredients = async () => {
+    if (
+      !confirm(
+        '¿Estás seguro de que quieres limpiar y validar todos los ingredientes? Esta operación puede tardar un momento.'
+      )
+    ) {
+      return;
+    }
+
+    setIsFixing(true);
+    setFixResult(null);
+
+    try {
+      const fixIngredients = httpsCallable(functions, 'fixIngredientsData');
+      const result = await fixIngredients();
+      setFixResult(result.data);
+      alert('✅ Ingredientes limpiados correctamente. Recarga la página para ver los cambios.');
+    } catch (error: any) {
+      console.error('Error al limpiar ingredientes:', error);
+      alert('❌ Error al limpiar ingredientes: ' + error.message);
+    } finally {
+      setIsFixing(false);
+    }
+  };
+
+  const handleDeleteAllIngredients = async () => {
+    const userInput = prompt(
+      '⚠️ ADVERTENCIA: Esta operación eliminará TODOS los ingredientes de la base de datos de forma PERMANENTE.\n\n' +
+        'Para confirmar, escribe exactamente: DELETE_ALL_INGREDIENTS'
+    );
+
+    if (userInput !== 'DELETE_ALL_INGREDIENTS') {
+      if (userInput !== null) {
+        alert('❌ Confirmación incorrecta. Operación cancelada.');
+      }
+      return;
+    }
+
+    setIsDeleting(true);
+    setDeleteResult(null);
+
+    try {
+      const deleteAllIngredients = httpsCallable(functions, 'deleteAllIngredients');
+      const result = await deleteAllIngredients({ confirmation: 'DELETE_ALL_INGREDIENTS' });
+      setDeleteResult(result.data);
+      alert(
+        `✅ ${(result.data as any).deleted} ingredientes eliminados correctamente. Recarga la página para ver los cambios.`
+      );
+    } catch (error: any) {
+      console.error('Error al eliminar ingredientes:', error);
+      alert('❌ Error al eliminar ingredientes: ' + error.message);
+    } finally {
+      setIsDeleting(false);
+    }
   };
 
   return (
@@ -86,6 +148,93 @@ export const SettingsPage: React.FC = () => {
             <strong>Nota:</strong> Al cambiar el modo, la barra lateral y los widgets del dashboard
             se actualizarán automáticamente. No es necesario recargar.
           </p>
+        </div>
+      </div>
+
+      {/* Maintenance Section */}
+      <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
+        <div className="flex items-center gap-2 mb-4">
+          <Wrench className="text-gray-600 dark:text-gray-400" size={24} />
+          <h2 className="text-xl font-semibold text-gray-800 dark:text-white">
+            Mantenimiento del Sistema
+          </h2>
+        </div>
+        <p className="text-gray-500 dark:text-gray-400 mb-6">
+          Herramientas de administración para mantener la integridad de los datos.
+        </p>
+
+        <div className="space-y-4">
+          <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
+            <h3 className="font-semibold text-gray-900 dark:text-white mb-2">
+              Limpiar y Validar Ingredientes
+            </h3>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
+              Esta operación corrige ingredientes con datos mal formados, normaliza unidades y
+              categorías, y elimina registros inválidos.
+            </p>
+            <button
+              onClick={handleFixIngredients}
+              disabled={isFixing}
+              className="bg-primary hover:bg-primary/90 text-white px-4 py-2 rounded-lg font-semibold disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+            >
+              {isFixing ? (
+                <>
+                  <Loader2 className="animate-spin" size={16} />
+                  Limpiando...
+                </>
+              ) : (
+                <>
+                  <Wrench size={16} />
+                  Ejecutar Limpieza
+                </>
+              )}
+            </button>
+            {fixResult && (
+              <div className="mt-4 p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-md">
+                <p className="text-sm text-green-800 dark:text-green-200">
+                  <strong>✅ Completado:</strong> {fixResult.fixed} corregidos, {fixResult.deleted}{' '}
+                  eliminados, {fixResult.skipped} sin cambios
+                </p>
+              </div>
+            )}
+          </div>
+
+          {/* Delete All Ingredients */}
+          <div className="border border-red-200 dark:border-red-900/50 rounded-lg p-4 bg-red-50/50 dark:bg-red-900/10">
+            <h3 className="font-semibold text-gray-900 dark:text-white mb-2 flex items-center gap-2">
+              <Trash2 size={18} className="text-red-600" />
+              Eliminar Todos los Ingredientes
+            </h3>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
+              ⚠️ <strong>PELIGRO:</strong> Esta operación eliminará TODOS los ingredientes de la
+              base de datos de forma PERMANENTE. Solo usar para pruebas o limpieza total del
+              sistema.
+            </p>
+            <button
+              onClick={handleDeleteAllIngredients}
+              disabled={isDeleting}
+              className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg font-semibold disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+            >
+              {isDeleting ? (
+                <>
+                  <Loader2 className="animate-spin" size={16} />
+                  Eliminando...
+                </>
+              ) : (
+                <>
+                  <Trash2 size={16} />
+                  Eliminar Todos los Ingredientes
+                </>
+              )}
+            </button>
+            {deleteResult && (
+              <div className="mt-4 p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-md">
+                <p className="text-sm text-green-800 dark:text-green-200">
+                  <strong>✅ Completado:</strong> {deleteResult.deleted} ingredientes eliminados
+                </p>
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>

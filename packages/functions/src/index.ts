@@ -6,6 +6,7 @@ setGlobalOptions({ region: 'europe-southwest1' });
 admin.initializeApp();
 
 export { scanInvoice } from './scanners/invoiceScanner';
+export { scanInvoiceV2 } from './scanners/invoiceScannerV2'; // Cloud Vision OCR (1000 FREE/month)
 export { searchRecipes } from './search/recipeSearcher';
 export { chatWithCopilot } from './chat/kitchenCopilot';
 export { predictDemand } from './predictors/demandPredictor';
@@ -44,7 +45,18 @@ export { generateSocialContent } from './socialManager';
 export { scanBEO } from './triggers/beoScanner';
 
 // Universal Ingestion (Mission 6)
-export { analyzeDocument, parseStructuredFile, commitImport } from './ingestion';
+export {
+  analyzeDocument,
+  parseStructuredFile,
+  commitImport,
+  classifyIngredients,
+} from './ingestion';
+
+// Invoice OCR (Priority Use Case)
+export { processRestaurantInvoice } from './triggers/invoiceUpload';
+
+// Maintenance Functions
+export { fixIngredientsData, deleteAllIngredients } from './ingestion';
 
 // Legacy Triggers (Scheduled for removal)
 // export { processExcelImport } from "./triggers/excelProcessor";

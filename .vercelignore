@@ -1,0 +1,12 @@
+node_modules
+.git
+.firebase
+packages/functions
+scripts
+docs
+*.log
+*.md
+test_*
+firebase-debug.log
+firestore-debug.log
+database-debug.log

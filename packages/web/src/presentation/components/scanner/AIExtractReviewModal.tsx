@@ -10,6 +10,8 @@ import {
   Loader2,
   ChevronDown,
   Search,
+  CheckCircle2,
+  AlertCircle,
 } from 'lucide-react';
 import { useStore } from '@/presentation/store/useStore';
 import type { Event, KanbanTask } from '@/types';
@@ -95,22 +97,22 @@ function SearchableMatchSelector({
           e.stopPropagation();
           setIsOpen(!isOpen);
         }}
-        className={`flex items-center justify-between w-full bg-[#1a2234] border rounded-xl px-4 py-3 text-[11px] font-black uppercase tracking-wider transition-all cursor-pointer hover:border-primary/50 group ${
+        className={`flex items-center justify-between w-full h-9 bg-[#1a2234] border rounded-lg px-3 text-[11px] font-medium transition-all cursor-pointer hover:border-primary/50 group ${
           currentMatch
             ? 'text-white border-primary/40 bg-primary/10'
             : 'text-slate-400 border-white/10'
         }`}
       >
-        <div className="truncate flex items-center gap-2.5">
+        <div className="truncate flex items-center gap-2">
           {currentMatch ? (
             <>
-              <span className="text-sm">{value?.type === 'recipe' ? '📖' : '📦'}</span>
-              <span className="truncate font-bold italic">{currentMatch.name}</span>
+              <span className="text-xs">{value?.type === 'recipe' ? '📖' : '📦'}</span>
+              <span className="truncate font-semibold">{currentMatch.name}</span>
             </>
           ) : (
             <div className="flex items-center gap-2 opacity-60">
-              <Search size={14} className="text-slate-400" />
-              <span>Seleccionar vinculación...</span>
+              <Search size={12} className="text-slate-400" />
+              <span className="italic">Seleccionar vinculación...</span>
             </div>
           )}
         </div>
@@ -124,7 +126,7 @@ function SearchableMatchSelector({
         dropdownPosition &&
         createPortal(
           <div
-            className="fixed z-[9999] w-[380px] md:w-[450px] mt-2 border border-white/20 rounded-2xl shadow-[0_30px_60px_-12px_rgba(0,0,0,1)] overflow-hidden isolate"
+            className="fixed z-[9999] w-[300px] md:w-[350px] mt-1 border border-white/20 rounded-xl shadow-[0_20px_50px_-12px_rgba(0,0,0,1)] overflow-hidden isolate"
             style={{
               top: dropdownPosition.top,
               left: dropdownPosition.left,
@@ -133,14 +135,14 @@ function SearchableMatchSelector({
             }}
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="p-3 border-b border-white/10 bg-slate-900">
+            <div className="p-2 border-b border-white/10 bg-slate-900/80 backdrop-blur-sm">
               <div className="relative">
-                <Search className="absolute left-3.5 top-3 w-4 h-4 text-primary" />
+                <Search className="absolute left-3 top-2.5 w-3.5 h-3.5 text-primary" />
                 <input
                   autoFocus
                   type="text"
-                  className="w-full bg-black border border-white/20 rounded-xl pl-10 pr-4 py-2.5 text-xs font-bold text-white outline-none focus:border-primary transition-all placeholder:text-slate-500"
-                  placeholder="Escribe para filtrar..."
+                  className="w-full bg-black/50 border border-white/10 rounded-lg pl-9 pr-3 py-2 text-xs text-white outline-none focus:border-primary transition-all placeholder:text-slate-500"
+                  placeholder="Buscar receta o ingrediente..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                 />
@@ -148,7 +150,7 @@ function SearchableMatchSelector({
             </div>
 
             <div
-              className="max-h-[300px] overflow-y-auto custom-scrollbar"
+              className="max-h-[250px] overflow-y-auto custom-scrollbar"
               style={{ backgroundColor: '#111827' }}
             >
               <button
@@ -159,14 +161,14 @@ function SearchableMatchSelector({
                   onChange(undefined);
                   setIsOpen(false);
                 }}
-                className="w-full px-5 py-3 text-left text-[11px] font-black uppercase tracking-[0.15em] text-slate-400 hover:bg-white/10 hover:text-white transition-all border-b border-white/5"
+                className="w-full px-4 py-2.5 text-left text-[10px] font-bold uppercase tracking-wider text-slate-500 hover:bg-white/5 hover:text-white transition-all border-b border-white/5"
               >
-                -- No Vinculado --
+                -- Desvincular --
               </button>
 
               {filteredRecipes.length > 0 && (
-                <div className="py-2">
-                  <div className="px-5 py-2 text-[9px] font-black uppercase tracking-[0.2em] text-primary bg-primary/20 sticky top-0 z-10 border-y border-primary/20">
+                <div className="py-1">
+                  <div className="px-4 py-1.5 text-[9px] font-black uppercase tracking-wider text-primary bg-primary/10 sticky top-0 z-10 backdrop-blur-sm border-y border-primary/10">
                     📖 Fichas Técnicas
                   </div>
                   {filteredRecipes.map((r) => (
@@ -179,12 +181,8 @@ function SearchableMatchSelector({
                         onChange({ id: r.id, type: 'recipe' });
                         setIsOpen(false);
                       }}
-                      className="w-full px-5 py-3 text-left text-xs font-bold text-slate-200 hover:bg-primary hover:text-white transition-all flex items-center gap-3 border-b border-white/[0.05] group/item"
-                      style={{ backgroundColor: '#111827' }}
+                      className="w-full px-4 py-2 text-left text-xs text-slate-300 hover:bg-primary/20 hover:text-white transition-all flex items-center gap-2 border-b border-white/[0.02] group/item"
                     >
-                      <span className="opacity-70 group-hover/item:opacity-100 transition-opacity text-sm">
-                        📖
-                      </span>
                       <span className="truncate">{r.name}</span>
                     </button>
                   ))}
@@ -192,9 +190,9 @@ function SearchableMatchSelector({
               )}
 
               {filteredIngredients.length > 0 && (
-                <div className="py-2 border-t border-white/5">
-                  <div className="px-5 py-2 text-[9px] font-black uppercase tracking-[0.2em] text-emerald-400 bg-emerald-500/20 sticky top-0 z-10 border-y border-emerald-500/20">
-                    📦 Ingredientes Directos
+                <div className="py-1 border-t border-white/5">
+                  <div className="px-4 py-1.5 text-[9px] font-black uppercase tracking-wider text-emerald-400 bg-emerald-500/10 sticky top-0 z-10 backdrop-blur-sm border-y border-emerald-500/10">
+                    📦 Ingredientes
                   </div>
                   {filteredIngredients.map((i) => (
                     <button
@@ -206,15 +204,11 @@ function SearchableMatchSelector({
                         onChange({ id: i.id, type: 'ingredient' });
                         setIsOpen(false);
                       }}
-                      className="w-full px-5 py-3 text-left text-xs font-bold text-slate-200 hover:bg-emerald-600 hover:text-white transition-all flex items-center gap-3 border-b border-white/[0.05] group/item"
-                      style={{ backgroundColor: '#111827' }}
+                      className="w-full px-4 py-2 text-left text-xs text-slate-300 hover:bg-emerald-500/20 hover:text-white transition-all flex items-center gap-2 border-b border-white/[0.02] group/item"
                     >
-                      <span className="opacity-70 group-hover/item:opacity-100 transition-opacity text-sm">
-                        📦
-                      </span>
                       <span className="truncate flex-1">{i.name}</span>
-                      <span className="text-[10px] opacity-40 font-mono italic shrink-0 group-hover/item:opacity-70">
-                        ({i.unit})
+                      <span className="text-[9px] opacity-40 font-mono group-hover/item:opacity-70">
+                        {i.unit}
                       </span>
                     </button>
                   ))}
@@ -222,10 +216,8 @@ function SearchableMatchSelector({
               )}
 
               {filteredRecipes.length === 0 && filteredIngredients.length === 0 && (
-                <div className="px-5 py-12 text-center bg-black/40">
-                  <p className="text-[11px] font-bold text-slate-500 italic uppercase tracking-wider">
-                    No se han encontrado resultados
-                  </p>
+                <div className="px-4 py-8 text-center">
+                  <p className="text-[10px] text-slate-600 italic">Sin resultados</p>
                 </div>
               )}
             </div>
@@ -233,10 +225,9 @@ function SearchableMatchSelector({
           document.body
         )}
 
-      {/* Backdrop for closing */}
       {isOpen && (
         <div
-          className="fixed inset-0 z-[65] cursor-default bg-black/80"
+          className="fixed inset-0 z-[65] cursor-default bg-transparent"
           onClick={(e) => {
             e.preventDefault();
             e.stopPropagation();
@@ -326,6 +317,10 @@ export const AIExtractReviewModal: React.FC<AIExtractReviewModalProps> = ({
     () => [...ingredients].sort((a, b) => a.name.localeCompare(b.name)),
     [ingredients]
   );
+
+  const matchedCount = Object.keys(matches).length;
+  const totalItems = allItems.length;
+  const progressPercentage = Math.round((matchedCount / totalItems) * 100) || 0;
 
   const handleSync = async () => {
     if (!activeOutletId) return;
@@ -431,30 +426,49 @@ export const AIExtractReviewModal: React.FC<AIExtractReviewModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
-      <div className="bg-surface border border-white/10 rounded-2xl w-full max-w-4xl max-h-[90vh] flex flex-col shadow-2xl overflow-hidden">
+      <div className="bg-surface border border-white/10 rounded-2xl w-full max-w-5xl max-h-[90vh] flex flex-col shadow-2xl overflow-hidden">
         {/* Header */}
-        <div className="p-6 border-b border-white/10 flex justify-between items-center bg-white/5">
-          <div className="flex items-center gap-3">
-            <div className="p-3 bg-primary/20 rounded-xl text-primary">
-              <Brain className="w-6 h-6" />
+        <div className="bg-white/5 border-b border-white/10">
+          <div className="p-6 flex justify-between items-center">
+            <div className="flex items-center gap-4">
+              <div className="p-3 bg-gradient-to-br from-primary/20 to-primary/5 rounded-xl text-primary border border-primary/20 shadow-lg shadow-primary/10">
+                <Brain className="w-6 h-6" />
+              </div>
+              <div>
+                <h2 className="text-2xl font-bold text-white tracking-tight">
+                  Revisar Extracción AI
+                </h2>
+                <div className="flex items-center gap-2 mt-1">
+                  <span className="px-2 py-0.5 rounded-full bg-slate-800 border border-white/10 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                    {event.name}
+                  </span>
+                  <span className="text-xs text-slate-500">• {totalItems} items detectados</span>
+                </div>
+              </div>
             </div>
-            <div>
-              <h2 className="text-2xl font-bold text-white">Revisar Extracción AI</h2>
-              <p className="text-sm text-slate-400">
-                Vincula los platos con Recetas o Ingredientes directos
-              </p>
-            </div>
+            <button
+              onClick={onClose}
+              className="p-2 hover:bg-white/10 rounded-lg transition-colors text-slate-400 hover:text-white"
+            >
+              <X className="w-6 h-6" />
+            </button>
           </div>
-          <button
-            onClick={onClose}
-            className="p-2 hover:bg-white/10 rounded-lg transition-colors text-slate-400 hover:text-white"
-          >
-            <X className="w-6 h-6" />
-          </button>
+
+          {/* Progress Bar */}
+          <div className="w-full h-1 bg-slate-800">
+            <div
+              className={`h-full transition-all duration-500 ease-out ${
+                progressPercentage === 100
+                  ? 'bg-gradient-to-r from-emerald-500 to-emerald-400 shadow-[0_0_10px_rgba(16,185,129,0.5)]'
+                  : 'bg-primary'
+              }`}
+              style={{ width: `${progressPercentage}%` }}
+            />
+          </div>
         </div>
 
         {/* Content */}
-        <div className="flex-1 overflow-y-auto p-6 custom-scrollbar">
+        <div className="flex-1 overflow-y-auto p-6 custom-scrollbar bg-[#0f1218]">
           <div className="grid grid-cols-1 gap-8">
             {(() => {
               // Group items by category to avoid duplicate headers
@@ -467,14 +481,14 @@ export const AIExtractReviewModal: React.FC<AIExtractReviewModalProps> = ({
 
               return Object.entries(groupedCategories).map(([category, items]) => (
                 <div key={category} className="space-y-4">
-                  <h3 className="text-sm font-black text-primary flex items-center gap-3 uppercase tracking-[0.2em] border-b border-primary/20 pb-3">
-                    <div className="p-1.5 bg-primary/10 rounded-lg">
-                      <Utensils size={14} />
+                  <h3 className="text-sm font-black text-slate-400 flex items-center gap-3 uppercase tracking-[0.2em] border-b border-white/5 pb-3">
+                    <div className="p-1 bg-white/5 rounded-md text-slate-400">
+                      <Utensils size={12} />
                     </div>
                     {category}
                   </h3>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     {items.map((item: any, iIdx: number) => {
                       const uid = `${category}_${item.name}`;
                       const match = matches[uid];
@@ -483,46 +497,59 @@ export const AIExtractReviewModal: React.FC<AIExtractReviewModalProps> = ({
                       return (
                         <div
                           key={iIdx}
-                          className={`group p-5 rounded-[1.5rem] border transition-all duration-300 relative ${
+                          className={`group flex flex-col p-4 rounded-2xl border transition-all duration-300 relative ${
                             isMatched
-                              ? 'bg-white/[0.03] border-primary/30 shadow-lg shadow-primary/5'
-                              : 'bg-white/[0.01] border-white/5 hover:border-white/10'
+                              ? 'bg-[#161b26] border-emerald-500/20 shadow-lg shadow-emerald-900/10'
+                              : 'bg-white/[0.02] border-white/5 hover:border-white/10 shadow-sm'
                           }`}
                         >
-                          {/* Glow effect on matched */}
-                          {isMatched && (
-                            <div className="absolute -right-4 -top-4 w-24 h-24 bg-primary/5 blur-2xl rounded-full" />
-                          )}
-
-                          <div className="flex justify-between items-start mb-4 relative z-10">
-                            <div className="min-w-0 flex-1">
-                              <div className="flex items-center gap-2 mb-1">
-                                <h4 className="font-black text-xs text-white uppercase tracking-tight group-hover:text-primary transition-colors truncate">
+                          <div className="flex justify-between items-start mb-3">
+                            <div className="min-w-0 pr-2">
+                              <div className="flex items-center gap-2 mb-1.5">
+                                {isMatched ? (
+                                  <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
+                                ) : (
+                                  <AlertCircle className="w-4 h-4 text-amber-500 shrink-0" />
+                                )}
+                                <h4
+                                  className={`font-bold text-sm leading-tight line-clamp-2 ${
+                                    isMatched ? 'text-white' : 'text-amber-500/90'
+                                  }`}
+                                >
                                   {item.name}
                                 </h4>
-                                {item.isHandwritten && (
-                                  <div className="flex items-center gap-1 px-1.5 py-0.5 bg-amber-500/10 text-amber-500 border border-amber-500/20 rounded-md">
-                                    <span className="text-[7px] font-black uppercase tracking-widest">
-                                      Manual
-                                    </span>
-                                  </div>
-                                )}
                               </div>
-                              <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider line-clamp-1 italic">
-                                {item.notes || 'Sin observaciones'}
-                              </p>
+
+                              {item.notes && item.notes !== 'Sin observaciones' ? (
+                                <p className="text-[11px] text-slate-400 leading-relaxed line-clamp-2">
+                                  {item.notes}
+                                </p>
+                              ) : (
+                                <p className="text-[10px] text-slate-600 italic">
+                                  Sin observaciones
+                                </p>
+                              )}
+
+                              {item.isHandwritten && (
+                                <span className="inline-block mt-1.5 px-1.5 py-0.5 bg-amber-500/10 text-amber-500 border border-amber-500/20 rounded text-[9px] font-bold uppercase tracking-wider">
+                                  Manual
+                                </span>
+                              )}
                             </div>
-                            <div className="ml-4 shrink-0">
-                              <div className="px-2 py-1 bg-black/40 border border-white/5 rounded-lg">
-                                <span className="font-mono text-[10px] font-black text-white">
-                                  {item.quantity || event.pax}{' '}
-                                  <span className="text-[8px] text-slate-500 font-sans">PAX</span>
+
+                            <div className="shrink-0 flex flex-col items-end gap-1">
+                              <div className="px-2 py-1 bg-black/40 border border-white/5 rounded-md min-w-[50px] text-center">
+                                <span className="font-mono text-xs font-bold text-white">
+                                  {item.quantity || event.pax}
+                                </span>
+                                <span className="ml-1 text-[9px] text-slate-500 font-sans uppercase">
+                                  PAX
                                 </span>
                               </div>
                             </div>
                           </div>
 
-                          <div className="space-y-3 relative z-10">
+                          <div className="mt-auto pt-3 border-t border-white/5 space-y-3">
                             <SearchableMatchSelector
                               value={match}
                               onChange={(m) => {
@@ -539,38 +566,54 @@ export const AIExtractReviewModal: React.FC<AIExtractReviewModalProps> = ({
                               recipes={sortedRecipes}
                               ingredients={sortedIngredients}
                             />
-                            {!isMatched && (
-                              <div className="absolute -left-1 -top-1 pointer-events-none">
-                                <div className="w-2 h-2 bg-orange-500 rounded-full animate-pulse shadow-[0_0_8px_rgba(249,115,22,0.5)]" />
-                              </div>
-                            )}
 
-                            <div className="flex items-center gap-4">
-                              <label className="flex items-center gap-2 cursor-pointer group">
+                            <div className="flex items-center justify-between gap-2 px-1">
+                              <label
+                                className={`flex items-center gap-2 cursor-pointer group/task select-none transition-opacity ${
+                                  !isMatched ? 'opacity-50' : 'opacity-100'
+                                }`}
+                                title={
+                                  !isMatched
+                                    ? 'Vincula un item primero'
+                                    : 'Crear tarea de producción'
+                                }
+                              >
                                 <div
                                   onClick={() => {
+                                    if (!isMatched) return;
                                     const next = new Set(selectedTasks);
                                     if (next.has(uid)) next.delete(uid);
                                     else next.add(uid);
                                     setSelectedTasks(next);
                                   }}
-                                  className={`w-5 h-5 rounded border flex items-center justify-center transition-colors ${
+                                  className={`w-4 h-4 rounded border flex items-center justify-center transition-all ${
                                     selectedTasks.has(uid)
-                                      ? 'bg-primary border-primary'
-                                      : 'border-white/20 group-hover:border-white/40'
+                                      ? 'bg-primary border-primary shadow-[0_0_8px_rgba(59,130,246,0.5)]'
+                                      : 'border-slate-600 bg-black/20 group-hover/task:border-slate-400'
                                   }`}
                                 >
                                   {selectedTasks.has(uid) && (
-                                    <Check className="w-3.5 h-3.5 text-white" />
+                                    <Check className="w-3 h-3 text-white" />
                                   )}
                                 </div>
-                                <span className="text-xs text-slate-400 uppercase font-bold tracking-wider">
-                                  Producción
+                                <span
+                                  className={`text-[10px] font-bold uppercase tracking-wider ${
+                                    selectedTasks.has(uid) ? 'text-primary' : 'text-slate-500'
+                                  }`}
+                                >
+                                  Tarea
                                 </span>
                               </label>
 
                               <label
-                                className={`flex items-center gap-2 cursor-pointer group ${!isMatched ? 'opacity-30 cursor-not-allowed' : ''}`}
+                                className={`flex items-center gap-2 cursor-pointer group/buy select-none transition-opacity ${
+                                  !isMatched ? 'opacity-30 cursor-not-allowed' : 'opacity-100'
+                                }`}
+                                title={
+                                  !isMatched
+                                    ? 'Vincula un item primero'
+                                    : 'Añadir a lista de compras'
+                                }
                               >
                                 <div
                                   onClick={() => {
@@ -580,18 +623,24 @@ export const AIExtractReviewModal: React.FC<AIExtractReviewModalProps> = ({
                                     else next.add(uid);
                                     setSelectedPurchases(next);
                                   }}
-                                  className={`w-5 h-5 rounded border flex items-center justify-center transition-colors ${
+                                  className={`w-4 h-4 rounded border flex items-center justify-center transition-all ${
                                     selectedPurchases.has(uid)
-                                      ? 'bg-indigo-500 border-indigo-500'
-                                      : 'border-white/20 group-hover:border-white/40'
+                                      ? 'bg-indigo-500 border-indigo-500 shadow-[0_0_8px_rgba(99,102,241,0.5)]'
+                                      : 'border-slate-600 bg-black/20 group-hover/buy:border-slate-400'
                                   }`}
                                 >
                                   {selectedPurchases.size > 0 && selectedPurchases.has(uid) && (
-                                    <Check className="w-3.5 h-3.5 text-white" />
+                                    <Check className="w-3 h-3 text-white" />
                                   )}
                                 </div>
-                                <span className="text-xs text-slate-400 uppercase font-bold tracking-wider">
-                                  Compras
+                                <span
+                                  className={`text-[10px] font-bold uppercase tracking-wider ${
+                                    selectedPurchases.has(uid)
+                                      ? 'text-indigo-400'
+                                      : 'text-slate-500'
+                                  }`}
+                                >
+                                  Compra
                                 </span>
                               </label>
                             </div>
@@ -607,47 +656,61 @@ export const AIExtractReviewModal: React.FC<AIExtractReviewModalProps> = ({
         </div>
 
         {/* Footer */}
-        <div className="p-6 border-t border-white/10 bg-white/5 flex items-center justify-between">
-          <div className="flex items-center gap-6">
-            <div className="flex flex-col">
-              <span className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">
-                Tareas a Crear
-              </span>
-              <span className="text-lg font-bold text-white flex items-center gap-2">
-                <Package className="w-4 h-4 text-primary" /> {selectedTasks.size}
-              </span>
+        <div className="p-4 border-t border-white/10 bg-[#161b26] flex items-center justify-between shrink-0 z-20 shadow-[0_-10px_40px_rgba(0,0,0,0.5)]">
+          <div className="flex items-center gap-8 pl-2">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center text-primary">
+                <Package className="w-5 h-5" />
+              </div>
+              <div className="flex flex-col">
+                <span className="text-2xl font-black text-white leading-none tracking-tight">
+                  {selectedTasks.size}
+                </span>
+                <span className="text-[9px] text-slate-400 uppercase font-bold tracking-wider">
+                  Tareas Producción
+                </span>
+              </div>
             </div>
-            <div className="flex flex-col">
-              <span className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">
-                Pedidos Borrador
-              </span>
-              <span className="text-lg font-bold text-white flex items-center gap-2">
-                <ShoppingCart className="w-4 h-4 text-indigo-400" /> {selectedPurchases.size}
-              </span>
+
+            <div className="w-px h-8 bg-white/10" />
+
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400">
+                <ShoppingCart className="w-5 h-5" />
+              </div>
+              <div className="flex flex-col">
+                <span className="text-2xl font-black text-white leading-none tracking-tight">
+                  {selectedPurchases.size}
+                </span>
+                <span className="text-[9px] text-slate-400 uppercase font-bold tracking-wider">
+                  Pedidos Borrador
+                </span>
+              </div>
             </div>
           </div>
 
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3">
             <button
               onClick={onClose}
-              className="px-6 py-2.5 text-slate-400 hover:text-white font-bold transition-colors"
+              className="px-6 py-3 text-sm text-slate-400 hover:text-white font-bold transition-colors hover:bg-white/5 rounded-xl uppercase tracking-wider"
             >
               Cancelar
             </button>
             <button
               onClick={handleSync}
               disabled={isSyncing || (selectedTasks.size === 0 && selectedPurchases.size === 0)}
-              className="bg-primary hover:bg-blue-600 disabled:opacity-50 text-white px-8 py-2.5 rounded-xl font-bold transition-all shadow-lg shadow-primary/20 flex items-center gap-2"
+              className="relative group overflow-hidden bg-primary hover:bg-blue-600 disabled:opacity-50 text-white px-8 py-3 rounded-xl font-bold transition-all shadow-lg shadow-primary/20 flex items-center gap-2"
             >
+              <div className="absolute inset-0 bg-gradient-to-tr from-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
               {isSyncing ? (
                 <>
                   <Loader2 className="w-5 h-5 animate-spin" />
-                  Sincronizando...
+                  <span className="uppercase tracking-wider text-xs">Sincronizando...</span>
                 </>
               ) : (
                 <>
                   <Check className="w-5 h-5" />
-                  Confirmar y Sincronizar
+                  <span className="uppercase tracking-wider text-xs">Confirmar Todo</span>
                 </>
               )}
             </button>

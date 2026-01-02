@@ -51,14 +51,18 @@ service cloud.firestore {
     // For read operations
     function canReadDocument(data) {
         return isAuthenticated() && isActive() && (
-            isAdmin() || (data.outletId != null && canAccessOutlet(data.outletId))
+            isAdmin() ||
+            data.outletId == 'GLOBAL' ||
+            (data.outletId != null && canAccessOutlet(data.outletId))
         );
     }
 
     // For write operations
     function canWriteDocument(data) {
         return isAuthenticated() && isActive() && (
-            isAdmin() || (data.outletId != null && canManageOutlet(data.outletId))
+            isAdmin() ||
+            data.outletId == 'GLOBAL' ||
+            (data.outletId != null && canManageOutlet(data.outletId))
         );
     }
     
@@ -177,9 +181,15 @@ service cloud.firestore {
     // AI Usage Metrics
     match /aiUsageMetrics/{id} {
         allow read: if canReadDocument(resource.data);
-        allow create: if isAuthenticated() && isActive();
+        allow create: if isAuthenticated();
     }
-    
+
+    // Application Logs
+    match /logs/{id} {
+        allow read: if isAdmin();
+        allow create: if isAuthenticated();
+    }
+
     match /ai_pricing/{docId} {
         allow read: if isAuthenticated();
         // allow write: if false; 

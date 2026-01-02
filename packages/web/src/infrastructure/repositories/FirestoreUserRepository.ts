@@ -1,32 +1,32 @@
 import {
   collection,
-  doc,
-  getDocs,
-  getDoc,
-  updateDoc,
-  deleteDoc,
   query,
-  where,
   onSnapshot,
+  where,
+  getDocs,
   addDoc,
+  doc,
+  deleteDoc,
 } from 'firebase/firestore';
 import { db } from '@/config/firebase';
+import {
+  getCollection,
+  getDocumentById,
+  setDocument,
+  deleteDocument,
+  updateDocument as firestoreUpdate,
+} from '@/services/firestoreService';
 import type { IUserRepository } from '@/domain/repositories/IUserRepository';
-import type { User, UserUpdateDTO, Invitation, InviteUserDTO } from '@/types'; // Import from types/index.ts where we added DTOs
+import type { User, UserUpdateDTO, Invitation, InviteUserDTO } from '@/types';
 import { UserRole } from '@/domain/entities/User';
+import { injectable } from 'inversify';
 
+@injectable()
 export class FirestoreUserRepository implements IUserRepository {
   private collectionName = 'users';
 
   async getAllUsers(): Promise<User[]> {
-    try {
-      const q = query(collection(db, this.collectionName));
-      const snapshot = await getDocs(q);
-      return snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }) as User);
-    } catch (error) {
-      console.error('Error fetching users:', error);
-      throw error;
-    }
+    return await getCollection<User>(this.collectionName);
   }
 
   // Real-time listener implementation
@@ -45,49 +45,27 @@ export class FirestoreUserRepository implements IUserRepository {
   }
 
   async getUserById(uid: string): Promise<User | null> {
-    try {
-      const docRef = doc(db, this.collectionName, uid);
-      const snapshot = await getDoc(docRef);
-      if (snapshot.exists()) {
-        return { id: snapshot.id, ...snapshot.data() } as User;
-      }
-      return null;
-    } catch (error) {
-      console.error('Error fetching user by ID:', error);
-      throw error;
-    }
+    const user = await getDocumentById<User>(this.collectionName, uid);
+    return user || null;
   }
 
   async getUsersByRole(role: UserRole): Promise<User[]> {
-    try {
-      const q = query(collection(db, this.collectionName), where('role', '==', role));
-      const snapshot = await getDocs(q);
-      return snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }) as User);
-    } catch (error) {
-      console.error('Error fetching users by role:', error);
-      throw error;
-    }
+    const q = query(collection(db, this.collectionName), where('role', '==', role));
+    const snapshot = await getDocs(q);
+    return snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }) as User);
   }
 
   async getActiveUsers(): Promise<User[]> {
-    try {
-      const q = query(collection(db, this.collectionName), where('active', '==', true));
-      const snapshot = await getDocs(q);
-      return snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }) as User);
-    } catch (error) {
-      console.error('Error fetching active users:', error);
-      throw error;
-    }
+    const q = query(collection(db, this.collectionName), where('active', '==', true));
+    const snapshot = await getDocs(q);
+    return snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }) as User);
   }
 
   async updateUser(uid: string, updates: Partial<UserUpdateDTO>): Promise<void> {
-    try {
-      const docRef = doc(db, this.collectionName, uid);
-      await updateDoc(docRef, { ...updates, updatedAt: new Date().toISOString() });
-    } catch (error) {
-      console.error('Error updating user:', error);
-      throw error;
-    }
+    await firestoreUpdate(this.collectionName, uid, {
+      ...updates,
+      updatedAt: new Date().toISOString(),
+    } as any);
   }
 
   async activateUser(uid: string): Promise<void> {
@@ -95,21 +73,11 @@ export class FirestoreUserRepository implements IUserRepository {
   }
 
   async deactivateUser(uid: string): Promise<void> {
-    // Validation: Check if user is trying to deactivate themselves is handled at UseCase level mostly,
-    // but good to have safety here or just rely on UI/UseCase.
     return this.updateUser(uid, { active: false });
   }
 
   async deleteUser(uid: string): Promise<void> {
-    try {
-      // Safety: Prevent deleting the last admin should be checked before calling this
-      // or check here.
-      const docRef = doc(db, this.collectionName, uid);
-      await deleteDoc(docRef);
-    } catch (error) {
-      console.error('Error deleting user:', error);
-      throw error;
-    }
+    await deleteDocument(this.collectionName, uid);
   }
 
   async assignOutlets(uid: string, outletIds: string[]): Promise<void> {
