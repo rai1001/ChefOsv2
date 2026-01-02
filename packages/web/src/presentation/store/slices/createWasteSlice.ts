@@ -1,6 +1,6 @@
 import type { StateCreator } from 'zustand';
 import type { AppState, WasteSlice, WasteRecord, InventoryItem } from '@/presentation/store/types';
-import { consumeStockFIFO, createMigrationBatch } from '@/services/inventoryService';
+import { consumeStockFIFO, createMigrationBatch } from '@/utils/inventoryHelpers';
 import { setDocument, deleteDocument, updateDocument } from '@/services/firestoreService';
 
 export const createWasteSlice: StateCreator<

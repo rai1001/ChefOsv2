@@ -1,5 +1,5 @@
 import type { Recipe, RecipeIngredient, AutoPurchaseSettings, Ingredient } from '@/types';
-import { calculateTotalStock } from './inventoryService';
+import { calculateTotalStock } from '@/utils/inventoryHelpers';
 
 export interface NeedsResult {
   ingredientId: string;

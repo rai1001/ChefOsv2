@@ -7,7 +7,7 @@ import type {
   IngredientBatch as Batch,
   PriceHistoryEntry,
 } from '@/types';
-import { calculateTotalStock } from './inventoryService';
+import { calculateTotalStock } from '@/utils/inventoryHelpers';
 import { query, where, orderBy, limit, getDocs } from 'firebase/firestore';
 
 export const recepcionService = {
