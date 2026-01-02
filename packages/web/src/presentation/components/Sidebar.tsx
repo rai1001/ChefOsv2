@@ -27,8 +27,6 @@ import {
 import { OutletSelector } from './dashboard/OutletSelector';
 import { NavItem } from './molecules/NavItem';
 import { NavGroup } from './molecules/NavGroup';
-import { useAtomValue } from 'jotai';
-import { userAtom } from '@/presentation/store/authAtoms';
 import { getAuth } from 'firebase/auth';
 import { useStore } from '@/presentation/store/useStore';
 
@@ -38,8 +36,7 @@ interface SidebarProps {
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
-  const user = useAtomValue(userAtom);
-  const { settings } = useStore();
+  const { currentUser: user, settings } = useStore();
   const isHotel = settings.businessType === 'HOTEL';
 
   return (

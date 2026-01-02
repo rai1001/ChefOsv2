@@ -1,6 +1,5 @@
 import { useState, useCallback, useEffect } from 'react';
-import { useAtomValue } from 'jotai';
-import { userAtom } from '@/presentation/store/authAtoms';
+import { useStore } from '@/presentation/store/useStore';
 import { container } from '@/application/di/Container';
 import { TYPES } from '@/application/di/types';
 import type { User, UserUpdateDTO } from '@/types';
@@ -22,7 +21,7 @@ import type { Invitation } from '@/types';
 import { toast } from 'sonner';
 
 export const useUserManagement = () => {
-  const currentUser = useAtomValue(userAtom);
+  const currentUser = useStore(state => state.currentUser);
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);

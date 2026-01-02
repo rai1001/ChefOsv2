@@ -3,9 +3,11 @@ import { useForm } from 'react-hook-form';
 import { X, Save, ArrowRightLeft, AlertTriangle, DollarSign, Archive, ClipboardCheck } from 'lucide-react';
 import { LegacyIngredient } from '@/domain/entities/Ingredient';
 import { StockTransactionType } from '@/domain/entities/StockTransaction';
-import { useInventory } from '@/presentation/store/inventoryAtoms';
-import { useAtomValue } from 'jotai';
-import { userAtom } from '@/presentation/store/authAtoms';
+import { useStore } from '@/presentation/store/useStore';
+import { container } from '@/application/di/Container';
+import { TYPES } from '@/application/di/types';
+import { RegisterStockMovementUseCase } from '@/application/use-cases/inventory/RegisterStockMovementUseCase';
+import { PerformAuditUseCase } from '@/application/use-cases/inventory/PerformAuditUseCase';
 
 interface StockMovementModalProps {
     ingredient: LegacyIngredient;
@@ -14,8 +16,9 @@ interface StockMovementModalProps {
 }
 
 export const StockMovementModal: React.FC<StockMovementModalProps> = ({ ingredient, onClose, onSuccess }) => {
-    const user = useAtomValue(userAtom);
-    const { registerMovement, performAudit, loading, error } = useInventory();
+    const user = useStore(state => state.currentUser);
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState<string | null>(null);
 
     const [type, setType] = useState<StockTransactionType>('PURCHASE');
 
@@ -43,9 +46,12 @@ export const StockMovementModal: React.FC<StockMovementModalProps> = ({ ingredie
             return;
         }
 
+        setLoading(true);
+        setError(null);
         try {
             if (type === 'AUDIT') {
-                await performAudit(
+                const auditUseCase = container.get<PerformAuditUseCase>(TYPES.PerformAuditUseCase);
+                await auditUseCase.execute(
                     ingredient.id,
                     Number(data.quantity),
                     user.displayName || 'Unknown',
@@ -59,7 +65,7 @@ export const StockMovementModal: React.FC<StockMovementModalProps> = ({ ingredie
                     qty = -Math.abs(qty);
                 }
 
-                // For adjustments, we trust the sign entered or force it? 
+                // For adjustments, we trust the sign entered or force it?
                 // Let's assume adjustment can be + or -
                 if (type === 'ADJUSTMENT') {
                     // Keep as is
@@ -67,7 +73,8 @@ export const StockMovementModal: React.FC<StockMovementModalProps> = ({ ingredie
 
                 // Purchase is positive.
 
-                await registerMovement({
+                const registerUseCase = container.get<RegisterStockMovementUseCase>(TYPES.RegisterStockMovementUseCase);
+                await registerUseCase.execute({
                     ingredientId: ingredient.id,
                     ingredientName: ingredient.name,
                     quantity: qty,
@@ -83,10 +90,17 @@ export const StockMovementModal: React.FC<StockMovementModalProps> = ({ ingredie
             }
             onSuccess();
             onClose();
-        } catch (e) {
-            console.error("Transaction failed", e);
+        } catch (e: any) {
+            setError(e.message);
+        } finally {
+            setLoading(false);
         }
     };
+
+    if (error) {
+        // Could show error in UI instead of console
+        console.error('Stock movement error:', error);
+    }
 
     const getTypeIcon = (t: StockTransactionType) => {
         switch (t) {

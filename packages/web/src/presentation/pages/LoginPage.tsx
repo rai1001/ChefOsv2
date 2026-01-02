@@ -1,23 +1,18 @@
 import React, { useEffect, useState } from 'react';
-import { useAtom, useAtomValue } from 'jotai';
 import { Lock, Mail, Key, ShieldCheck, ArrowRight } from 'lucide-react';
-import {
-  loginWithGoogleAtom,
-  loginWithEmailAtom,
-  userAtom,
-  isLoadingAtom,
-  errorAtom,
-} from '@/presentation/store/authAtoms';
 import { useNavigate } from 'react-router-dom';
+import { useStore } from '@/presentation/store/useStore';
+import { container } from '@/application/di/Container';
+import { TYPES } from '@/application/di/types';
+import { LoginUseCase } from '@/application/use-cases/auth/LoginUseCase';
+import { LoginWithEmailUseCase } from '@/application/use-cases/auth/LoginWithEmailUseCase';
 
 export const LoginPage: React.FC = () => {
   const navigate = useNavigate();
-  const [, loginWithGoogle] = useAtom(loginWithGoogleAtom);
-  const [, loginWithEmail] = useAtom(loginWithEmailAtom);
-  const user = useAtomValue(userAtom);
-  const isLoading = useAtomValue(isLoadingAtom);
-  const error = useAtomValue(errorAtom);
+  const { currentUser: user, setCurrentUser } = useStore();
 
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
@@ -29,13 +24,36 @@ export const LoginPage: React.FC = () => {
   }, [user, navigate]);
 
   const handleGoogleLogin = async () => {
-    await loginWithGoogle();
+    setIsLoading(true);
+    setError(null);
+    try {
+      const loginUseCase = container.get<LoginUseCase>(TYPES.LoginUseCase);
+      const loggedInUser = await loginUseCase.execute();
+      setCurrentUser(loggedInUser as any);
+    } catch (err) {
+      console.error('Login failed:', err);
+      setError('Failed to login with Google');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleEmailLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email || !password) return;
-    await loginWithEmail({ email, password });
+
+    setIsLoading(true);
+    setError(null);
+    try {
+      const loginUseCase = container.get<LoginWithEmailUseCase>(TYPES.LoginWithEmailUseCase);
+      const loggedInUser = await loginUseCase.execute({ email, password });
+      setCurrentUser(loggedInUser as any);
+    } catch (err) {
+      console.error('Email login failed:', err);
+      setError('Credenciales incorrectas');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   if (isLoading) {
