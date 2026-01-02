@@ -148,7 +148,14 @@ export const parseStructuredFile = onCall(
         console.log(`Sheet "${sheetName}": ${json.length} rows`);
         if (json.length > 0 && json[0]) {
           console.log('First row keys:', Object.keys(json[0] as object));
-          console.log('First row sample:', json[0]);
+          console.log('First row sample:', JSON.stringify(json[0], null, 2));
+
+          // Log first 3 rows to understand structure
+          console.log('=== FIRST 3 ROWS FOR DEBUGGING ===');
+          for (let i = 0; i < Math.min(3, json.length); i++) {
+            console.log(`Row ${i + 1}:`, JSON.stringify(json[i], null, 2));
+          }
+          console.log('=== END DEBUGGING ===');
         }
 
         let type = hintType || 'unknown';
@@ -192,7 +199,14 @@ export const parseStructuredFile = onCall(
           if (!hasData) return; // Skip empty rows
 
           // Find name field - try exact matches first, then fuzzy match
+          // PRIORITY: Artículo (with accent) for Spanish Excel files
           let nameField =
+            rowData['Artículo'] ||
+            rowData['ARTÍCULO'] ||
+            rowData['artículo'] ||
+            rowData.Articulo ||
+            rowData.articulo ||
+            rowData.ARTICULO ||
             rowData.name ||
             rowData.Name ||
             rowData.NAME ||
@@ -202,9 +216,6 @@ export const parseStructuredFile = onCall(
             rowData.producto ||
             rowData.Producto ||
             rowData.PRODUCTO ||
-            rowData.Articulo ||
-            rowData.articulo ||
-            rowData.ARTICULO ||
             rowData.Material ||
             rowData.material ||
             rowData.MATERIAL ||
@@ -223,17 +234,25 @@ export const parseStructuredFile = onCall(
             const keys = Object.keys(rowData);
             for (const key of keys) {
               const keyUpper = key.toUpperCase();
+              // Normalize accents: í->I, ó->O, etc for Spanish columns
+              const keyNormalized = keyUpper
+                .replace(/[ÁÀÄÂ]/g, 'A')
+                .replace(/[ÉÈËÊ]/g, 'E')
+                .replace(/[ÍÌÏÎ]/g, 'I')
+                .replace(/[ÓÒÖÔ]/g, 'O')
+                .replace(/[ÚÙÜÛ]/g, 'U');
+
               // Look for columns with name-like keywords
               if (
-                keyUpper.includes('NOMBRE') ||
-                keyUpper.includes('NAME') ||
-                keyUpper.includes('PRODUCTO') ||
-                keyUpper.includes('ARTICULO') ||
-                keyUpper.includes('MATERIAL') ||
-                keyUpper.includes('DESCRIPCION') ||
-                keyUpper.includes('DESCRIPTION') ||
-                keyUpper.includes('ITEM') ||
-                keyUpper.includes('DETALLE')
+                keyNormalized.includes('NOMBRE') ||
+                keyNormalized.includes('NAME') ||
+                keyNormalized.includes('PRODUCTO') ||
+                keyNormalized.includes('ARTICULO') || // Now matches ARTÍCULO
+                keyNormalized.includes('MATERIAL') ||
+                keyNormalized.includes('DESCRIPCION') ||
+                keyNormalized.includes('DESCRIPTION') ||
+                keyNormalized.includes('ITEM') ||
+                keyNormalized.includes('DETALLE')
               ) {
                 nameField = rowData[key];
                 console.log(`Found name in column "${key}": ${nameField}`);
@@ -241,16 +260,26 @@ export const parseStructuredFile = onCall(
               }
             }
 
-            // If STILL no match, use the first non-numeric column
+            // DISABLED: Don't use first text column as it picks "Proveedor" instead of "Artículo"
+            // if (!nameField) {
+            //   for (const key of keys) {
+            //     const val = rowData[key];
+            //     if (val && typeof val === 'string' && val.trim() !== '' && isNaN(Number(val))) {
+            //       nameField = val;
+            //       console.log(`Using first text column "${key}" as name: ${nameField}`);
+            //       break;
+            //     }
+            //   }
+            // }
+
+            // If still no nameField, log warning with available columns
             if (!nameField) {
-              for (const key of keys) {
-                const val = rowData[key];
-                if (val && typeof val === 'string' && val.trim() !== '' && isNaN(Number(val))) {
-                  nameField = val;
-                  console.log(`Using first text column "${key}" as name: ${nameField}`);
-                  break;
-                }
-              }
+              console.warn(
+                '[PARSE] Could not find name field. Available columns:',
+                Object.keys(rowData),
+                'Row data:',
+                rowData
+              );
             }
           }
 
@@ -279,9 +308,24 @@ export const parseStructuredFile = onCall(
           // Normalize data structure for better compatibility
           const normalizedData: any = { ...rowData };
 
+          // DEBUG: Log all fields for first row
+          if (results.length === 0) {
+            console.log('[PARSE DEBUG] First row all fields:', JSON.stringify(rowData, null, 2));
+            console.log('[PARSE DEBUG] nameField detected:', nameField);
+            console.log('[PARSE DEBUG] All keys:', Object.keys(rowData));
+          }
+
           // Map common field names to standard names
           if (!normalizedData.name) {
             normalizedData.name = nameField;
+          }
+
+          // Log first 5 items to see what's being extracted
+          if (results.length < 5) {
+            console.log(
+              `[PARSE DEBUG] Item ${results.length + 1} - name: "${nameField}", columns:`,
+              Object.keys(rowData)
+            );
           }
 
           // Map price fields - try common price column names
@@ -375,9 +419,11 @@ export const parseStructuredFile = onCall(
               rowData.suministrador ||
               rowData.SUMINISTRADOR;
 
-            if (supplierField) {
-              normalizedData.supplier = supplierField;
-              normalizedData.supplierName = supplierField;
+            if (supplierField && String(supplierField).trim() !== '') {
+              const cleanSupplier = String(supplierField).trim();
+              normalizedData.supplier = cleanSupplier;
+              normalizedData.supplierName = cleanSupplier;
+              console.log(`[Parse] Mapped supplier for "${normalizedData.name}": ${cleanSupplier}`);
             } else {
               // Search for any column with "proveedor" or "supplier" in name
               const keys = Object.keys(rowData);
@@ -388,11 +434,24 @@ export const parseStructuredFile = onCall(
                   keyUpper.includes('SUPPLIER') ||
                   keyUpper.includes('SUMINISTRADOR')
                 ) {
-                  normalizedData.supplier = rowData[key];
-                  normalizedData.supplierName = rowData[key];
-                  console.log(`Found supplier in column "${key}": ${rowData[key]}`);
-                  break;
+                  const value = rowData[key];
+                  if (value && String(value).trim() !== '') {
+                    const cleanSupplier = String(value).trim();
+                    normalizedData.supplier = cleanSupplier;
+                    normalizedData.supplierName = cleanSupplier;
+                    console.log(
+                      `[Parse] Found supplier in column "${key}" for "${normalizedData.name}": ${cleanSupplier}`
+                    );
+                    break;
+                  }
                 }
+              }
+
+              if (!normalizedData.supplier && !normalizedData.supplierName) {
+                console.log(
+                  `[Parse] WARNING: No supplier found for "${normalizedData.name}". Available columns:`,
+                  Object.keys(rowData)
+                );
               }
             }
           }
