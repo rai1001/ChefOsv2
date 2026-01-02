@@ -59,6 +59,52 @@ export class SupabaseSupplierRepository implements ISupplierRepository {
     return data.map(this.mapToDomain);
   }
 
+  /**
+   * Finds supplier by exact name (case-insensitive) or creates a new one
+   */
+  async findOrCreateSupplier(name: string, outletId: string): Promise<string> {
+    const normalizedName = name.trim();
+
+    // Try to find existing supplier (case-insensitive)
+    const { data: existing, error: searchError } = await supabase
+      .from('suppliers')
+      .select('id, name')
+      .eq('outlet_id', outletId)
+      .ilike('name', normalizedName)
+      .limit(1)
+      .single();
+
+    if (existing && !searchError) {
+      return existing.id;
+    }
+
+    // Create new supplier
+    const newSupplier = new Supplier(
+      crypto.randomUUID(),
+      outletId,
+      normalizedName,
+      undefined, // contactPerson
+      undefined, // email
+      undefined, // phone
+      undefined, // address
+      undefined, // paymentTerms
+      0, // leadTimeDays
+      undefined, // rating
+      true, // isActive
+      new Date()
+    );
+
+    const { data: inserted, error: insertError } = await supabase
+      .from('suppliers')
+      .insert(this.mapToRow(newSupplier))
+      .select('id')
+      .single();
+
+    if (insertError) throw insertError;
+
+    return inserted.id;
+  }
+
   private mapToDomain(row: any): Supplier {
     return new Supplier(
       row.id,

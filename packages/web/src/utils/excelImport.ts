@@ -209,6 +209,14 @@ async function confirmAndCommitLocal(
       .map((i) => [i.name.toLowerCase().trim(), i.id])
   );
 
+  // Get existing suppliers for deduplication
+  const existingSuppliers = await getCollection<any>('suppliers');
+  const supplierNameToId = new Map(
+    existingSuppliers
+      .filter((s) => s.outletId === outletId || s.outletId === 'GLOBAL')
+      .map((s) => [s.name.toLowerCase().trim(), s.id])
+  );
+
   for (const item of items) {
     try {
       const type = item.type === 'unknown' ? defaultType || 'ingredient' : item.type;
@@ -221,10 +229,40 @@ async function confirmAndCommitLocal(
         const normalizedName = name.toLowerCase().trim();
         const existingId = ingredientNameMap.get(normalizedName);
 
+        // Auto-create supplier if data.supplier or data.supplierName is present
+        let resolvedSupplierId = supplierId || data.supplierId || data.preferredSupplierId || null;
+        const supplierNameField = data.supplier || data.supplierName;
+
+        if (supplierNameField && !resolvedSupplierId) {
+          const supplierNormalized = supplierNameField.toLowerCase().trim();
+          let foundSupplierId = supplierNameToId.get(supplierNormalized);
+
+          if (!foundSupplierId) {
+            // Create new supplier
+            const newSupplierId = uuidv4();
+            await setDocument('suppliers', newSupplierId, {
+              id: newSupplierId,
+              name: supplierNameField.trim(),
+              outletId: outletId || 'GLOBAL',
+              isActive: true,
+              leadTimeDays: 0,
+              createdAt: new Date().toISOString(),
+            });
+            supplierNameToId.set(supplierNormalized, newSupplierId);
+            foundSupplierId = newSupplierId;
+            console.log(
+              `[Import] Created new supplier: ${supplierNameField} (ID: ${newSupplierId})`
+            );
+          }
+
+          resolvedSupplierId = foundSupplierId;
+        }
+
         const ingredientData = {
           ...data,
           outletId: outletId || 'GLOBAL',
-          supplierId: supplierId || data.supplierId || data.preferredSupplierId || null,
+          supplierId: resolvedSupplierId,
+          preferredSupplierId: resolvedSupplierId,
           unit: data.unit || 'un',
           costPerUnit: Number(data.price || data.cost || data.costPerUnit || 0),
           updatedAt: new Date().toISOString(),

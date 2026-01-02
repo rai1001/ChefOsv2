@@ -7,4 +7,5 @@ export interface ISupplierRepository {
   updateSupplier(id: string, supplier: Partial<Supplier>): Promise<void>;
   deleteSupplier(id: string): Promise<void>;
   searchSuppliers(query: string, outletId: string): Promise<Supplier[]>;
+  findOrCreateSupplier?(name: string, outletId: string): Promise<string>;
 }
