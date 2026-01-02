@@ -25,9 +25,9 @@ Vercel debería detectar automáticamente la configuración desde `vercel.json`,
 
 **Build Settings:**
 
-- **Build Command:** `cd packages/web && npm run build`
+- **Build Command:** `pnpm -r build`
 - **Output Directory:** `packages/web/dist`
-- **Install Command:** `npm install -g pnpm && pnpm install`
+- **Install Command:** `npm install -g pnpm@9.15.0 && pnpm install --frozen-lockfile`
 
 ### 3. Variables de Entorno
 
