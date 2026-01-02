@@ -1,13 +1,13 @@
 import { firestoreService } from '@/services/firestoreService';
 import { COLLECTIONS } from '@/config/collections';
-import { pedidosService } from './pedidosService';
+import { PurchasingService } from '@/application/services/PurchasingService';
 import { auditService } from './auditService';
 import type { PurchaseOrder } from '@/types';
 
 export const aprobacionService = {
     approveOrder: async (orderId: string, userId: string, logistics?: Partial<PurchaseOrder>): Promise<void> => {
-        // Mock Bypass delegated to pedidosService.updateStatus
-        await pedidosService.updateStatus(orderId, 'APPROVED', userId, logistics);
+        // Mock Bypass delegated to PurchasingService.updateStatus
+        await PurchasingService.updateStatus(orderId, 'APPROVED', userId, logistics);
 
         const mockDB = localStorage.getItem('E2E_MOCK_DB');
         if (!mockDB) {
@@ -56,7 +56,7 @@ export const aprobacionService = {
     },
 
     sendOrder: async (orderId: string, userId: string, logistics?: Partial<PurchaseOrder>): Promise<void> => {
-        await pedidosService.updateStatus(orderId, 'ORDERED', userId, logistics);
+        await PurchasingService.updateStatus(orderId, 'ORDERED', userId, logistics);
 
         const mockDB = localStorage.getItem('E2E_MOCK_DB');
         if (!mockDB) {

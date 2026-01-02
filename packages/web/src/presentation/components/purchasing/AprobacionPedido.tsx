@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { Check, X, Send, FileText, ShoppingCart, Calendar, MapPin, User, Package, Clock, AlertCircle } from 'lucide-react';
-import { pedidosService } from '@/services/pedidosService';
+import { PurchasingService } from '@/application/services/PurchasingService';
 import { aprobacionService } from '@/services/aprobacionService';
 import type { PurchaseOrder } from '@/types/purchases';
 import { useStore } from '@/presentation/store/useStore';
@@ -37,7 +37,7 @@ export const AprobacionPedido: React.FC<AprobacionPedidoProps> = ({ outletId }) 
     const fetchOrders = useCallback(async () => {
         setLoading(true);
         try {
-            const allOrders = await pedidosService.getAll(outletId);
+            const allOrders = await PurchasingService.getAll(outletId);
             const filtered = filterStatus === 'ALL'
                 ? allOrders
                 : allOrders.filter(o => o.status === filterStatus);

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { PackageCheck, Calendar, CheckCircle, Package, Search, AlertCircle, ArrowLeft } from 'lucide-react';
-import { pedidosService } from '@/services/pedidosService';
+import { PurchasingService } from '@/application/services/PurchasingService';
 import { recepcionService } from '@/services/recepcionService';
 import type { PurchaseOrder } from '@/types/purchases';
 import { useStore } from '@/presentation/store/useStore';
@@ -20,7 +20,7 @@ export const RecepcionPedido: React.FC<RecepcionPedidoProps> = ({ outletId }) =>
     const fetchOrders = async () => {
         setLoading(true);
         try {
-            const orders = await pedidosService.getOrdersByStatus(outletId, ['ORDERED', 'PARTIAL']);
+            const orders = await PurchasingService.getOrdersByStatus(outletId, ['ORDERED', 'PARTIAL']);
             setOrders(orders);
         } finally {
             setLoading(false);

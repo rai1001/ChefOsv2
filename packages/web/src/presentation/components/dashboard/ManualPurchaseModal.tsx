@@ -12,7 +12,7 @@ import {
 } from 'lucide-react';
 import Select from 'react-select';
 import { useStore } from '@/presentation/store/useStore';
-import { pedidosService } from '@/services/pedidosService';
+import { PurchasingService } from '@/application/services/PurchasingService';
 import { useToast } from '@/presentation/components/ui';
 import type { PurchaseOrderItem } from '@/types/purchases';
 import type { Unit } from '@/types/inventory';
@@ -139,7 +139,7 @@ export const ManualPurchaseModal: React.FC<ManualPurchaseModalProps> = ({ isOpen
         tempDescription: item.tempDescription || 'Artículo Manual',
       }));
 
-      await pedidosService.createManualOrder(supplierId, orderItems, activeOutletId);
+      await PurchasingService.createManualOrder(supplierId, orderItems, activeOutletId);
 
       addToast('Compra manual creada correctamente', 'success');
       onClose();
