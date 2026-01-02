@@ -1,5 +1,5 @@
 {
-  "buildCommand": "cd packages/web && npm run build",
+  "buildCommand": "pnpm -r build",
   "outputDirectory": "packages/web/dist",
   "framework": "vite",
   "installCommand": "npm install -g pnpm && pnpm install",
