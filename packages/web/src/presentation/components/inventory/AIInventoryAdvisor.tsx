@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Sparkles, Brain, Check, X, Info, TrendingUp, TrendingDown, RefreshCw, AlertCircle } from 'lucide-react';
-import { inventoryAnalyticsService } from '@/services/inventoryAnalytics';
+import { InventoryAnalyticsService } from '@/application/services/InventoryAnalyticsService';
 import { optimizeInventorySettings } from '@/services/geminiService';
 import { updateDocument } from '@/services/firestoreService';
 import { COLLECTION_NAMES } from '@/config/collections';
@@ -29,7 +29,7 @@ export const AIInventoryAdvisor: React.FC<AIAdvisorProps> = ({ outletId, isOpen,
     const runAnalysis = async () => {
         setStatus('analyzing');
         try {
-            const context = await inventoryAnalyticsService.getInventoryContext(outletId);
+            const context = await InventoryAnalyticsService.getInventoryContext(outletId);
             const result = await optimizeInventorySettings(context);
 
             if (result.success && result.data) {

@@ -1,7 +1,7 @@
 import { v4 as uuidv4 } from 'uuid';
 import { firestoreService } from '@/services/firestoreService';
 import { COLLECTIONS } from '@/config/collections';
-import type { ReorderNeed } from './necesidadesService';
+import type { ReorderNeed } from '@/application/services/InventoryAnalyticsService';
 import type { PurchaseOrder, PurchaseOrderItem, PurchaseStatus } from '@/types/purchases';
 import { collection, where, arrayUnion } from 'firebase/firestore';
 import type { CollectionReference, UpdateData } from 'firebase/firestore';
