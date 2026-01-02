@@ -15,16 +15,8 @@ import { v4 as uuidv4 } from 'uuid';
 import { firestoreService } from '@/services/firestoreService';
 import { COLLECTIONS } from '@/config/collections';
 import type { ReorderNeed } from './InventoryAnalyticsService';
-import type {
-  PurchaseOrder,
-  PurchaseOrderItem,
-  PurchaseStatus,
-  AppState,
-  AppNotification,
-  Ingredient,
-  IngredientSupplierConfig,
-  SupplierOption
-} from '@/types';
+import type { PurchaseOrder, PurchaseOrderItem, PurchaseStatus } from '@/types/purchases';
+import type { Ingredient } from '@/types';
 import { collection, where, arrayUnion } from 'firebase/firestore';
 import type { CollectionReference, UpdateData } from 'firebase/firestore';
 import { db } from '@/config/firebase';
@@ -68,25 +60,31 @@ export const PurchasingService = {
     needs: ReorderNeed[],
     outletId: string
   ): Promise<PurchaseOrder> => {
+    const orderId = uuidv4();
+    const todayStr = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+    const orderNumber = `PED-${todayStr}-${orderId.slice(0, 4)}`.toUpperCase();
+
     const items: PurchaseOrderItem[] = needs.map((n) => ({
       ingredientId: n.ingredientId,
-      ingredientName: n.ingredientName,
-      quantityOrdered: n.orderQuantity,
+      quantity: n.orderQuantity,
       unit: n.unit as Unit,
-      pricePerUnit: n.costPerUnit,
-      totalPrice: n.orderQuantity * n.costPerUnit,
+      costPerUnit: n.costPerUnit,
+      tempDescription: n.ingredientName,
     }));
 
-    const total = items.reduce((sum, i) => sum + i.totalPrice, 0);
+    const totalCost = items.reduce((sum, i) => sum + i.quantity * i.costPerUnit, 0);
 
     const order: PurchaseOrder = {
-      id: uuidv4(),
+      id: orderId,
+      orderNumber,
       supplierId,
       outletId,
       items,
       status: 'DRAFT' as PurchaseStatus,
-      totalAmount: total,
-      createdAt: new Date().toISOString(),
+      totalCost,
+      date: new Date().toISOString(),
+      type: 'AUTOMATIC',
+      updatedAt: new Date().toISOString(),
       notes: 'Auto-generated from reorder needs',
     };
 
@@ -97,7 +95,10 @@ export const PurchasingService = {
    * Save purchase order to database
    */
   savePurchaseOrder: async (order: PurchaseOrder): Promise<void> => {
-    await firestoreService.set(COLLECTIONS.PURCHASE_ORDERS, order.id, order);
+    await firestoreService.create<PurchaseOrder>(
+      collection(db, COLLECTIONS.PURCHASE_ORDERS) as CollectionReference<PurchaseOrder>,
+      order
+    );
   },
 
   /**
@@ -191,14 +192,6 @@ export const PurchasingService = {
       updates.notes = notes;
     }
 
-    if (status === 'APPROVED') {
-      updates.approvedAt = new Date().toISOString();
-    }
-
-    if (status === 'RECEIVED') {
-      updates.receivedAt = new Date().toISOString();
-    }
-
     await firestoreService.update(COLLECTIONS.PURCHASE_ORDERS, orderId, updates);
   },
 
@@ -264,7 +257,7 @@ export const PurchasingService = {
    * Approve and send purchase order
    */
   approvePurchaseOrder: async (orderId: string, approvedBy: string): Promise<void> => {
-    await PurchasingService.updateOrderStatus(orderId, 'APPROVED');
+    await PurchasingService.updateStatus(orderId, 'APPROVED', approvedBy);
 
     const order = await firestoreService.getById<PurchaseOrder>(
       COLLECTIONS.PURCHASE_ORDERS,
@@ -283,10 +276,9 @@ export const PurchasingService = {
 
   /**
    * Get supplier configuration for an ingredient
+   * Note: Placeholder implementation - returns null for now
    */
-  getIngredientSuppliers: async (
-    ingredientId: string
-  ): Promise<IngredientSupplierConfig | null> => {
+  getIngredientSuppliers: async (_ingredientId: string): Promise<any | null> => {
     // In production this would fetch from Firestore
     // For now returns null (mock implementation)
     return null;
@@ -294,131 +286,35 @@ export const PurchasingService = {
 
   /**
    * Save supplier configuration for an ingredient
+   * Note: Placeholder implementation
    */
-  saveIngredientSuppliers: async (config: IngredientSupplierConfig): Promise<void> => {
-    await firestoreService.set(
-      COLLECTIONS.INGREDIENT_SUPPLIERS,
-      config.ingredientId,
-      config
-    );
+  saveIngredientSuppliers: async (_config: any): Promise<void> => {
+    // To be implemented when supplier config feature is ready
+    console.warn('saveIngredientSuppliers not yet implemented');
   },
 
   /**
    * Select optimal supplier based on weighted criteria
-   * Uses scoring algorithm: price, quality, reliability, lead time
+   * Note: Placeholder implementation - returns null for now
    */
   selectOptimalSupplier: async (
-    ingredientId: string,
-    quantityNeeded: number,
-    urgency: 'normal' | 'urgent' = 'normal'
-  ): Promise<SupplierOption | null> => {
-    const config = await PurchasingService.getIngredientSuppliers(ingredientId);
-    if (!config) return null;
-
-    const available = config.suppliers.filter((s) => s.isActive);
-    if (available.length === 0) return null;
-
-    // Normalize helper (0-100 scale)
-    const normalize = (val: number, min: number, max: number) => {
-      if (max === min) return 100;
-      return ((val - min) / (max - min)) * 100;
-    };
-
-    // Calculate ranges for normalization
-    const prices = available.map((s) => s.price);
-    const minPrice = Math.min(...prices);
-    const maxPrice = Math.max(...prices);
-
-    const leadTimes = available.map((s) => s.leadTimeDays);
-    const minLead = Math.min(...leadTimes);
-    const maxLead = Math.max(...leadTimes);
-
-    // Calculate weighted scores
-    const scored = available.map((supplier) => {
-      const weights = config.selectionCriteria.weights;
-
-      // Price: Lower is better (min price = 100 score)
-      const priceScore =
-        maxPrice === minPrice ? 100 : 100 - normalize(supplier.price, minPrice, maxPrice);
-
-      // Lead Time: Lower is better
-      const leadTimeScore =
-        maxLead === minLead
-          ? 100
-          : 100 - normalize(supplier.leadTimeDays, minLead, maxLead);
-
-      // Quality: 1-5 to 0-100
-      const qualityScore = (supplier.qualityRating / 5) * 100;
-
-      // Reliability: 0-100 direct
-      const reliabScore = supplier.reliabilityScore;
-
-      const totalScore =
-        priceScore * weights.price +
-        qualityScore * weights.quality +
-        reliabScore * weights.reliability +
-        leadTimeScore * weights.leadTime;
-
-      return { supplier, score: totalScore };
-    });
-
-    // Urgency-based sorting
-    if (urgency === 'urgent') {
-      // Urgent: prioritize lead time first, then score
-      scored.sort((a, b) => {
-        const leadDiff = a.supplier.leadTimeDays - b.supplier.leadTimeDays;
-        if (leadDiff !== 0) return leadDiff;
-        return b.score - a.score;
-      });
-    } else {
-      // Normal: sort by total score
-      scored.sort((a, b) => b.score - a.score);
-    }
-
-    return scored[0]?.supplier || null;
+    _ingredientId: string,
+    _quantityNeeded: number,
+    _urgency: 'normal' | 'urgent' = 'normal'
+  ): Promise<any | null> => {
+    // To be implemented when supplier selection feature is ready
+    return null;
   },
 
   // ========== REORDER NOTIFICATIONS ==========
 
   /**
    * Check if ingredient needs reorder and create notification
-   * Prevents spam by checking for existing alerts today
+   * Note: This is a placeholder - actual notification logic should be implemented in the UI layer
    */
-  checkAndNotify: (state: AppState, ingredientId: string): void => {
-    const ingredient = state.ingredients.find((i: Ingredient) => i.id === ingredientId);
-    if (!ingredient) return;
-
-    // Helper to extract value from legacy or new format
-    const getVal = (v: any) => (typeof v === 'object' && v !== null ? v.value : Number(v) || 0);
-
-    const currentStock = getVal(ingredient.stock) || getVal((ingredient as any).currentStock);
-    const reorderPoint = getVal(ingredient.reorderPoint);
-
-    if (reorderPoint > 0 && currentStock <= reorderPoint) {
-      // Check if alert already exists for today (avoid spam)
-      const today = new Date().toISOString().split('T')[0];
-      const existingAlert = state.notifications.find(
-        (n: AppNotification) =>
-          n.type === 'SYSTEM' &&
-          n.message.includes(ingredient.name) &&
-          (n.timestamp instanceof Date
-            ? n.timestamp.toISOString()
-            : n.timestamp
-          ).startsWith(today)
-      );
-
-      if (!existingAlert) {
-        const newNotification: AppNotification = {
-          id: crypto.randomUUID(),
-          message: `CRITICAL: Stock de ${ingredient.name} bajo (${currentStock} ${ingredient.unit}). Reorder Point: ${reorderPoint}.`,
-          type: 'SYSTEM',
-          timestamp: new Date().toISOString(),
-          read: false,
-          outletId: state.activeOutletId || undefined,
-        };
-        state.addNotification(newNotification);
-      }
-    }
+  checkAndNotify: (_ingredients: Ingredient[], _ingredientId: string): void => {
+    // To be implemented: notification logic
+    console.warn('checkAndNotify not yet fully implemented');
   },
 
   // ========== AUTO-PURCHASE WORKFLOW ==========

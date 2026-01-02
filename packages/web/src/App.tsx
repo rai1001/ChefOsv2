@@ -12,19 +12,13 @@ import { EventsPage } from './presentation/pages/EventsPage';
 import { StaffPage } from './presentation/pages/StaffPage';
 import { HACCPPage } from './presentation/pages/HACCPPage';
 import { ProductionPage } from './presentation/pages/ProductionPage';
-import { WastePage } from './presentation/pages/WastePage';
 import { PurchasingPage } from './presentation/pages/PurchasingPage';
 import { SupplierPage } from './presentation/pages/SupplierPage';
 import { MenuPage } from './presentation/pages/MenuPage';
 import { MenuAnalyticsPage } from './presentation/pages/MenuAnalyticsPage';
 import { FichasTecnicasPage } from './presentation/pages/FichasTecnicasPage';
-import { HospitalityLogisticsPage } from './presentation/pages/HospitalityLogisticsPage';
-import { KitchenDisplayPage } from './presentation/pages/KitchenDisplayPage';
 import { IntegrationsPage } from './presentation/pages/IntegrationsPage';
-import { AIFeaturesPage } from './presentation/pages/AIFeaturesPage';
-import { SocialManagerView } from './presentation/pages/social/SocialManagerView';
 import { SettingsPage } from './presentation/pages/SettingsPage';
-import { AITelemetryPage } from './presentation/pages/AITelemetryPage';
 import { UserManagementPage } from './presentation/pages/UserManagementPage';
 import { ProtectedRoute } from './presentation/components/auth/ProtectedRoute';
 import { Toaster } from 'sonner';
@@ -51,18 +45,12 @@ export const App = () => {
             <Route path="staff" element={<StaffPage />} />
             <Route path="haccp" element={<HACCPPage />} />
             <Route path="production" element={<ProductionPage />} />
-            <Route path="waste" element={<WastePage />} />
             <Route path="purchasing" element={<PurchasingPage />} />
             <Route path="suppliers" element={<SupplierPage />} />
             <Route path="menu" element={<MenuPage />} />
             <Route path="menu-engineering" element={<MenuAnalyticsPage />} />
             <Route path="fichas" element={<FichasTecnicasPage />} />
-            <Route path="logistics" element={<HospitalityLogisticsPage />} />
-            <Route path="kds" element={<KitchenDisplayPage />} />
             <Route path="integrations" element={<IntegrationsPage />} />
-            <Route path="ai-features" element={<AIFeaturesPage />} />
-            <Route path="ai-telemetry" element={<AITelemetryPage />} />
-            <Route path="social-manager" element={<SocialManagerView />} />
             <Route path="settings" element={<SettingsPage />} />
 
             {/* Admin Routes */}

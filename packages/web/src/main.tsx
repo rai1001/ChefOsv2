@@ -1,7 +1,6 @@
 import 'reflect-metadata';
 import React from 'react';
 import ReactDOM from 'react-dom/client';
-import { Provider } from 'jotai';
 import { bootstrap } from './application/di/bootstrap';
 import { App } from './App';
 import { ToastProvider } from './presentation/components/ui';
@@ -14,12 +13,10 @@ bootstrap();
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
-    <Provider>
-      <ToastProvider>
-        <AuthWrapper>
-          <App />
-        </AuthWrapper>
-      </ToastProvider>
-    </Provider>
+    <ToastProvider>
+      <AuthWrapper>
+        <App />
+      </AuthWrapper>
+    </ToastProvider>
   </React.StrictMode>
 );
