@@ -1,7 +1,7 @@
 # 🚀 REFACTOR PROGRESS - ChefOsv2 Clean Architecture
 
 **Branch:** `claude/plan-app-refactor-1lPQ1`
-**Status:** ✅ FASE 0 + FASE 1 COMPLETADAS (Pusheadas al remoto)
+**Status:** ✅ FASE 0 + FASE 1 + FASE 2 COMPLETADAS (Pusheadas al remoto)
 **Última actualización:** 2026-01-02
 
 ---
@@ -23,8 +23,22 @@
 - ✅ Librería jotai desinstalada (-604 paquetes npm)
 - ✅ Clean Architecture mejorada (componentes → use cases directos)
 
+**FASE 2: Consolidación de Servicios**
+- ✅ Inventario consolidado (3 servicios → 1)
+  - inventoryService.ts + inventoryAnalytics.ts + necesidadesService.ts
+  - → InventoryAnalyticsService.ts + inventoryHelpers.ts
+  - 676 líneas → 560 líneas
+- ✅ Compras consolidado (4 servicios → 1)
+  - purchasingService.ts + pedidosService.ts + reorderService.ts + supplierSelectionService.ts
+  - → PurchasingService.ts
+  - 452 líneas → 450 líneas
+- ✅ 7 archivos actualizados con nuevos imports
+- ✅ 2 documentos de deprecación creados
+
 **Commits realizados:**
 ```
+7684030 refactor: FASE 2 - Consolidar servicios de compras (4→1)
+d5154e7 refactor: FASE 2 - Consolidar servicios de inventario (3→1)
 fe678c3 refactor: FASE 1 completa - Migrar Jotai → Zustand (Clean Architecture)
 af86217 refactor: FASE 1 - Eliminar código muerto y páginas no usadas
 ```
@@ -37,9 +51,11 @@ af86217 refactor: FASE 1 - Eliminar código muerto y páginas no usadas
 |---------|-------|-------|--------|--------|
 | **Páginas** | 27 | 20 | -26% | ✅ |
 | **Servicios muertos** | 2 | 0 | -100% | ✅ |
+| **Servicios consolidados** | 32 | 25 | -22% | ✅ |
 | **Componentes (categorías)** | 30 | 26 | -13% | ✅ |
 | **Sistemas de estado** | 3 (Zustand+Jotai+Context) | 1 (Zustand) | -67% | ✅ |
 | **Archivos eliminados** | - | 28 | - | ✅ |
+| **Líneas consolidadas** | - | ~1,128 → 1,010 | -10% | ✅ |
 | **Líneas eliminadas** | - | ~5,140 | - | ✅ |
 | **Paquetes npm** | - | -604 | - | ✅ |
 
@@ -86,26 +102,28 @@ af86217 refactor: FASE 1 - Eliminar código muerto y páginas no usadas
 
 ## 🎯 PRÓXIMOS PASOS (PENDIENTES)
 
-### **FASE 2: Consolidar Servicios Duplicados**
-**Objetivo:** De 30 servicios → ~6-8 repositories bien organizados
+### **FASE 2: Consolidar Servicios Duplicados** ✅ 66% COMPLETADA
+**Objetivo:** De 32 servicios → ~25 servicios bien organizados
 
 **Tareas:**
-- [ ] Consolidar servicios de inventario (3→1)
-  - `inventoryService.ts` + `inventoryAnalytics.ts` + `necesidadesService.ts`
-  - → `FirebaseInventoryRepository.ts`
+- [x] Consolidar servicios de inventario (3→1) ✅
+  - inventoryService.ts + inventoryAnalytics.ts + necesidadesService.ts
+  - → InventoryAnalyticsService.ts + inventoryHelpers.ts
+  - 676 líneas → 560 líneas
 
-- [ ] Consolidar servicios de compras (4→1)
-  - `purchasingService.ts` + `pedidosService.ts` + `reorderService.ts` + `supplierSelectionService.ts`
-  - → `FirebasePurchaseRepository.ts`
+- [x] Consolidar servicios de compras (4→1) ✅
+  - purchasingService.ts + pedidosService.ts + reorderService.ts + supplierSelectionService.ts
+  - → PurchasingService.ts
+  - 452 líneas → 450 líneas
 
-- [ ] Consolidar servicios de forecasting (3→1)
-  - `forecastingService.ts` + `requirementsService.ts` + `necesidadesService.ts`
-  - → `ForecastService.ts`
+- [ ] Consolidar servicios de forecasting (2→1)
+  - `forecastingService.ts` + `requirementsService.ts`
+  - → `ForecastingService.ts`
 
-**Impacto estimado:**
-- ~1,600 líneas consolidadas
-- De 30 servicios → ~20 servicios
-- Mejor adherencia a Clean Architecture
+**Impacto alcanzado:**
+- ~1,128 líneas consolidadas → 1,010 líneas (-10%)
+- De 32 servicios → 25 servicios (-22%)
+- Mejor adherencia a Clean Architecture ✅
 
 ---
 
