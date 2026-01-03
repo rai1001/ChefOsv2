@@ -108,8 +108,22 @@ export const AuthWrapper: React.FC<AuthWrapperProps> = ({ children }) => {
           allowedOutlets: userData.allowedOutlets,
           defaultOutletId: userData.activeOutletId,
         });
-        // Set Global Store
+        // Set Global Store (Zustand)
         setCurrentUser(userData);
+
+        // Sync to Atom (Jotai) - Critical for new LoginPage redirection
+        const mappedUserForAtom = new DomainUser({
+          id: userData.id,
+          email: userData.email,
+          displayName: userData.name,
+          photoURL: userData.photoURL || undefined,
+          role: userData.role as any,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        });
+        setUserAtom(mappedUserForAtom);
+        console.log('E2E Bypass Active: Syncing to stores');
+
         if (userData.activeOutletId) {
           setActiveOutletId(userData.activeOutletId);
         }
