@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Gemini AI - ChefOS</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #2563eb;
+            margin-bottom: 10px;
+        }
+        .subtitle {
+            color: #64748b;
+            margin-bottom: 30px;
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 20px;
+            border: 1px solid #e2e8f0;
+            border-radius: 6px;
+        }
+        .test-section h2 {
+            color: #334155;
+            margin-top: 0;
+        }
+        button {
+            background: #2563eb;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            margin-right: 10px;
+            margin-bottom: 10px;
+        }
+        button:hover {
+            background: #1d4ed8;
+        }
+        button:disabled {
+            background: #94a3b8;
+            cursor: not-allowed;
+        }
+        .result {
+            margin-top: 15px;
+            padding: 15px;
+            background: #f8fafc;
+            border-radius: 6px;
+            border-left: 4px solid #2563eb;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .error {
+            border-left-color: #dc2626;
+            background: #fef2f2;
+            color: #dc2626;
+        }
+        .success {
+            border-left-color: #16a34a;
+            background: #f0fdf4;
+            color: #16a34a;
+        }
+        .loading {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 3px solid #f3f4f6;
+            border-top: 3px solid #2563eb;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            vertical-align: middle;
+            margin-left: 10px;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .info-box {
+            background: #eff6ff;
+            border: 1px solid #bfdbfe;
+            padding: 15px;
+            border-radius: 6px;
+            margin: 20px 0;
+        }
+        .info-box h3 {
+            margin-top: 0;
+            color: #1e40af;
+        }
+        .info-box code {
+            background: white;
+            padding: 2px 6px;
+            border-radius: 3px;
+            border: 1px solid #bfdbfe;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 Test Gemini AI Integration</h1>
+        <p class="subtitle">Diagnóstico completo de la integración de Supabase Edge Functions con Gemini API</p>
+
+        <div class="info-box">
+            <h3>📋 Información de Configuración</h3>
+            <p><strong>Supabase URL:</strong> <code>https://xrgewhvijmrthsnrrxdw.supabase.co</code></p>
+            <p><strong>Edge Functions:</strong></p>
+            <ul>
+                <li><code>scan-document</code> - Escaneo de documentos con IA</li>
+                <li><code>enrich-ingredient</code> - Enriquecimiento de ingredientes</li>
+            </ul>
+            <p><strong>Gemini API Key:</strong> Configurada en Supabase Vault como <code>GEMINI_API_KEY</code></p>
+        </div>
+
+        <!-- Test 1: Verificar configuración de Supabase -->
+        <div class="test-section">
+            <h2>1️⃣ Verificar Configuración de Supabase</h2>
+            <button onclick="testSupabaseConfig()">Ejecutar Test</button>
+            <div id="test1-result"></div>
+        </div>
+
+        <!-- Test 2: Test Edge Function - enrich-ingredient -->
+        <div class="test-section">
+            <h2>2️⃣ Test Edge Function: enrich-ingredient</h2>
+            <p>Prueba el enriquecimiento de un ingrediente simple</p>
+            <button onclick="testEnrichIngredient()">Ejecutar Test</button>
+            <div id="test2-result"></div>
+        </div>
+
+        <!-- Test 3: Test Edge Function - scan-document (con imagen de prueba) -->
+        <div class="test-section">
+            <h2>3️⃣ Test Edge Function: scan-document</h2>
+            <p>Prueba el escaneo de un documento simple</p>
+            <button onclick="testScanDocument()">Ejecutar Test</button>
+            <div id="test3-result"></div>
+        </div>
+
+        <!-- Test 4: Test completo con imagen real -->
+        <div class="test-section">
+            <h2>4️⃣ Test con Imagen Real</h2>
+            <p>Sube una factura o menú para probar el escaneo completo</p>
+            <input type="file" id="imageInput" accept="image/*">
+            <button onclick="testRealImage()">Escanear Imagen</button>
+            <div id="test4-result"></div>
+        </div>
+
+        <!-- Test 5: Verificar logs de Edge Function -->
+        <div class="test-section">
+            <h2>5️⃣ Información de Depuración</h2>
+            <p>Enlaces útiles para depuración:</p>
+            <ul>
+                <li><a href="https://supabase.com/dashboard/project/xrgewhvijmrthsnrrxdw/functions" target="_blank">Ver Edge Functions en Dashboard</a></li>
+                <li><a href="https://supabase.com/dashboard/project/xrgewhvijmrthsnrrxdw/settings/vault" target="_blank">Ver Secrets en Vault</a></li>
+                <li><a href="https://aistudio.google.com/apikey" target="_blank">Verificar Gemini API Key</a></li>
+            </ul>
+        </div>
+    </div>
+
+    <script type="module">
+        import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
+
+        // Configuración
+        const SUPABASE_URL = 'https://xrgewhvijmrthsnrrxdw.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhyZ2V3aHZpam1ydGhzbnJyeGR3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjczMzExMzMsImV4cCI6MjA4MjkwNzEzM30.04IvQ0-HezX9J9Cj4ZoJPxpCCc4hawWM4GPOPGYC7qc';
+
+        // Create Supabase client
+        window.supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        // Helper para mostrar resultados
+        window.showResult = (elementId, content, type = 'info') => {
+            const element = document.getElementById(elementId);
+            element.innerHTML = `<div class="result ${type}">${content}</div>`;
+        };
+
+        // Helper para mostrar loading
+        window.showLoading = (elementId, message) => {
+            const element = document.getElementById(elementId);
+            element.innerHTML = `<div class="result">${message} <span class="loading"></span></div>`;
+        };
+
+        // Test 1: Verificar configuración de Supabase
+        window.testSupabaseConfig = async () => {
+            showLoading('test1-result', 'Verificando configuración...');
+
+            try {
+                // Verificar cliente Supabase
+                const { data: { session }, error } = await supabase.auth.getSession();
+
+                let result = '✅ Cliente Supabase inicializado correctamente\n\n';
+                result += `📍 URL: ${SUPABASE_URL}\n`;
+                result += `🔑 Anon Key: ${SUPABASE_ANON_KEY.substring(0, 50)}...\n\n`;
+
+                if (session) {
+                    result += `✅ Usuario autenticado\n`;
+                    result += `📧 Email: ${session.user.email}\n`;
+                    result += `🆔 User ID: ${session.user.id}\n`;
+                } else {
+                    result += `⚠️  No hay sesión activa\n`;
+                    result += `ℹ️  Nota: Edge Functions pueden requerir autenticación\n`;
+                }
+
+                showResult('test1-result', result, 'success');
+            } catch (error) {
+                showResult('test1-result', `❌ Error: ${error.message}\n\n${error.stack}`, 'error');
+            }
+        };
+
+        // Test 2: Test enrich-ingredient
+        window.testEnrichIngredient = async () => {
+            showLoading('test2-result', 'Llamando a Edge Function enrich-ingredient...');
+
+            try {
+                const startTime = Date.now();
+
+                const { data, error } = await supabase.functions.invoke('enrich-ingredient', {
+                    body: {
+                        ingredientName: 'Tomate',
+                    }
+                });
+
+                const duration = Date.now() - startTime;
+
+                if (error) {
+                    let errorMsg = `❌ Error en Edge Function\n\n`;
+                    errorMsg += `Mensaje: ${error.message}\n`;
+                    errorMsg += `Contexto: ${JSON.stringify(error.context || {}, null, 2)}\n\n`;
+                    errorMsg += `Duración: ${duration}ms\n\n`;
+                    errorMsg += `🔍 Posibles causas:\n`;
+                    errorMsg += `1. GEMINI_API_KEY no configurada en Supabase Vault\n`;
+                    errorMsg += `2. API key de Gemini inválida o con restricciones\n`;
+                    errorMsg += `3. Edge Function no desplegada correctamente\n`;
+                    errorMsg += `4. Usuario no autenticado (requiere login)\n`;
+                    showResult('test2-result', errorMsg, 'error');
+                    return;
+                }
+
+                if (!data.success) {
+                    showResult('test2-result', `❌ Edge Function retornó error:\n\n${data.error}`, 'error');
+                    return;
+                }
+
+                let result = `✅ Edge Function ejecutada correctamente\n\n`;
+                result += `⏱️  Duración: ${duration}ms\n\n`;
+                result += `📊 Datos recibidos:\n`;
+                result += JSON.stringify(data.data, null, 2);
+
+                if (data.usage) {
+                    result += `\n\n💰 Uso de tokens:\n`;
+                    result += `  Input: ${data.usage.inputTokens}\n`;
+                    result += `  Output: ${data.usage.outputTokens}\n`;
+                    result += `  Total: ${data.usage.totalTokens}\n`;
+                    result += `  Costo: $${data.usage.estimatedCost.toFixed(6)}\n`;
+                }
+
+                showResult('test2-result', result, 'success');
+            } catch (error) {
+                showResult('test2-result', `❌ Error inesperado:\n\n${error.message}\n\n${error.stack}`, 'error');
+            }
+        };
+
+        // Test 3: Test scan-document con imagen de prueba
+        window.testScanDocument = async () => {
+            showLoading('test3-result', 'Llamando a Edge Function scan-document...');
+
+            try {
+                // Crear una imagen de prueba simple (1x1 pixel rojo)
+                const testImageBase64 = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8DwHwAFBQIAX8jx0gAAAABJRU5ErkJggg==';
+
+                const startTime = Date.now();
+
+                const { data, error } = await supabase.functions.invoke('scan-document', {
+                    body: {
+                        imageBase64: testImageBase64,
+                        type: 'invoice',
+                    }
+                });
+
+                const duration = Date.now() - startTime;
+
+                if (error) {
+                    let errorMsg = `❌ Error en Edge Function\n\n`;
+                    errorMsg += `Mensaje: ${error.message}\n`;
+                    errorMsg += `Contexto: ${JSON.stringify(error.context || {}, null, 2)}\n\n`;
+                    errorMsg += `Duración: ${duration}ms\n\n`;
+                    errorMsg += `🔍 Posibles causas:\n`;
+                    errorMsg += `1. GEMINI_API_KEY no configurada en Supabase Vault\n`;
+                    errorMsg += `2. API key de Gemini inválida o con restricciones\n`;
+                    errorMsg += `3. Edge Function no desplegada correctamente\n`;
+                    errorMsg += `4. Usuario no autenticado (requiere login)\n`;
+                    showResult('test3-result', errorMsg, 'error');
+                    return;
+                }
+
+                if (!data.success) {
+                    showResult('test3-result', `❌ Edge Function retornó error:\n\n${data.error}`, 'error');
+                    return;
+                }
+
+                let result = `✅ Edge Function ejecutada correctamente\n\n`;
+                result += `⏱️  Duración: ${duration}ms\n\n`;
+                result += `📊 Items escaneados: ${data.data.items?.length || 0}\n`;
+                result += `📄 Metadata:\n`;
+                result += JSON.stringify(data.data.metadata, null, 2);
+
+                if (data.usage) {
+                    result += `\n\n💰 Uso de tokens:\n`;
+                    result += `  Input: ${data.usage.inputTokens}\n`;
+                    result += `  Output: ${data.usage.outputTokens}\n`;
+                    result += `  Total: ${data.usage.totalTokens}\n`;
+                    result += `  Costo: $${data.usage.estimatedCost.toFixed(6)}\n`;
+                }
+
+                showResult('test3-result', result, 'success');
+            } catch (error) {
+                showResult('test3-result', `❌ Error inesperado:\n\n${error.message}\n\n${error.stack}`, 'error');
+            }
+        };
+
+        // Test 4: Test con imagen real
+        window.testRealImage = async () => {
+            const fileInput = document.getElementById('imageInput');
+            const file = fileInput.files[0];
+
+            if (!file) {
+                showResult('test4-result', '⚠️  Por favor selecciona una imagen primero', 'error');
+                return;
+            }
+
+            showLoading('test4-result', 'Procesando imagen...');
+
+            try {
+                // Convertir a base64
+                const base64 = await new Promise((resolve, reject) => {
+                    const reader = new FileReader();
+                    reader.onload = () => resolve(reader.result);
+                    reader.onerror = reject;
+                    reader.readAsDataURL(file);
+                });
+
+                showLoading('test4-result', 'Llamando a Edge Function scan-document...');
+
+                const startTime = Date.now();
+
+                const { data, error } = await supabase.functions.invoke('scan-document', {
+                    body: {
+                        imageBase64: base64,
+                        type: 'invoice',
+                    }
+                });
+
+                const duration = Date.now() - startTime;
+
+                if (error) {
+                    let errorMsg = `❌ Error en Edge Function\n\n`;
+                    errorMsg += `Mensaje: ${error.message}\n`;
+                    errorMsg += `Contexto: ${JSON.stringify(error.context || {}, null, 2)}\n\n`;
+                    errorMsg += `Duración: ${duration}ms\n`;
+                    showResult('test4-result', errorMsg, 'error');
+                    return;
+                }
+
+                if (!data.success) {
+                    showResult('test4-result', `❌ Edge Function retornó error:\n\n${data.error}`, 'error');
+                    return;
+                }
+
+                let result = `✅ Imagen escaneada correctamente\n\n`;
+                result += `⏱️  Duración: ${duration}ms\n`;
+                result += `📄 Archivo: ${file.name} (${(file.size / 1024).toFixed(2)} KB)\n\n`;
+                result += `📊 Resultados:\n`;
+                result += `  Items encontrados: ${data.data.items?.length || 0}\n\n`;
+
+                if (data.data.items && data.data.items.length > 0) {
+                    result += `📝 Primeros items:\n`;
+                    data.data.items.slice(0, 5).forEach((item, i) => {
+                        result += `  ${i + 1}. ${item.name} - ${item.quantity} ${item.unit}\n`;
+                    });
+                }
+
+                if (data.usage) {
+                    result += `\n💰 Uso de tokens:\n`;
+                    result += `  Input: ${data.usage.inputTokens}\n`;
+                    result += `  Output: ${data.usage.outputTokens}\n`;
+                    result += `  Total: ${data.usage.totalTokens}\n`;
+                    result += `  Costo: $${data.usage.estimatedCost.toFixed(6)}\n`;
+                }
+
+                showResult('test4-result', result, 'success');
+            } catch (error) {
+                showResult('test4-result', `❌ Error inesperado:\n\n${error.message}\n\n${error.stack}`, 'error');
+            }
+        };
+
+        // Auto-ejecutar test de configuración al cargar
+        window.addEventListener('DOMContentLoaded', () => {
+            console.log('🧪 Test page loaded. Supabase client ready.');
+            testSupabaseConfig();
+        });
+    </script>
+</body>
+</html>
