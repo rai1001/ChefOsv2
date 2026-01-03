@@ -149,10 +149,33 @@ export const LoginPage: React.FC = () => {
           Google SSO
         </button>
 
-        <div className="pt-4">
+        <div className="pt-4 flex flex-col gap-3">
           <button className="text-[10px] font-black uppercase tracking-widest text-slate-500 hover:text-primary transition-colors">
             ¿Has olvidado tu contraseña?
           </button>
+
+          <div className="pt-4 border-t border-white/5">
+            <button
+              onClick={() => {
+                localStorage.setItem(
+                  'E2E_TEST_USER',
+                  JSON.stringify({
+                    id: 'test-admin-uid',
+                    email: 'admin@chefos.com',
+                    role: 'admin',
+                    active: true,
+                    name: 'Admin Tester',
+                    activeOutletId: '51f84de3-62e1-44c3-a6f8-b347285aca03',
+                    allowedOutlets: ['51f84de3-62e1-44c3-a6f8-b347285aca03'],
+                  })
+                );
+                window.location.reload();
+              }}
+              className="w-full py-2.5 bg-yellow-500/10 hover:bg-yellow-500/20 text-yellow-500 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] border border-yellow-500/20 transition-all active:scale-[0.98]"
+            >
+              🔑 Modo Desarrollador (Bypass)
+            </button>
+          </div>
         </div>
       </div>
 
