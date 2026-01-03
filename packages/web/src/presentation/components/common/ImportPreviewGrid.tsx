@@ -4,8 +4,8 @@ import { useStore } from '@/presentation/store/useStore';
 import type { IngestionItem } from '@/utils/excelImport';
 import { Check, Trash2, Link, Plus, Search, Box, Layers, X, Sparkles, Package } from 'lucide-react';
 import Fuse from 'fuse.js';
-import { httpsCallable } from 'firebase/functions';
-import { functions } from '@/config/firebase';
+// import { httpsCallable } from 'firebase/functions';
+// import { functions } from '@/config/firebase';
 
 interface ImportPreviewGridProps {
   items: IngestionItem[];
@@ -49,6 +49,9 @@ export const ImportPreviewGrid: React.FC<ImportPreviewGridProps> = ({
   };
 
   const handleAutoClassify = async () => {
+    // Feature temporarily disabled during migration
+    alert('AI Classification is currently unavailable during system upgrade.');
+    /*
     setIsClassifying(true);
     try {
       // Get all ingredient names
@@ -95,6 +98,7 @@ export const ImportPreviewGrid: React.FC<ImportPreviewGridProps> = ({
     } finally {
       setIsClassifying(false);
     }
+    */
   };
 
   const filteredItems = items.filter(

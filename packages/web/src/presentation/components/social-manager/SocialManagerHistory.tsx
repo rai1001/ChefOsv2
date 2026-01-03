@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { collection, query, where, orderBy, limit, onSnapshot } from 'firebase/firestore';
-import { db } from '@/config/firebase';
+import { supabase } from '@/config/supabase';
+// import { collection, query, where, orderBy, limit, onSnapshot } from 'firebase/firestore'; // REMOVED
+// import { db } from '@/config/firebase'; // REMOVED
 import { useStore } from '@/presentation/store/useStore';
 import type { SocialManagerPost } from '@/types/socialManager';
 import { Loader2, Calendar, Share2, Eye } from 'lucide-react';
@@ -19,30 +20,29 @@ export const SocialManagerHistory: React.FC<SocialManagerHistoryProps> = ({ onSe
   useEffect(() => {
     if (!activeOutletId) return;
 
-    const q = query(
-      collection(db, 'socialManagerPosts'),
-      where('businessId', '==', activeOutletId),
-      orderBy('generatedAt', 'desc'),
-      limit(10)
-    );
+    const fetchPosts = async () => {
+      try {
+        // TODO: Validate table name and column names for Supabase
+        const { data, error } = await supabase
+          .from('social_manager_posts') // Assumption: Table name converted to snake_case
+          .select('*')
+          .eq('businessId', activeOutletId)
+          .order('generatedAt', { ascending: false }) // Keeping camelCase for columns for risk mitigation, change to generated_at if needed
+          .limit(10);
 
-    const unsubscribe = onSnapshot(
-      q,
-      (snapshot) => {
-        const fetchedPosts: SocialManagerPost[] = [];
-        snapshot.forEach((doc) => {
-          fetchedPosts.push({ id: doc.id, ...doc.data() } as SocialManagerPost);
-        });
-        setPosts(fetchedPosts);
-        setLoading(false);
-      },
-      (error) => {
-        console.error('Error fetching history:', error);
+        if (error) {
+          console.error('Error fetching history:', error);
+        } else {
+          setPosts(data as unknown as SocialManagerPost[]);
+        }
+      } catch (err) {
+        console.error('Unexpected error fetching history:', err);
+      } finally {
         setLoading(false);
       }
-    );
+    };
 
-    return () => unsubscribe();
+    fetchPosts();
   }, [activeOutletId]);
 
   if (loading) {

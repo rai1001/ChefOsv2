@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
-import { query, where } from 'firebase/firestore';
-import { onSnapshotMockable } from '@/services/mockSnapshot';
+// import { query, where } from 'firebase/firestore';
+// import { onSnapshotMockable } from '@/services/mockSnapshot';
 import { collections } from '@/config/collections';
 import { useStore } from '@/presentation/store/useStore';
 import type { Ingredient } from '@/types';
@@ -13,10 +13,14 @@ export const useIngredientsSync = () => {
   const [error, setError] = useState<Error | null>(null);
 
   useEffect(() => {
-    if (import.meta.env.VITE_USE_SUPABASE_READ === 'true') {
+    // Stubbed for Supabase migration
+    const fetchIngredients = async () => {
+      // Here we should fetch from Supabase
       setLoading(false);
-      return;
-    }
+    };
+    fetchIngredients();
+
+    /*
     if (!activeOutletId) {
       setIngredients([]);
       setLoading(false);
@@ -74,6 +78,7 @@ export const useIngredientsSync = () => {
     );
 
     return () => unsubscribe();
+    */
   }, [setIngredients]);
 
   return { loading, error };

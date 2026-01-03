@@ -1,74 +1,21 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { useStore } from '../store/useStore';
-import { Building2, UtensilsCrossed, Check, Wrench, Loader2, Trash2 } from 'lucide-react';
-import { httpsCallable } from 'firebase/functions';
-import { functions } from '@/config/firebase';
+import { Building2, UtensilsCrossed, Check, Wrench, Trash2 } from 'lucide-react';
 
 export const SettingsPage: React.FC = () => {
   const { settings, setSettings } = useStore();
-  const [isFixing, setIsFixing] = useState(false);
-  const [fixResult, setFixResult] = useState<any>(null);
-  const [isDeleting, setIsDeleting] = useState(false);
-  const [deleteResult, setDeleteResult] = useState<any>(null);
+  /* State removed for migration stub */
 
   const handleModeChange = (mode: 'HOTEL' | 'RESTAURANT') => {
     setSettings({ businessType: mode });
   };
 
   const handleFixIngredients = async () => {
-    if (
-      !confirm(
-        '¿Estás seguro de que quieres limpiar y validar todos los ingredientes? Esta operación puede tardar un momento.'
-      )
-    ) {
-      return;
-    }
-
-    setIsFixing(true);
-    setFixResult(null);
-
-    try {
-      const fixIngredients = httpsCallable(functions, 'fixIngredientsData');
-      const result = await fixIngredients();
-      setFixResult(result.data);
-      alert('✅ Ingredientes limpiados correctamente. Recarga la página para ver los cambios.');
-    } catch (error: any) {
-      console.error('Error al limpiar ingredientes:', error);
-      alert('❌ Error al limpiar ingredientes: ' + error.message);
-    } finally {
-      setIsFixing(false);
-    }
+    alert('Esta funcionalidad está temporalmente deshabilitada durante la migración.');
   };
 
   const handleDeleteAllIngredients = async () => {
-    const userInput = prompt(
-      '⚠️ ADVERTENCIA: Esta operación eliminará TODOS los ingredientes de la base de datos de forma PERMANENTE.\n\n' +
-        'Para confirmar, escribe exactamente: DELETE_ALL_INGREDIENTS'
-    );
-
-    if (userInput !== 'DELETE_ALL_INGREDIENTS') {
-      if (userInput !== null) {
-        alert('❌ Confirmación incorrecta. Operación cancelada.');
-      }
-      return;
-    }
-
-    setIsDeleting(true);
-    setDeleteResult(null);
-
-    try {
-      const deleteAllIngredients = httpsCallable(functions, 'deleteAllIngredients');
-      const result = await deleteAllIngredients({ confirmation: 'DELETE_ALL_INGREDIENTS' });
-      setDeleteResult(result.data);
-      alert(
-        `✅ ${(result.data as any).deleted} ingredientes eliminados correctamente. Recarga la página para ver los cambios.`
-      );
-    } catch (error: any) {
-      console.error('Error al eliminar ingredientes:', error);
-      alert('❌ Error al eliminar ingredientes: ' + error.message);
-    } finally {
-      setIsDeleting(false);
-    }
+    alert('Esta funcionalidad está temporalmente deshabilitada durante la migración.');
   };
 
   return (
@@ -174,29 +121,11 @@ export const SettingsPage: React.FC = () => {
             </p>
             <button
               onClick={handleFixIngredients}
-              disabled={isFixing}
-              className="bg-primary hover:bg-primary/90 text-white px-4 py-2 rounded-lg font-semibold disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+              className="bg-primary hover:bg-primary/90 text-white px-4 py-2 rounded-lg font-semibold flex items-center gap-2"
             >
-              {isFixing ? (
-                <>
-                  <Loader2 className="animate-spin" size={16} />
-                  Limpiando...
-                </>
-              ) : (
-                <>
-                  <Wrench size={16} />
-                  Ejecutar Limpieza
-                </>
-              )}
+              <Wrench size={16} />
+              Ejecutar Limpieza
             </button>
-            {fixResult && (
-              <div className="mt-4 p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-md">
-                <p className="text-sm text-green-800 dark:text-green-200">
-                  <strong>✅ Completado:</strong> {fixResult.fixed} corregidos, {fixResult.deleted}{' '}
-                  eliminados, {fixResult.skipped} sin cambios
-                </p>
-              </div>
-            )}
           </div>
 
           {/* Delete All Ingredients */}
@@ -212,28 +141,11 @@ export const SettingsPage: React.FC = () => {
             </p>
             <button
               onClick={handleDeleteAllIngredients}
-              disabled={isDeleting}
-              className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg font-semibold disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+              className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg font-semibold flex items-center gap-2"
             >
-              {isDeleting ? (
-                <>
-                  <Loader2 className="animate-spin" size={16} />
-                  Eliminando...
-                </>
-              ) : (
-                <>
-                  <Trash2 size={16} />
-                  Eliminar Todos los Ingredientes
-                </>
-              )}
+              <Trash2 size={16} />
+              Eliminar Todos los Ingredientes
             </button>
-            {deleteResult && (
-              <div className="mt-4 p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-md">
-                <p className="text-sm text-green-800 dark:text-green-200">
-                  <strong>✅ Completado:</strong> {deleteResult.deleted} ingredientes eliminados
-                </p>
-              </div>
-            )}
           </div>
         </div>
       </div>

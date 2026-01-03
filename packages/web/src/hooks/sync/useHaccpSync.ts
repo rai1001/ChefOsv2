@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { onSnapshot, query, where } from 'firebase/firestore';
+// import { onSnapshot, query, where } from 'firebase/firestore';
 import { collections } from '@/config/collections';
 import { useStore } from '@/presentation/store/useStore';
 
@@ -9,10 +9,12 @@ export const useHaccpSync = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (import.meta.env.VITE_USE_SUPABASE_READ === 'true') {
+    // Stubbed for Supabase migration
+    const fetchHACCP = async () => {
       setLoading(false);
-      return;
-    }
+    };
+    fetchHACCP();
+    /*
     if (!activeOutletId) {
       setHACCPLogs([]);
       setHACCPTasks([]);
@@ -72,6 +74,7 @@ export const useHaccpSync = () => {
       unsubCompletions();
       unsubPCCs();
     };
+    */
   }, [activeOutletId, setHACCPLogs, setHACCPTasks, setHACCPTaskCompletions, setPCCs]);
 
   return { loading };

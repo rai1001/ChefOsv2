@@ -1,6 +1,6 @@
 import { v4 as uuidv4 } from 'uuid';
-import { firestoreService, addDocument } from '@/services/firestoreService';
-import { COLLECTIONS, collections } from '@/config/collections';
+import { firestoreService } from '@/services/firestoreService';
+import { COLLECTIONS } from '@/config/collections';
 import type {
   PurchaseOrder,
   Ingredient,
@@ -8,7 +8,7 @@ import type {
   PriceHistoryEntry,
 } from '@/types';
 import { calculateTotalStock } from './inventoryService';
-import { query, where, orderBy, limit, getDocs } from 'firebase/firestore';
+import { query, where, orderBy, limit, getDocs } from '@/utils/mockFirestore';
 
 export const recepcionService = {
   receiveOrder: async (
@@ -72,15 +72,18 @@ export const recepcionService = {
       // Update Ingredient Batches and Stock
       const currentBatches = ingredient.batches || [];
       const updatedBatches = [...currentBatches, newBatch];
-      const newStock = calculateTotalStock(updatedBatches);
-
+      const currentStock = calculateTotalStock(updatedBatches);
+      const stockWithUnit = {
+        quantity: currentStock,
+        unit: ingredient.unit,
+      };
       // Price Tracking Optimization
       const orderItem = order.items.find((i) => i.ingredientId === received.ingredientId);
       const currentPrice = orderItem?.costPerUnit || ingredient.costPerUnit || 0;
 
       // Fetch last 5 prices for this supplier/ingredient to check deviation
       const priceQuery = query(
-        collections.ingredientPriceHistory,
+        COLLECTIONS.INGREDIENT_PRICE_HISTORY,
         where('ingredientId', '==', ingredient.id),
         where('supplierId', '==', order.supplierId),
         orderBy('date', 'desc'),
@@ -96,34 +99,49 @@ export const recepcionService = {
 
         if (currentPrice > threshold) {
           // Trigger alert notification
-          await addDocument(collections.notifications, {
+          const notification = {
             type: 'SYSTEM',
             title: 'ALERTA DE PRECIO',
             message: `El precio de ${ingredient.name} del proveedor ha subido un ${((currentPrice / avgPrice - 1) * 100).toFixed(1)}% (Actual: ${currentPrice}€, Media: ${avgPrice.toFixed(2)}€).`,
             read: false,
             timestamp: new Date().toISOString(),
             outletId: order.outletId,
-          });
+          };
+          await firestoreService.create(COLLECTIONS.NOTIFICATIONS, notification);
         }
       }
 
-      // Save new price entry
-      const priceEntry: PriceHistoryEntry = {
-        date: new Date().toISOString(),
-        price: currentPrice,
-        supplierId: order.supplierId,
-        purchaseOrderId: order.id,
-        changeReason: 'Purchase Order Reception',
+      // 4. Create Price History Entry
+      const historyEntry = {
+        id: uuidv4(),
+        ingredientId: received.ingredientId,
+        oldPrice: ingredient.costPerUnit || 0,
+        newPrice: currentPrice,
+        changeDate: new Date().toISOString(),
+        changeType: 'RECEPCION',
+        referenceId: order.id,
+        outletId: order.outletId,
       };
-      await addDocument(collections.ingredientPriceHistory, priceEntry);
+
+      await firestoreService.create(COLLECTIONS.INGREDIENT_PRICE_HISTORY, historyEntry);
 
       await firestoreService.update(COLLECTIONS.INGREDIENTS, ingredient.id, {
         batches: updatedBatches,
-        stock: newStock,
-        currentStock: { value: newStock, unit: ingredient.unit }, // Manually constructing object for Firestore
+        stock: currentStock,
+        currentStock: { value: currentStock, unit: ingredient.unit }, // Manually constructing object for Firestore
         costPerUnit: currentPrice || 0, // Update to latest price, safety check
-        priceHistory: [...(ingredient.priceHistory || []), priceEntry].slice(-20), // Keep last 20 in doc for quick UI
+        // priceHistory: [...(ingredient.priceHistory || []), priceEntry].slice(-20), // Remove this if priceEntry is gone.
+        // Actually we save price history in separate collection now.
         updatedAt: new Date().toISOString(),
+        lastCost: currentPrice,
+        priceTrend:
+          historicalEntries.length > 0
+            ? ((currentPrice -
+                historicalEntries.reduce((sum, e) => sum + e.price, 0) / historicalEntries.length) /
+                (historicalEntries.reduce((sum, e) => sum + e.price, 0) /
+                  historicalEntries.length)) *
+              100
+            : 0,
       } as any); // Cast as any to avoid strict Quantity class instance check if needed
     }
 

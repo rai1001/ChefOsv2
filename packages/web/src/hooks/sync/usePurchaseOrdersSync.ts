@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { onSnapshot, query, where, orderBy } from 'firebase/firestore';
+// import { onSnapshot, query, where, orderBy } from 'firebase/firestore';
 import { collections } from '@/config/collections';
 import { useStore } from '@/presentation/store/useStore';
 import type { PurchaseOrder } from '@/types';
@@ -9,10 +9,12 @@ export const usePurchaseOrdersSync = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (import.meta.env.VITE_USE_SUPABASE_READ === 'true') {
+    // Stubbed for Supabase migration
+    const fetchPOs = async () => {
       setLoading(false);
-      return;
-    }
+    };
+    fetchPOs();
+    /*
     if (!activeOutletId) {
       setPurchaseOrders([]);
       setLoading(false);
@@ -49,6 +51,7 @@ export const usePurchaseOrdersSync = () => {
     );
 
     return () => unsubscribe();
+    */
   }, [activeOutletId, setPurchaseOrders]);
 
   return { loading };

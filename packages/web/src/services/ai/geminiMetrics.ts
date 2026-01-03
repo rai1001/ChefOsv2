@@ -1,6 +1,6 @@
-import { rtdb, db } from '@/config/firebase';
-import { ref, push, set } from 'firebase/database';
-import { collection, addDoc, Timestamp, doc, getDoc } from 'firebase/firestore';
+// import { rtdb, db } from '@/config/firebase';
+// import { ref, push, set } from 'firebase/database';
+// import { collection, addDoc, Timestamp, doc, getDoc } from 'firebase/firestore';
 import type { AIFeature, AIMetrics, AICallMetadata } from './types';
 import { checkBudgetBeforeCall, updateUsageAfterCall } from './budgetManager';
 import { getCachedResult, setCachedResult, generateCacheKey } from './intelligentCache';
@@ -27,25 +27,7 @@ async function getPricingConfig(): Promise<PricingConfig> {
     return cachedPricing;
   }
 
-  try {
-    const pricingDoc = await getDoc(doc(db, 'aiConfiguration', 'pricing'));
-    if (pricingDoc.exists()) {
-      const data = pricingDoc.data();
-      cachedPricing = {
-        inputCostPer1M: data.inputCostPer1M ?? DEFAULT_INPUT_COST_PER_1M,
-        outputCostPer1M: data.outputCostPer1M ?? DEFAULT_OUTPUT_COST_PER_1M,
-        spanishMultiplier: data.spanishMultiplier ?? DEFAULT_SPANISH_MULTIPLIER,
-      };
-      lastFetchTime = now;
-      return cachedPricing!;
-    }
-  } catch (e) {
-    console.log(
-      '[AI Metrics] Info: Using default pricing (Firestore config not found/accessible)',
-      e
-    );
-  }
-
+  // Stubbed: Always return defaults during migration
   return {
     inputCostPer1M: DEFAULT_INPUT_COST_PER_1M,
     outputCostPer1M: DEFAULT_OUTPUT_COST_PER_1M,
@@ -93,33 +75,14 @@ function calculateCost(inputTokens: number, outputTokens: number, pricing: Prici
   return inputCost + outputCost;
 }
 
-// Log to RTDB (HOT)
+// Log to RTDB (HOT) - Stubbed
 async function logMetricToRealtime(metric: AIMetrics) {
-  try {
-    const date = new Date(metric.timestamp);
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
-
-    // Path: /ai_metrics/{outletId}/{year}/{month}/{day}/{callId}
-    const metricsRef = ref(rtdb, `ai_metrics/${metric.outletId}/${year}/${month}/${day}`);
-    const newMetricRef = push(metricsRef);
-    await set(newMetricRef, metric);
-  } catch (e) {
-    console.error('Failed to log to RTDB', e);
-  }
+  // console.log('[AI Metrics] Stubbed RTDB log:', metric);
 }
 
-// Log to Firestore (COLD)
+// Log to Firestore (COLD) - Stubbed
 async function logMetricToFirestore(metric: AIMetrics) {
-  try {
-    await addDoc(collection(db, 'aiUsageMetrics'), {
-      ...metric,
-      timestamp: Timestamp.fromDate(new Date(metric.timestamp)),
-    });
-  } catch (e) {
-    console.error('Failed to log to Firestore', e);
-  }
+  // console.log('[AI Metrics] Stubbed Firestore log:', metric);
 }
 
 /**
@@ -170,18 +133,18 @@ export async function trackedGeminiCall<T>(
     }
   }
 
-  console.log(`[AI Metrics] Starting tracked call: ${feature}`);
+  // console.log(`[AI Metrics] Starting tracked call: ${feature}`);
   // 1. Check Budget
   try {
-    console.log(`[AI Metrics] Checking budget for ${feature}...`);
+    // console.log(`[AI Metrics] Checking budget for ${feature}...`);
     const costPerTokenInput = pricing.inputCostPer1M / 1_000_000;
     const estimatedCost = estimatedInputTokens * costPerTokenInput;
     const budget = await checkBudgetBeforeCall(metadata.outletId, feature, estimatedCost);
-    console.log(`[AI Metrics] Budget check result for ${feature}:`, {
-      allowed: budget.allowed,
-      estimatedTokens: estimatedInputTokens,
-      estimatedCost: estimatedCost.toFixed(6),
-    });
+    // console.log(`[AI Metrics] Budget check result for ${feature}:`, {
+    //   allowed: budget.allowed,
+    //   estimatedTokens: estimatedInputTokens,
+    //   estimatedCost: estimatedCost.toFixed(6),
+    // });
     if (!budget || !budget.allowed) {
       throw new Error(budget?.errorMessage || `Budget exceeded for feature: ${feature}`);
     }
@@ -198,15 +161,15 @@ export async function trackedGeminiCall<T>(
   // 2. Check Cache
   if (cacheKey) {
     try {
-      console.log(`[AI Metrics] Checking cache for ${feature}...`);
+      // console.log(`[AI Metrics] Checking cache for ${feature}...`);
       const isForceRefresh = (options as any)?.forceRefresh === true;
       const cached = await getCachedResult<T>(cacheKey, isForceRefresh);
       if (cached) {
-        console.log(`[AI Metrics] Cache HIT for ${feature}`);
+        // console.log(`[AI Metrics] Cache HIT for ${feature}`);
         cacheHit = true;
         return cached as T;
       }
-      console.log(`[AI Metrics] Cache MISS for ${feature}`);
+      // console.log(`[AI Metrics] Cache MISS for ${feature}`);
     } catch (e) {
       console.warn(`[AI Metrics] Cache check failed (non-fatal):`, e);
     }
@@ -214,48 +177,28 @@ export async function trackedGeminiCall<T>(
 
   // 4. Perform Operation
   try {
-    console.log(`[AI Metrics] Executing operation for ${feature}...`);
+    // console.log(`[AI Metrics] Executing operation for ${feature}...`);
     if (typeof operation !== 'function') {
       console.error(`[AI Metrics] OPERATION IS NOT A FUNCTION for ${feature}`, operation);
     }
 
     result = await performanceUtils.measureAsync(`ai_call_${feature}`, operation);
 
-    console.log(`[AI Metrics] Operation finished for ${feature}. result exists: ${!!result}`);
+    // console.log(`[AI Metrics] Operation finished for ${feature}. result exists: ${!!result}`);
 
     if (result === undefined || result === null) {
       console.error(`[AI Metrics] Operation for ${feature} returned NULL/UNDEFINED`);
       throw new Error(`AI operation for ${feature} returned no result`);
     }
 
-    // Defensive check for .success if result is an object
-    if (typeof result === 'object' && result !== null) {
-      console.log(`[AI Metrics] result keys:`, Object.keys(result));
-      // TRAP: Is something reading .success here?
-      try {
-        const s = (result as any).success;
-        console.log(`[AI Metrics] result.success value:`, s);
-      } catch (e) {
-        console.warn(`[AI Metrics] Non-fatal error reading .success from result:`, e);
-      }
-    }
-
     success = true;
     return result as T;
   } catch (error: any) {
     console.error(`[AI Metrics] Operation FAILED for ${feature}:`, error);
-    if (error instanceof TypeError && error.message.includes('success')) {
-      console.error(
-        `[AI Metrics] DETECTED TYPEERROR (reading success) for ${feature}. Check callback return type.`
-      );
-    }
     success = false;
     errorMsg = error.message;
     throw error;
   } finally {
-    console.log(
-      `[AI Metrics] Entering finally block for ${feature}. Success: ${success}, CacheHit: ${cacheHit}`
-    );
     if (!cacheHit) {
       try {
         const end = performance.now();
@@ -288,7 +231,7 @@ export async function trackedGeminiCall<T>(
         // Remove undefined values recursively (shallow check sufficient for this flat object)
         const sanitizedMetric = JSON.parse(JSON.stringify(metric));
 
-        console.log(`[AI Metrics] Logging metric for ${feature}:`, metric);
+        // console.log(`[AI Metrics] Logging metric for ${feature}:`, metric);
 
         // Log Metrics (Async - Fire and Forget)
         logMetricToRealtime(sanitizedMetric).catch((err) =>

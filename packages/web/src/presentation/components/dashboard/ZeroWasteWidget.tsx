@@ -3,8 +3,7 @@ import React, { useState, useMemo } from 'react';
 import { useStore } from '@/presentation/store/useStore';
 import { parseISO, addHours } from 'date-fns';
 import { AlertTriangle, Sparkles, ChefHat, ArrowRight, Loader2 } from 'lucide-react';
-import { httpsCallable } from 'firebase/functions';
-import { functions } from '@/config/firebase';
+
 import type { WasteSuggestion } from '@/types';
 import { useToast } from '@/presentation/components/ui'; // Adjust path if needed
 
@@ -57,8 +56,6 @@ const ActionCard = ({
 export const ZeroWasteWidget: React.FC = () => {
   const { inventory, activeOutletId } = useStore();
   const [isLoading, setIsLoading] = useState(false);
-  const [suggestions, setSuggestions] = useState<WasteSuggestion[]>([]);
-  const [showModal, setShowModal] = useState(false);
   const { addToast } = useToast();
 
   // 1. Detect Expiring Items locally
@@ -86,16 +83,9 @@ export const ZeroWasteWidget: React.FC = () => {
     if (!activeOutletId) return;
     setIsLoading(true);
     try {
-      const callable = httpsCallable(functions, 'getWasteSuggestions');
-      const result = await callable({ outletId: activeOutletId });
-      const data = result.data as { suggestions: WasteSuggestion[] };
-
-      if (data.suggestions && data.suggestions.length > 0) {
-        setSuggestions(data.suggestions);
-        setShowModal(true);
-      } else {
-        addToast('Sin desperdicios', 'info');
-      }
+      // Stub for migration
+      addToast('Funcionalidad IA temporalmente deshabilitada', 'info');
+      // In future: Call Supabase Edge Function
     } catch (error) {
       console.error('Failed to get suggestions:', error);
       addToast('Error al consultar IA', 'error');

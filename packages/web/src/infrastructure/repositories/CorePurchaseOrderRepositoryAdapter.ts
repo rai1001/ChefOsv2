@@ -1,17 +1,17 @@
 import { injectable } from 'inversify';
-import { db } from '@/config/firebase';
-import {
-  collection,
-  doc,
-  setDoc,
-  getDoc,
-  getDocs,
-  query,
-  where,
-  updateDoc,
-  deleteDoc,
-  Timestamp,
-} from 'firebase/firestore';
+// import { db } from '@/config/firebase';
+// import {
+//   collection,
+//   doc,
+//   setDoc,
+//   getDoc,
+//   getDocs,
+//   query,
+//   where,
+//   updateDoc,
+//   deleteDoc,
+//   Timestamp,
+// } from 'firebase/firestore';
 import {
   IPurchaseOrderRepository,
   PurchaseOrder,
@@ -22,35 +22,24 @@ import {
   NotFoundError,
 } from '@culinaryos/core';
 import { useStore } from '@/presentation/store/useStore';
+import { supabasePersistenceService } from '@/services/supabasePersistenceService';
 
 @injectable()
 export class CorePurchaseOrderRepositoryAdapter implements IPurchaseOrderRepository {
   private collectionName = 'purchaseOrders';
 
-  // Helper to map Firestore data to Entity
+  // Helper to map Supabase data to Entity
   private mapDocToEntity(id: string, data: any): PurchaseOrder {
     return {
       ...data,
       id,
-      createdAt:
-        data.createdAt instanceof Timestamp ? data.createdAt.toDate() : new Date(data.createdAt),
-      updatedAt:
-        data.updatedAt instanceof Timestamp ? data.updatedAt.toDate() : new Date(data.updatedAt),
+      createdAt: data.createdAt ? new Date(data.createdAt) : new Date(),
+      updatedAt: data.updatedAt ? new Date(data.updatedAt) : new Date(),
       expectedDeliveryDate: data.expectedDeliveryDate
-        ? data.expectedDeliveryDate instanceof Timestamp
-          ? data.expectedDeliveryDate.toDate()
-          : new Date(data.expectedDeliveryDate)
+        ? new Date(data.expectedDeliveryDate)
         : undefined,
-      actualDeliveryDate: data.actualDeliveryDate
-        ? data.actualDeliveryDate instanceof Timestamp
-          ? data.actualDeliveryDate.toDate()
-          : new Date(data.actualDeliveryDate)
-        : undefined,
-      approvedAt: data.approvedAt
-        ? data.approvedAt instanceof Timestamp
-          ? data.approvedAt.toDate()
-          : new Date(data.approvedAt)
-        : undefined,
+      actualDeliveryDate: data.actualDeliveryDate ? new Date(data.actualDeliveryDate) : undefined,
+      approvedAt: data.approvedAt ? new Date(data.approvedAt) : undefined,
       lines: (data.lines || []).map((line: any) => ({
         ...line,
         unitCost: line.unitCost
@@ -66,13 +55,8 @@ export class CorePurchaseOrderRepositoryAdapter implements IPurchaseOrderReposit
     } as PurchaseOrder;
   }
 
-  /**
-   * Creates a new purchase order.
-   * @param dto - Data to create the purchase order.
-   * @returns The created Purchase Order entity.
-   */
   async create(dto: CreatePurchaseOrderDTO): Promise<PurchaseOrder> {
-    const id = doc(collection(db, this.collectionName)).id;
+    const id = crypto.randomUUID();
     const now = new Date();
     const currentUser = useStore.getState().currentUser;
 
@@ -84,8 +68,6 @@ export class CorePurchaseOrderRepositoryAdapter implements IPurchaseOrderReposit
       const totalCost = unitCost.multiply(line.quantity.value);
       return {
         ...line,
-        // Ensure ingredientName is present. If missing, use a placeholder or ID.
-        // Ideally this should be passed in DTO or fetched.
         ingredientName: (line as any).ingredientName || 'Unknown Ingredient',
         unitCost,
         totalCost,
@@ -109,13 +91,12 @@ export class CorePurchaseOrderRepositoryAdapter implements IPurchaseOrderReposit
       lines: formattedLines,
       total: totalAmount,
       createdBy: currentUser?.email || 'system',
-      orderNumber: id.substring(0, 8).toUpperCase(), // Simple generation
+      orderNumber: id.substring(0, 8).toUpperCase(),
       supplier: dto.supplier,
       outletId: dto.outletId,
     };
 
-    // Prepare for Firestore (convert Money to JSON)
-    const firestoreData = {
+    const supabaseData = {
       ...purchaseOrder,
       lines: purchaseOrder.lines.map((l) => ({
         ...l,
@@ -123,63 +104,54 @@ export class CorePurchaseOrderRepositoryAdapter implements IPurchaseOrderReposit
         totalCost: l.totalCost?.toJSON(),
       })),
       total: purchaseOrder.total?.toJSON(),
-      createdAt: Timestamp.fromDate(now),
-      updatedAt: Timestamp.fromDate(now),
+      createdAt: now.toISOString(),
+      updatedAt: now.toISOString(),
     };
 
-    // Remove undefined fields to avoid Firestore errors
-    Object.keys(firestoreData).forEach(
-      (key) => (firestoreData as any)[key] === undefined && delete (firestoreData as any)[key]
+    // Clean undefined
+    Object.keys(supabaseData).forEach(
+      (key) => (supabaseData as any)[key] === undefined && delete (supabaseData as any)[key]
     );
 
-    await setDoc(doc(db, this.collectionName, id), firestoreData);
-
+    await supabasePersistenceService.set(this.collectionName, id, supabaseData);
     return purchaseOrder;
   }
 
   async findById(id: string): Promise<PurchaseOrder | null> {
-    const docRef = doc(db, this.collectionName, id);
-    const docSnap = await getDoc(docRef);
-
-    if (docSnap.exists()) {
-      return this.mapDocToEntity(docSnap.id, docSnap.data());
+    const data = await supabasePersistenceService.getById<any>(this.collectionName, id);
+    if (data) {
+      return this.mapDocToEntity(id, data);
     }
     return null;
   }
 
   async findByOutletId(outletId: string): Promise<PurchaseOrder[]> {
-    const q =
-      outletId && outletId !== 'GLOBAL'
-        ? query(collection(db, this.collectionName), where('outletId', 'in', [outletId, 'GLOBAL']))
-        : query(collection(db, this.collectionName));
-    const snapshot = await getDocs(q);
-    return snapshot.docs.map((d) => this.mapDocToEntity(d.id, d.data()));
+    const results = await supabasePersistenceService.query(this.collectionName, (q) =>
+      outletId && outletId !== 'GLOBAL' ? q.or(`outletId.eq.${outletId},outletId.eq.GLOBAL`) : q
+    );
+    return results.map((d: any) => this.mapDocToEntity(d.id, d));
   }
 
   async findByStatus(outletId: string, status: PurchaseOrderStatus): Promise<PurchaseOrder[]> {
-    const q =
-      outletId && outletId !== 'GLOBAL'
-        ? query(
-            collection(db, this.collectionName),
-            where('outletId', 'in', [outletId, 'GLOBAL']),
-            where('status', '==', status)
-          )
-        : query(collection(db, this.collectionName), where('status', '==', status));
-    const snapshot = await getDocs(q);
-    return snapshot.docs.map((d) => this.mapDocToEntity(d.id, d.data()));
+    const results = await supabasePersistenceService.query(this.collectionName, (q) => {
+      let query = q.eq('status', status);
+      if (outletId && outletId !== 'GLOBAL') {
+        query = query.or(`outletId.eq.${outletId},outletId.eq.GLOBAL`);
+      }
+      return query;
+    });
+    return results.map((d: any) => this.mapDocToEntity(d.id, d));
   }
 
   async findAutoGenerated(outletId: string): Promise<PurchaseOrder[]> {
-    const q =
-      outletId && outletId !== 'GLOBAL'
-        ? query(
-            collection(db, this.collectionName),
-            where('outletId', 'in', [outletId, 'GLOBAL']),
-            where('type', '==', 'AUTOMATIC')
-          )
-        : query(collection(db, this.collectionName), where('type', '==', 'AUTOMATIC'));
-    const snapshot = await getDocs(q);
-    return snapshot.docs.map((d) => this.mapDocToEntity(d.id, d.data()));
+    const results = await supabasePersistenceService.query(this.collectionName, (q) => {
+      let query = q.eq('type', 'AUTOMATIC');
+      if (outletId && outletId !== 'GLOBAL') {
+        query = query.or(`outletId.eq.${outletId},outletId.eq.GLOBAL`);
+      }
+      return query;
+    });
+    return results.map((d: any) => this.mapDocToEntity(d.id, d));
   }
 
   async approve(dto: ApprovePurchaseOrderDTO): Promise<PurchaseOrder> {
@@ -190,11 +162,11 @@ export class CorePurchaseOrderRepositoryAdapter implements IPurchaseOrderReposit
     const updates = {
       status: PurchaseOrderStatus.APPROVED,
       approvedBy: dto.approvedBy,
-      approvedAt: Timestamp.fromDate(now),
-      updatedAt: Timestamp.fromDate(now),
+      approvedAt: now.toISOString(),
+      updatedAt: now.toISOString(),
     };
 
-    await updateDoc(doc(db, this.collectionName, dto.orderId), updates);
+    await supabasePersistenceService.update(this.collectionName, dto.orderId, updates);
 
     return {
       ...order,
@@ -207,13 +179,12 @@ export class CorePurchaseOrderRepositoryAdapter implements IPurchaseOrderReposit
 
   async update(id: string, updates: Partial<PurchaseOrder>): Promise<PurchaseOrder> {
     const now = new Date();
-    // Exclude fields that shouldn't be directly updated if necessary or format them
-    const firestoreUpdates = {
+    const supabaseUpdates = {
       ...updates,
-      updatedAt: Timestamp.fromDate(now),
+      updatedAt: now.toISOString(),
     };
 
-    await updateDoc(doc(db, this.collectionName, id), firestoreUpdates);
+    await supabasePersistenceService.update(this.collectionName, id, supabaseUpdates);
 
     const updated = await this.findById(id);
     if (!updated) throw new Error('Order not found after update');
@@ -222,9 +193,9 @@ export class CorePurchaseOrderRepositoryAdapter implements IPurchaseOrderReposit
 
   async updateStatus(id: string, status: PurchaseOrderStatus): Promise<PurchaseOrder> {
     const now = new Date();
-    await updateDoc(doc(db, this.collectionName, id), {
+    await supabasePersistenceService.update(this.collectionName, id, {
       status,
-      updatedAt: Timestamp.fromDate(now),
+      updatedAt: now.toISOString(),
     });
 
     const updated = await this.findById(id);
@@ -233,6 +204,6 @@ export class CorePurchaseOrderRepositoryAdapter implements IPurchaseOrderReposit
   }
 
   async delete(id: string): Promise<void> {
-    await deleteDoc(doc(db, this.collectionName, id));
+    await supabasePersistenceService.delete(this.collectionName, id);
   }
 }

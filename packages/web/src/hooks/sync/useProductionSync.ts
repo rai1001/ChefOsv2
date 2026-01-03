@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { onSnapshot, query, where, orderBy } from 'firebase/firestore';
+// import { onSnapshot, query, where, orderBy } from 'firebase/firestore';
 import { collections } from '@/config/collections';
 import { useStore } from '@/presentation/store/useStore';
 import type { KanbanTask } from '@/types';
@@ -10,6 +10,12 @@ export const useProductionSync = () => {
   const [error, setError] = useState<Error | null>(null);
 
   useEffect(() => {
+    // Stubbed for Supabase migration
+    const fetchProduction = async () => {
+      setLoading(false);
+    };
+    fetchProduction();
+    /*
     if (import.meta.env.VITE_USE_SUPABASE_READ === 'true') {
       setLoading(false);
       return;
@@ -69,6 +75,7 @@ export const useProductionSync = () => {
     );
 
     return () => unsubscribe();
+    */
   }, [activeOutletId, replaceAllProductionTasks]);
 
   return { loading, error };

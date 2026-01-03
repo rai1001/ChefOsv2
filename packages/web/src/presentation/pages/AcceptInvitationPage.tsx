@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
-import { doc, getDoc, updateDoc } from 'firebase/firestore';
-import { db } from '@/config/firebase';
+import { getDocumentById, updateDocument } from '@/services/firestoreService';
 import { useStore } from '@/presentation/store/useStore';
 import { Mail, XCircle, Loader2 } from 'lucide-react';
 
@@ -25,16 +24,13 @@ export const AcceptInvitationPage = () => {
       }
 
       try {
-        const inviteRef = doc(db, 'invitations', invitationId);
-        const inviteSnap = await getDoc(inviteRef);
+        const data = await getDocumentById<any>('invitations', invitationId);
 
-        if (!inviteSnap.exists()) {
+        if (!data) {
           setError('Invitación no encontrada');
           setLoading(false);
           return;
         }
-
-        const data = inviteSnap.data();
 
         // Validar status
         if (data.status !== 'pending' && data.status !== 'sent') {
@@ -43,7 +39,7 @@ export const AcceptInvitationPage = () => {
           return;
         }
 
-        setInvitation({ id: inviteSnap.id, ...data });
+        setInvitation({ id: invitationId, ...data });
         setLoading(false);
       } catch (err) {
         console.error('Error loading invitation:', err);
@@ -61,8 +57,7 @@ export const AcceptInvitationPage = () => {
     setLoading(true);
     try {
       // Actualizar usuario
-      const userRef = doc(db, 'users', currentUser.id);
-      await updateDoc(userRef, {
+      await updateDocument('users', currentUser.id, {
         role: invitation.role,
         allowedOutlets: invitation.allowedOutlets || [],
         active: true,
@@ -70,8 +65,7 @@ export const AcceptInvitationPage = () => {
       });
 
       // Marcar invitación como aceptada
-      const inviteRef = doc(db, 'invitations', invitation.id);
-      await updateDoc(inviteRef, {
+      await updateDocument('invitations', invitation.id, {
         status: 'accepted',
         acceptedAt: new Date().toISOString(),
         acceptedBy: currentUser.id,

@@ -6,8 +6,8 @@ import { compressImage } from '@/utils/imageCompression';
 import { generateSocialContent } from '@/services/socialManager';
 import { SocialManagerResultsModal } from '@/presentation/components/social-manager/SocialManagerResultsModal';
 import { SocialManagerHistory } from '@/presentation/components/social-manager/SocialManagerHistory';
-import { db } from '@/config/firebase';
-import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { addDocument } from '@/services/firestoreService';
+
 import type {
   SocialContentType,
   GeneratedSocialContent,
@@ -69,6 +69,8 @@ export const SocialManagerView: React.FC = () => {
         additionalContext
       );
 
+      // ... inside handleGenerate ...
+
       // 3. Save to Firestore
       const newPost: Omit<SocialManagerPost, 'id'> = {
         userId: (currentUser as any)?.uid || 'unknown',
@@ -77,11 +79,11 @@ export const SocialManagerView: React.FC = () => {
         contentType,
         imageUrl: uploadedImageUrl,
         additionalContext,
-        generatedAt: serverTimestamp(),
+        generatedAt: new Date(), // using Date instead of serverTimestamp for client compatibility
         data: generatedData,
       };
 
-      await addDoc(collection(db, 'socialManagerPosts'), newPost);
+      await addDocument('socialManagerPosts', newPost);
 
       setResult(generatedData);
       setIsModalOpen(true);

@@ -5,7 +5,7 @@
 
 import { v4 as uuidv4 } from 'uuid';
 import { firestoreService } from '@/services/firestoreService';
-import { COLLECTIONS, collections } from '@/config/collections';
+import { COLLECTIONS, COLLECTIONS as collections } from '@/config/collections';
 import { calcularCostosFicha } from './costosService';
 import type {
   FichaTecnica,
@@ -16,7 +16,7 @@ import type {
   Ingredient,
   IngredienteFicha,
 } from '@/types';
-import { where, orderBy, documentId } from 'firebase/firestore';
+import { where, orderBy, documentId } from '@/utils/mockFirestore';
 
 /**
  * Creates a new Ficha Técnica.
@@ -53,7 +53,7 @@ export async function crearFichaTecnica(
   }
 
   // 2. Save to Firestore
-  const generatedId = await firestoreService.create(collections.fichasTecnicas, ficha as any);
+  const generatedId = await firestoreService.create(collections.FICHAS_TECNICAS, ficha as any);
 
   return { ...ficha, id: generatedId };
 }
@@ -126,7 +126,7 @@ export async function actualizarFichaTecnica(
       cambiosRealizados: updates.notas || 'Actualización de versión',
       versionadaPor: userId,
     };
-    await firestoreService.create(collections.versionesFichas, snapshot as any);
+    await firestoreService.create(COLLECTIONS.VERSIONES_FICHAS, versionData);
   }
 
   // 2. Prepare updated data
@@ -166,13 +166,18 @@ export async function listarFichas(outletId: string): Promise<FichaTecnica[]> {
     }
   }
 
-  return firestoreService.query<FichaTecnica>(
-    collections.fichasTecnicas as any,
+  /*
+  // Original usage was getDocs with an array of constraints.
+  // firestoreService.query signature: (ref, options, ...constraints)
+  */
+  const fichas = await firestoreService.query<FichaTecnica>(
+    COLLECTIONS.FICHAS_TECNICAS,
     {},
     where('outletId', '==', outletId),
-    where('activa', '==', true),
+    where('active', '==', true),
     orderBy('nombre', 'asc')
   );
+  return fichas;
 }
 
 /**
@@ -225,7 +230,7 @@ export async function convertirRecetaAFicha(
   const inventoryChunks = await Promise.all(
     chunks.map((chunk) =>
       firestoreService.query<Ingredient>(
-        collections.ingredients as any,
+        COLLECTIONS.INGREDIENTS as any,
         {},
         where(documentId(), 'in', chunk)
       )
@@ -285,12 +290,13 @@ export async function convertirRecetaAFicha(
  * Lists all versions (snapshots) for a specific Ficha Técnica.
  */
 export async function listarVersionesFicha(fichaId: string): Promise<VersionFicha[]> {
-  return firestoreService.query<VersionFicha>(
-    collections.versionesFichas as any,
+  const versiones = await firestoreService.query<VersionFicha>(
+    COLLECTIONS.VERSIONES_FICHAS,
     {},
     where('fichaId', '==', fichaId),
     orderBy('version', 'desc')
   );
+  return versiones;
 }
 
 /**

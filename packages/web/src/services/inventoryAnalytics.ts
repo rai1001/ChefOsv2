@@ -1,5 +1,3 @@
-import { collection, query, where, getDocs } from 'firebase/firestore';
-import { db } from '@/config/firebase';
 import { COLLECTIONS } from '@/config/collections';
 import type { Event, Menu, Recipe, Ingredient } from '@/types';
 
@@ -125,20 +123,20 @@ export const inventoryAnalyticsService = {
 };
 
 // Utils
-async function fetchCollection<T>(collectionName: string, outletId: string): Promise<T[]> {
-  const q = query(collection(db, collectionName), where('outletId', '==', outletId));
-  const snap = await getDocs(q);
-  return snap.docs.map((d) => ({ id: d.id, ...d.data() }) as T);
+// Utils
+import { queryDocuments } from './firestoreService';
+
+async function fetchCollection<T extends { outletId: string }>(
+  collectionName: string,
+  outletId: string
+): Promise<T[]> {
+  const allDocs = await queryDocuments<T>(collectionName);
+  return allDocs.filter((doc) => doc.outletId === outletId);
 }
 
 async function fetchActiveBatches(outletId: string): Promise<any[]> {
-  const q = query(
-    collection(db, COLLECTIONS.BATCHES),
-    where('outletId', '==', outletId),
-    where('status', '==', 'ACTIVE')
-  );
-  const snap = await getDocs(q);
-  return snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+  const allBatches = await queryDocuments<any>(COLLECTIONS.BATCHES);
+  return allBatches.filter((batch) => batch.outletId === outletId && batch.status === 'ACTIVE');
 }
 
 function processEventDemand(

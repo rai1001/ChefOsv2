@@ -4,7 +4,7 @@
  */
 
 import type { FichaTecnica, Event, Menu, Recipe, Ingredient, MenuItemAnalytics } from '@/types';
-import { httpsCallable } from 'firebase/functions';
+// import { httpsCallable } from 'firebase/functions';
 
 export interface Optimizacion {
   tipo: 'ingrediente_caro' | 'margen_bajo' | 'porcion_grande' | 'desperdicio_alto';
@@ -252,7 +252,7 @@ export function analizarFicha(ficha: FichaTecnica, fichasCategoria: FichaTecnica
  * Calculates menu engineering analytics based on events and dishes.
  * Migrated to Cloud Functions for performance.
  */
-import { functions } from '@/config/firebase';
+// import { functions } from '@/config/firebase';
 
 /**
  * Calculates menu engineering analytics based on events and dishes.
@@ -267,6 +267,9 @@ export async function calculateIngredientUsage(
   endDate: string,
   outletId?: string
 ): Promise<MenuItemAnalytics[]> {
+  console.warn('Analytics temporarily disabled during migration.');
+  return [];
+  /*
   try {
     const getMenuAnalytics = httpsCallable(functions, 'getMenuAnalytics');
     const result = await getMenuAnalytics({ startDate, endDate, outletId });
@@ -275,4 +278,5 @@ export async function calculateIngredientUsage(
     console.error('Error calling getMenuAnalytics cloud function:', error);
     return [];
   }
+  */
 }

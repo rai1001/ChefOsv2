@@ -1,5 +1,5 @@
-import { trace } from 'firebase/performance';
-import { perf } from '@/config/firebase';
+// import { trace } from 'firebase/performance';
+// import { perf } from '@/config/firebase';
 
 const MAX_ATTR_LENGTH = 100;
 const truncate = (str: string) => {
@@ -21,14 +21,14 @@ export const performanceUtils = {
    * @param fn Async function to execute
    */
   measureAsync: async <T>(name: string, fn: () => Promise<T>): Promise<T> => {
-    if (!perf) return await fn();
-    const perfTrace = trace(perf, truncate(name));
-    perfTrace.start();
+    // if (!perf) return await fn();
+    // const perfTrace = trace(perf, truncate(name));
+    // perfTrace.start();
     try {
       const result = await fn();
       return result;
     } finally {
-      perfTrace.stop();
+      // perfTrace.stop();
     }
   },
 
@@ -38,14 +38,14 @@ export const performanceUtils = {
    * @param fn Function to execute
    */
   measureSync: <T>(name: string, fn: () => T): T => {
-    if (!perf) return fn();
-    const perfTrace = trace(perf, truncate(name));
-    perfTrace.start();
+    // if (!perf) return fn();
+    // const perfTrace = trace(perf, truncate(name));
+    // perfTrace.start();
     try {
       const result = fn();
       return result;
     } finally {
-      perfTrace.stop();
+      // perfTrace.stop();
     }
   },
 
@@ -54,16 +54,16 @@ export const performanceUtils = {
    * @param name Name of the trace
    */
   startTrace: (name: string) => {
-    if (!perf) return { stop: () => {}, putAttribute: () => {} } as any;
-    const perfTrace = trace(perf, truncate(name));
-    perfTrace.start();
+    // if (!perf) return { stop: () => {}, putAttribute: () => {} } as any;
+    // const perfTrace = trace(perf, truncate(name));
+    // perfTrace.start();
 
     // Wrap putAttribute to ensure safety
-    const originalPutAttribute = perfTrace.putAttribute.bind(perfTrace);
-    perfTrace.putAttribute = (attr: string, value: string) => {
-      originalPutAttribute(attr, truncate(value));
-    };
+    // const originalPutAttribute = perfTrace.putAttribute.bind(perfTrace);
+    // perfTrace.putAttribute = (attr: string, value: string) => {
+    //   originalPutAttribute(attr, truncate(value));
+    // };
 
-    return perfTrace;
+    return { stop: () => {}, putAttribute: () => {} } as any;
   },
 };

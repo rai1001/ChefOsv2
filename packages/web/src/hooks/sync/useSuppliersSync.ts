@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { onSnapshot, query, where } from 'firebase/firestore';
+// import { onSnapshot, query, where } from 'firebase/firestore';
 import { collections } from '@/config/collections';
 import { useStore } from '@/presentation/store/useStore';
 import type { Supplier } from '@/types';
@@ -10,10 +10,12 @@ export const useSuppliersSync = () => {
   const [error, setError] = useState<Error | null>(null);
 
   useEffect(() => {
-    if (import.meta.env.VITE_USE_SUPABASE_READ === 'true') {
+    // Stubbed for Supabase migration
+    const fetchSuppliers = async () => {
       setLoading(false);
-      return;
-    }
+    };
+    fetchSuppliers();
+    /*
     if (!activeOutletId) {
       setSuppliers([]);
       setLoading(false);
@@ -42,6 +44,7 @@ export const useSuppliersSync = () => {
     );
 
     return () => unsubscribe();
+    */
   }, [activeOutletId, setSuppliers]);
 
   return { loading, error };

@@ -1,6 +1,3 @@
-import { collection } from 'firebase/firestore';
-import { db } from './firebase';
-
 // Collection Names
 export const COLLECTION_NAMES = {
   INGREDIENTS: 'ingredients',
@@ -28,31 +25,5 @@ export const COLLECTION_NAMES = {
   SOCIAL_MANAGER_POSTS: 'socialManagerPosts',
 } as const;
 
-// Collection References
-export const collections = {
-  ingredients: collection(db, COLLECTION_NAMES.INGREDIENTS),
-  recipes: collection(db, COLLECTION_NAMES.RECIPES),
-  menus: collection(db, COLLECTION_NAMES.MENUS),
-  events: collection(db, COLLECTION_NAMES.EVENTS),
-  staff: collection(db, COLLECTION_NAMES.STAFF),
-  suppliers: collection(db, COLLECTION_NAMES.SUPPLIERS),
-  purchaseOrders: collection(db, COLLECTION_NAMES.PURCHASE_ORDERS),
-  wasteRecords: collection(db, COLLECTION_NAMES.WASTE_RECORDS),
-  schedule: collection(db, COLLECTION_NAMES.SCHEDULE),
-  pccs: collection(db, COLLECTION_NAMES.PCCS),
-  haccpLogs: collection(db, COLLECTION_NAMES.HACCP_LOGS),
-  haccpTasks: collection(db, COLLECTION_NAMES.HACCP_TASKS),
-  haccpTaskCompletions: collection(db, COLLECTION_NAMES.HACCP_TASK_COMPLETIONS),
-  productionTasks: collection(db, COLLECTION_NAMES.PRODUCTION_TASKS),
-  outlets: collection(db, COLLECTION_NAMES.OUTLETS),
-  batches: collection(db, COLLECTION_NAMES.BATCHES),
-  fichasTecnicas: collection(db, COLLECTION_NAMES.FICHAS_TECNICAS),
-  versionesFichas: collection(db, COLLECTION_NAMES.VERSIONES_FICHAS),
-  inventory: collection(db, COLLECTION_NAMES.INVENTORY),
-  stockMovements: collection(db, COLLECTION_NAMES.STOCK_MOVEMENTS),
-  ingredientPriceHistory: collection(db, COLLECTION_NAMES.INGREDIENT_PRICE_HISTORY),
-  notifications: collection(db, COLLECTION_NAMES.NOTIFICATIONS),
-};
-
-// Alias for compatibility
+// Helper to get collection name only (removed live collection refs)
 export const COLLECTIONS = COLLECTION_NAMES;

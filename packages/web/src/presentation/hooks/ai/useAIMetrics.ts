@@ -1,62 +1,19 @@
 import { useState, useEffect, useMemo } from 'react';
-import { db } from '@/config/firebase';
-import {
-  collection,
-  query,
-  where,
-  orderBy,
-  limit,
-  onSnapshot,
-  Timestamp,
-} from 'firebase/firestore';
 import type { AIMetrics } from '@/services/ai/types';
 
 export function useAIMetrics(outletId: string, daysLookback: number = 30) {
+  // Placeholder state to satisfy return type
   const [metrics, setMetrics] = useState<AIMetrics[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!outletId) return;
-
+    // Stub implementation to remove Firebase
     setLoading(true);
-    const lookbackDate = new Date();
-    lookbackDate.setDate(lookbackDate.getDate() - daysLookback);
-
-    const q = query(
-      collection(db, 'aiUsageMetrics'),
-      where('outletId', '==', outletId),
-      where('timestamp', '>=', Timestamp.fromDate(lookbackDate)),
-      orderBy('timestamp', 'desc'),
-      limit(1000)
-    );
-
-    const unsubscribe = onSnapshot(
-      q,
-      (snapshot) => {
-        const data: AIMetrics[] = [];
-        snapshot.forEach((doc) => {
-          const metric = doc.data();
-          data.push({
-            ...metric,
-            timestamp:
-              metric.timestamp instanceof Timestamp
-                ? metric.timestamp.toDate().toISOString()
-                : metric.timestamp,
-          } as AIMetrics);
-        });
-        setMetrics(data);
-        setLoading(false);
-      },
-      (err) => {
-        console.error('[useAIMetrics] Error fetching metrics:', err);
-        setError(err.message);
-        setLoading(false);
-      }
-    );
-
-    return () => unsubscribe();
-  }, [outletId, daysLookback]);
+    // In future: Use supabasePersistenceService to fetch metrics
+    setMetrics([]);
+    setLoading(false);
+  }, []);
 
   const aggregatedData = useMemo(() => {
     const dailyUsage: Record<string, { date: string; calls: number; cost: number }> = {};

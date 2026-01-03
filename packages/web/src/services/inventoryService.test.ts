@@ -2,35 +2,21 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { consumeStockFIFO, recordPhysicalCount } from './inventoryService';
 import { IngredientBatch } from '@/types';
 import { firestoreService } from '@/services/firestoreService';
-import * as firestoreModule from 'firebase/firestore';
+import { supabasePersistenceService } from '@/services/supabasePersistenceService';
 
-// Mock firestoreService
+// Mock firestoreService (used for getById)
 vi.mock('@/services/firestoreService', () => ({
   firestoreService: {
     getById: vi.fn(),
-    update: vi.fn(),
   },
-  addDocument: vi.fn(),
 }));
 
-// Mock firebase/firestore
-const mockTransaction = {
-  get: vi.fn(),
-  set: vi.fn(),
-  update: vi.fn(),
-};
-
-vi.mock('firebase/firestore', () => ({
-  getFirestore: vi.fn(),
-  collection: vi.fn(),
-  doc: vi.fn(() => ({ id: 'mock-doc-id' })),
-  query: vi.fn(),
-  where: vi.fn(),
-  getDocs: vi.fn(),
-  runTransaction: vi.fn(async (db, callback) => {
-    return callback(mockTransaction);
-  }),
-  connectFirestoreEmulator: vi.fn(),
+// Mock supabasePersistenceService
+vi.mock('@/services/supabasePersistenceService', () => ({
+  supabasePersistenceService: {
+    set: vi.fn(),
+    update: vi.fn(),
+  },
 }));
 
 describe('InventoryService - consumeStockFIFO', () => {
@@ -118,10 +104,6 @@ describe('InventoryService - consumeStockFIFO', () => {
 describe('InventoryService - recordPhysicalCount', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    // Reset transaction mocks
-    mockTransaction.get.mockReset();
-    mockTransaction.update.mockReset();
-    mockTransaction.set.mockReset();
   });
 
   it('should calculate variance and update stock correctly', async () => {
@@ -137,20 +119,25 @@ describe('InventoryService - recordPhysicalCount', () => {
     // 1. Initial Get
     (firestoreService.getById as any).mockResolvedValue(mockItem);
 
-    // 2. Transaction Get
-    mockTransaction.get.mockResolvedValue({
-      exists: () => true,
-      data: () => mockItem,
-    });
-
     const result = await recordPhysicalCount('item-1', 15, 'user-1', 'Count notes');
 
     // Variance = Real (15) - Initial Theoretical (12) = 3
     expect(result.variance).toBe(3);
 
-    // Verify update call on TRANSACTION, not firestoreService
-    expect(mockTransaction.update).toHaveBeenCalledWith(
-      expect.anything(), // Ref
+    // Verify updates
+    expect(supabasePersistenceService.set).toHaveBeenCalledWith(
+      'stock_movements',
+      expect.any(String),
+      expect.objectContaining({
+        type: 'ADJUSTMENT',
+        quantity: 3,
+        referenceId: 'item-1',
+      })
+    );
+
+    expect(supabasePersistenceService.update).toHaveBeenCalledWith(
+      'inventory',
+      'item-1',
       expect.objectContaining({
         stock: 15,
         theoreticalStock: 15,
@@ -170,14 +157,17 @@ describe('InventoryService - recordPhysicalCount', () => {
 
     (firestoreService.getById as any).mockResolvedValue(mockItem);
 
-    mockTransaction.get.mockResolvedValue({
-      exists: () => true,
-      data: () => mockItem,
-    });
-
     const result = await recordPhysicalCount('item-2', 18, 'user-1');
 
     // Variance = 18 - 20 = -2
     expect(result.variance).toBe(-2);
+
+    expect(supabasePersistenceService.update).toHaveBeenCalledWith(
+      'inventory',
+      'item-2',
+      expect.objectContaining({
+        stock: 18,
+      })
+    );
   });
 });

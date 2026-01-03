@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { onSnapshot, query, where } from 'firebase/firestore';
+// import { onSnapshot, query, where } from 'firebase/firestore';
 import { collections } from '@/config/collections';
 import { useStore } from '@/presentation/store/useStore';
 import type { Employee } from '@/types';
@@ -10,10 +10,12 @@ export const useStaffSync = () => {
   const [error, setError] = useState<Error | null>(null);
 
   useEffect(() => {
-    if (import.meta.env.VITE_USE_SUPABASE_READ === 'true') {
+    // Stubbed for Supabase migration
+    const fetchStaff = async () => {
       setLoading(false);
-      return;
-    }
+    };
+    fetchStaff();
+    /*
     if (!activeOutletId) {
       setStaff([]);
       setLoading(false);
@@ -42,6 +44,7 @@ export const useStaffSync = () => {
     );
 
     return () => unsubscribe();
+    */
   }, [activeOutletId, setStaff]);
 
   return { loading, error };

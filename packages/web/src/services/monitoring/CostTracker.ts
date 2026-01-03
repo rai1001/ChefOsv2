@@ -1,6 +1,3 @@
-import { db } from '@/config/firebase';
-import { collection, addDoc } from 'firebase/firestore';
-
 export interface CostRecord {
   timestamp: number;
   tokens: {
@@ -62,11 +59,16 @@ export class CostTracker {
 
       // Firestore sync (fire and forget)
       if (context.outletId) {
-        addDoc(collection(db, 'aiUsageMetrics'), {
-          ...record,
-          // Use server timestamp or keep client timestamp? Client is fine for now.
-          timestamp: record.timestamp,
-        }).catch((err) => console.error('Firestore log error:', err));
+        // Using direct supabase client import or service to avoid circular deps if any,
+        // but persistence service is safe.
+        import('@/services/supabasePersistenceService').then(({ supabasePersistenceService }) => {
+          supabasePersistenceService
+            .create('aiUsageMetrics', {
+              ...record,
+              timestamp: record.timestamp,
+            })
+            .catch((err) => console.error('Supabase log error:', err));
+        });
       }
     } catch (e) {
       console.error('Failed to save cost record:', e);

@@ -1,5 +1,5 @@
-import { db } from '@/config/firebase';
-import { doc, getDoc, setDoc, Timestamp } from 'firebase/firestore';
+// import { db } from '@/config/firebase';
+// import { doc, getDoc, setDoc, Timestamp } from 'firebase/firestore';
 import type { AIFeature } from './types';
 
 // TTL Definitions (in hours)
@@ -52,30 +52,8 @@ export async function getCachedResult<T>(
   key: string,
   forceRefresh: boolean = false
 ): Promise<T | null> {
-  if (forceRefresh) return null;
-  try {
-    const docRef = doc(db, 'aiCache', key);
-    const docSnap = await getDoc(docRef);
-
-    if (docSnap.exists()) {
-      const data = docSnap.data();
-      const expiresAt =
-        data.expiresAt instanceof Timestamp ? data.expiresAt.toDate() : new Date(data.expiresAt);
-      const now = new Date();
-
-      if (now < expiresAt) {
-        // Update hit count asynchronously (fire and forget)
-        setDoc(docRef, { hitCount: (data.hitCount || 0) + 1 }, { merge: true }).catch(
-          console.error
-        );
-        return data.result as T;
-      }
-    }
-    return null;
-  } catch (e) {
-    console.warn('Cache lookup failed', e);
-    return null;
-  }
+  // Stubbed: Cache disabled
+  return null;
 }
 
 /**
@@ -91,37 +69,8 @@ export async function setCachedResult(
   input: any,
   result: any
 ): Promise<void> {
-  try {
-    const ttlHours = CACHE_TTL[feature] || 24;
-    const now = new Date();
-    const expiresAt = new Date(now.getTime() + ttlHours * 60 * 60 * 1000);
-
-    // Avoid storing large inputs (like base64 images)
-    let inputToStore = input;
-    if (typeof input === 'string' && input.length > 500) {
-      inputToStore = { type: 'string', length: input.length, preview: input.substring(0, 100) };
-    } else if (typeof input === 'object' && input !== null) {
-      // Shallow check for large strings in object
-      inputToStore = { ...input };
-      for (const k in inputToStore) {
-        if (typeof inputToStore[k] === 'string' && inputToStore[k].length > 500) {
-          inputToStore[k] = `[Large string: ${inputToStore[k].length} chars]`;
-        }
-      }
-    }
-
-    await setDoc(doc(db, 'aiCache', key), {
-      hash: key,
-      feature,
-      input: inputToStore,
-      result,
-      createdAt: now,
-      expiresAt,
-      hitCount: 0,
-    });
-  } catch (e) {
-    console.warn('Cache set failed', e);
-  }
+  // Stubbed: Cache disabled
+  // console.log('Cache set (stubbed):', key);
 }
 
 /**
@@ -129,12 +78,6 @@ export async function setCachedResult(
  * @param key The cache key to invalidate.
  */
 export async function invalidateCache(key: string): Promise<void> {
-  try {
-    const docRef = doc(db, 'aiCache', key);
-    // Instead of deleting, we set expiresAt to the past to keep the audit trail
-    await setDoc(docRef, { expiresAt: new Date(0) }, { merge: true });
-    console.log(`[AI Cache] Invalidated key: ${key}`);
-  } catch (e) {
-    console.error('[AI Cache] Invalidation failed', e);
-  }
+  // Stubbed: Cache disabled
+  // console.log('Cache invalidated (stubbed):', key);
 }

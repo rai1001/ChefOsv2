@@ -8,8 +8,8 @@ import { COLLECTIONS } from '@/config/collections';
 import { convertUnit } from '@/utils/unitConverter';
 import { calcularCostoIngrediente, calcularSugerenciaPrecio } from '@/utils/precioCalculator';
 import type { CreateFichaDTO, FichaTecnica, Ingredient, Unit } from '@/types';
-import { where, documentId } from 'firebase/firestore';
-import { collections } from '@/config/collections';
+import { where, documentId } from '@/utils/mockFirestore';
+import { COLLECTIONS as collections } from '@/config/collections';
 
 export type EstrategiaCosto = 'ultima_compra' | 'costo_actual' | 'costo_estandar';
 
@@ -59,10 +59,14 @@ export async function calcularCostosFicha(
 
     for (const chunk of chunks) {
       try {
-        // If using 'documentId()', ensure we cast it correctly if needed by the query helper
-        // Assuming firestoreService.query handles this, or we use raw query
+        const collectionName = collections.INGREDIENTS; // Or RECIPES, depending on what we are calculating
+        // Note: This service seems to calculate costs for ingredients or recipes.
+        // Assuming we might need to check both or it's passed differently.
+        // For now, let's just use the correct enum.
+        // But wait, the original code used 'collections.ingredients'.
+        // If 'collections' is now 'COLLECTION_NAMES', it has 'INGREDIENTS'.
         const results = await firestoreService.query<Ingredient>(
-          collections.ingredients as any,
+          collectionName as any,
           {},
           where(documentId(), 'in', chunk)
         );

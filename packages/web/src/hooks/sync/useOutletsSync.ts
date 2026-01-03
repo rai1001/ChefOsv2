@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
-import { query } from 'firebase/firestore';
-import { onSnapshotMockable } from '@/services/mockSnapshot';
+// import { query } from 'firebase/firestore';
+// import { onSnapshotMockable } from '@/services/mockSnapshot';
 import { collections } from '@/config/collections';
 import { useStore } from '@/presentation/store/useStore';
 import type { Outlet } from '@/types';
@@ -10,6 +10,12 @@ export const useOutletsSync = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // Stubbed for Supabase migration
+    const fetchOutlets = async () => {
+      setLoading(false);
+    };
+    fetchOutlets();
+    /*
     if (import.meta.env.VITE_USE_SUPABASE_READ === 'true') {
       setLoading(false);
       return;
@@ -54,6 +60,7 @@ export const useOutletsSync = () => {
     );
 
     return () => unsubscribe();
+    */
   }, [setOutlets, setActiveOutletId]); // Removed activeOutletId to prevent infinite re-subscription loop
 
   return { loading };

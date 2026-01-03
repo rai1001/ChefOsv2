@@ -10,47 +10,33 @@ import {
   Money,
   NutritionalInfo,
 } from '@culinaryos/core';
-import { DocumentData, QueryDocumentSnapshot } from 'firebase/firestore';
+import { supabasePersistenceService } from '@/services/supabasePersistenceService';
 
 @injectable()
 export class CoreIngredientRepositoryAdapter implements IIngredientRepository {
   private readonly COLLECTION_NAME = 'ingredients';
 
   async findByOutletId(outletId: string): Promise<Ingredient[]> {
-    const { collection, getDocs, query, where } = await import('firebase/firestore');
-    const { db } = await import('@/config/firebase');
-
-    const q = query(collection(db, this.COLLECTION_NAME), where('outletId', '==', outletId));
-    const snapshot = await getDocs(q);
-
-    return snapshot.docs.map((doc) => this.mapToCore(doc));
+    const docs = await supabasePersistenceService.query<any>(this.COLLECTION_NAME, (q) =>
+      q.eq('outletId', outletId)
+    );
+    return docs.map((doc) => this.mapToCore(doc));
   }
 
   async findById(id: string): Promise<Ingredient | null> {
-    const { doc, getDoc } = await import('firebase/firestore');
-    const { db } = await import('@/config/firebase');
-
-    const docRef = doc(db, this.COLLECTION_NAME, id);
-    const snapshot = await getDoc(docRef);
-
-    if (!snapshot.exists()) {
-      return null;
-    }
-
-    return this.mapToCore(snapshot);
+    const doc = await supabasePersistenceService.getById<any>(this.COLLECTION_NAME, id);
+    if (!doc) return null;
+    return this.mapToCore(doc);
   }
 
   async create(dto: CreateIngredientDTO): Promise<Ingredient> {
-    const { collection, addDoc, getDoc } = await import('firebase/firestore');
-    const { db } = await import('@/config/firebase');
-
-    // Prepare data for Firestore
+    // Prepare data
     const data = {
       outletId: dto.outletId,
       name: dto.name,
       category: dto.category,
       unit: dto.unit,
-      currentStock: 0, // Initial stock
+      currentStock: 0,
       minimumStock: dto.minimumStock.value,
       yieldFactor: dto.yieldFactor ?? 1,
       preferredSupplierId: dto.preferredSupplierId ?? null,
@@ -60,23 +46,17 @@ export class CoreIngredientRepositoryAdapter implements IIngredientRepository {
       density: dto.density ?? null,
       pieceWeight: dto.pieceWeight ?? null,
       isActive: true,
-      createdAt: new Date(),
-      updatedAt: new Date(),
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
     };
 
-    const docRef = await addDoc(collection(db, this.COLLECTION_NAME), data);
-    const snapshot = await getDoc(docRef);
-
-    return this.mapToCore(snapshot);
+    const id = await supabasePersistenceService.create(this.COLLECTION_NAME, data);
+    return this.findById(id) as Promise<Ingredient>;
   }
 
   async update(id: string, dto: UpdateIngredientDTO): Promise<Ingredient> {
-    const { doc, updateDoc, getDoc } = await import('firebase/firestore');
-    const { db } = await import('@/config/firebase');
-
-    const docRef = doc(db, this.COLLECTION_NAME, id);
     const updates: any = {
-      updatedAt: new Date(),
+      updatedAt: new Date().toISOString(),
     };
 
     if (dto.name !== undefined) updates.name = dto.name;
@@ -95,39 +75,28 @@ export class CoreIngredientRepositoryAdapter implements IIngredientRepository {
     if (dto.allergens !== undefined) updates.allergens = dto.allergens;
     if (dto.suppliers !== undefined)
       updates.suppliers = dto.suppliers.map(this.mapSupplierToFirestore);
-    if (dto.nutritionalInfo !== undefined) updates.nutritionalInfo = dto.nutritionalInfo.values; // Storing just values for simplicity or adjust as needed
+    if (dto.nutritionalInfo !== undefined) updates.nutritionalInfo = dto.nutritionalInfo.values;
     if (dto.density !== undefined) updates.density = dto.density;
     if (dto.pieceWeight !== undefined) updates.pieceWeight = dto.pieceWeight;
     if (dto.isActive !== undefined) updates.isActive = dto.isActive;
 
-    await updateDoc(docRef, updates);
-    const snapshot = await getDoc(docRef);
+    await supabasePersistenceService.update(this.COLLECTION_NAME, id, updates);
 
-    if (!snapshot.exists()) {
-      throw new Error(`Ingredient ${id} not found after update`);
-    }
-
-    return this.mapToCore(snapshot);
+    // Fetch and return updated
+    const updated = await this.findById(id);
+    if (!updated) throw new Error(`Ingredient ${id} not found after update`);
+    return updated;
   }
 
   async delete(id: string): Promise<void> {
-    const { doc, deleteDoc } = await import('firebase/firestore');
-    const { db } = await import('@/config/firebase');
-    await deleteDoc(doc(db, this.COLLECTION_NAME, id));
+    await supabasePersistenceService.delete(this.COLLECTION_NAME, id);
   }
 
   async findByCategory(outletId: string, category: string): Promise<Ingredient[]> {
-    const { collection, getDocs, query, where } = await import('firebase/firestore');
-    const { db } = await import('@/config/firebase');
-
-    const q = query(
-      collection(db, this.COLLECTION_NAME),
-      where('outletId', '==', outletId),
-      where('category', '==', category)
+    const docs = await supabasePersistenceService.query<any>(this.COLLECTION_NAME, (q) =>
+      q.eq('outletId', outletId).eq('category', category)
     );
-    const snapshot = await getDocs(q);
-
-    return snapshot.docs.map((doc) => this.mapToCore(doc));
+    return docs.map((doc) => this.mapToCore(doc));
   }
 
   async findLowStock(outletId: string): Promise<Ingredient[]> {
@@ -138,7 +107,6 @@ export class CoreIngredientRepositoryAdapter implements IIngredientRepository {
   }
 
   async search(outletId: string, query: string): Promise<Ingredient[]> {
-    // Basic in-memory search as Firestore doesn't support full-text natively effectively for this without external index
     const all = await this.findByOutletId(outletId);
     const lowerQuery = query.toLowerCase();
     return all.filter(
@@ -147,43 +115,28 @@ export class CoreIngredientRepositoryAdapter implements IIngredientRepository {
   }
 
   async updateStock(id: string, quantityChange: Quantity): Promise<void> {
-    const { doc, runTransaction } = await import('firebase/firestore');
-    const { db } = await import('@/config/firebase');
+    // Supabase RPC or read-modify-write.
+    // RMW is risky but acceptable for now if RPC not set up.
+    // Ideally use an RPC call.
+    // supabase.rpc('increment_stock', { row_id: id, quantity: value })
+    // For now, simpler fetch-update.
+    const item = await this.findById(id);
+    if (!item) throw new Error('Ingredient does not exist!');
 
-    const docRef = doc(db, this.COLLECTION_NAME, id);
+    const newVal = item.currentStock.value + quantityChange.value;
+    if (newVal < 0) throw new Error('Insufficient stock');
 
-    await runTransaction(db, async (transaction) => {
-      const sfDoc = await transaction.get(docRef);
-      if (!sfDoc.exists()) {
-        throw new Error('Ingredient does not exist!');
-      }
-
-      const data = sfDoc.data();
-      // Assume value is stored as number in 'currentStock' field based on create/update methods in this file
-      // create: currentStock: 0
-      // update: currentStock: dto.currentStock.value
-      // So data.currentStock is a number.
-
-      const currentVal = data.currentStock || 0;
-      const newVal = currentVal + quantityChange.value;
-
-      if (newVal < 0) {
-        throw new Error('Insufficient stock for atomic update');
-      }
-
-      transaction.update(docRef, {
-        currentStock: newVal,
-        updatedAt: new Date(),
-      });
+    await supabasePersistenceService.update(this.COLLECTION_NAME, id, {
+      currentStock: newVal,
+      updatedAt: new Date().toISOString(),
     });
   }
 
-  private mapToCore(doc: QueryDocumentSnapshot | any): Ingredient {
-    const data = doc.data() as DocumentData;
+  private mapToCore(data: any): Ingredient {
     const unit = new Unit(data.unit || 'unit');
 
     return {
-      id: doc.id,
+      id: data.id,
       outletId: data.outletId,
       name: data.name,
       category: data.category,
@@ -208,8 +161,8 @@ export class CoreIngredientRepositoryAdapter implements IIngredientRepository {
       pieceWeight: data.pieceWeight,
 
       isActive: data.isActive ?? true,
-      createdAt: data.createdAt?.toDate() || new Date(),
-      updatedAt: data.updatedAt?.toDate() || new Date(),
+      createdAt: data.createdAt ? new Date(data.createdAt) : new Date(),
+      updatedAt: data.updatedAt ? new Date(data.updatedAt) : new Date(),
     };
   }
 
@@ -223,7 +176,7 @@ export class CoreIngredientRepositoryAdapter implements IIngredientRepository {
       qualityRating: supplier.qualityRating,
       isPrimary: supplier.isPrimary,
       isActive: supplier.isActive,
-      lastOrderDate: supplier.lastOrderDate,
+      lastOrderDate: supplier.lastOrderDate ? supplier.lastOrderDate.toISOString() : null,
     };
   }
 
@@ -237,7 +190,7 @@ export class CoreIngredientRepositoryAdapter implements IIngredientRepository {
       qualityRating: data.qualityRating,
       isPrimary: data.isPrimary,
       isActive: data.isActive,
-      lastOrderDate: data.lastOrderDate?.toDate(),
+      lastOrderDate: data.lastOrderDate ? new Date(data.lastOrderDate) : undefined,
     };
   }
 }

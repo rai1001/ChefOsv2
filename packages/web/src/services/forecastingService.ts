@@ -1,37 +1,13 @@
 import type { AppState } from '@/presentation/store/types';
 import type { Ingredient } from '@/types';
 import { addDays, isBefore, parseISO } from 'date-fns';
-import { httpsCallable } from 'firebase/functions';
-import { functions } from '@/config/firebase';
-
-export interface ForecastData {
-  ingredientId: string;
-  ingredientName: string;
-  currentStock: number;
-  unit: string;
-  futureDemand: {
-    neededQuantity: number;
-    eventCount: number;
-  };
-  historicalUsage: {
-    totalWaste: number;
-    avgDaily: number;
-  };
-}
-
 export const forecastingService = {
   /**
    * Calls the Cloud Function for AI-powered demand prediction
    */
   getAIPredictions: async (outletId: string, windowDays = 14) => {
-    try {
-      const predictDemand = httpsCallable<any, any>(functions, 'predictDemand');
-      const result = await predictDemand({ outletId, windowDays });
-      return result.data;
-    } catch (error) {
-      console.error('Cloud Prediction Error:', error);
-      throw error;
-    }
+    console.warn('AI Predictions are temporarily disabled during migration.');
+    return [];
   },
 
   /**

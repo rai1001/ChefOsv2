@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { onSnapshot, query, where } from 'firebase/firestore';
+// import { onSnapshot, query, where } from 'firebase/firestore';
 import { collections } from '@/config/collections';
 import { useStore } from '@/presentation/store/useStore';
 import type { Menu } from '@/types';
@@ -10,10 +10,12 @@ export const useMenusSync = () => {
   const [error, setError] = useState<Error | null>(null);
 
   useEffect(() => {
-    if (import.meta.env.VITE_USE_SUPABASE_READ === 'true') {
+    // Stubbed for Supabase migration
+    const fetchMenus = async () => {
       setLoading(false);
-      return;
-    }
+    };
+    fetchMenus();
+    /*
     if (!activeOutletId) {
       setMenus([]);
       setLoading(false);
@@ -42,6 +44,7 @@ export const useMenusSync = () => {
     );
 
     return () => unsubscribe();
+    */
   }, [activeOutletId, setMenus]);
 
   return { loading, error };

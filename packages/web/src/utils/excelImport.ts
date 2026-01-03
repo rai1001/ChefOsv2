@@ -1,8 +1,5 @@
 import * as XLSX from 'xlsx';
 import { v4 as uuidv4 } from 'uuid';
-import { getStorage, ref, uploadBytes } from 'firebase/storage';
-import { httpsCallable } from 'firebase/functions';
-import { functions } from '@/config/firebase';
 import { setDocument, updateDocument, getCollection } from '@/services/firestoreService';
 import type { Recipe, Menu, Unit } from '@/types';
 import { ALLERGENS } from './allergenUtils';
@@ -69,22 +66,14 @@ export interface ImportJobStatus {
  * @deprecated Use processStructuredFile
  */
 export const uploadForCloudParsing = async (file: File, userId: string): Promise<string> => {
-  const storage = getStorage();
-  const fileId = uuidv4();
-  const storageRef = ref(storage, `incoming_imports/${userId}/${fileId}`);
-  await uploadBytes(storageRef, file);
-  return fileId;
+  throw new Error('Cloud parsing not supported in Supabase version.');
 };
 
 /**
  * @deprecated Use processFileForAnalysis
  */
 export const uploadForAISmartParsing = async (file: File, userId: string): Promise<string> => {
-  const storage = getStorage();
-  const fileId = uuidv4();
-  const storageRef = ref(storage, `universal_imports/${userId}/${fileId}`);
-  await uploadBytes(storageRef, file);
-  return fileId;
+  throw new Error('AI parsing not supported in Supabase version.');
 };
 
 /**
@@ -94,21 +83,9 @@ export const processFileForAnalysis = async (
   file: File,
   targetCollection?: string
 ): Promise<IngestionItem[]> => {
-  const analyzeDocument = httpsCallable<any, { items: IngestionItem[] }>(
-    functions,
-    'analyzeDocument'
-  );
-
-  // Convert file to base64
-  const base64Data = await fileToBase64(file);
-
-  const response = await analyzeDocument({
-    base64Data,
-    mimeType: file.type,
-    targetCollection,
-  });
-
-  return response.data.items;
+  // Stub for AI analysis
+  console.warn('AI analysis disabled in cleanup.');
+  throw new Error('AI Analysis disabled. Use structured file import.');
 };
 
 /**
@@ -118,47 +95,30 @@ export const processStructuredFile = async (
   file: File,
   hintType?: string
 ): Promise<IngestionItem[]> => {
-  try {
-    const parseFile = httpsCallable<any, { items: IngestionItem[] }>(
-      functions,
-      'parseStructuredFile'
-    );
+  // Directly use local parser
+  const localResult = await parseWorkbook(file);
 
-    const base64Data = await fileToBase64(file);
+  // Map ParseResult to IngestionItem[]
+  const items: IngestionItem[] = [
+    ...localResult.ingredients.map((i) => ({
+      type: 'ingredient' as ImportType,
+      data: i,
+      confidence: 100,
+    })),
+    ...localResult.recipes.map((r) => ({
+      type: 'recipe' as ImportType,
+      data: r,
+      confidence: 100,
+    })),
+    ...localResult.menus.map((m) => ({ type: 'menu' as ImportType, data: m, confidence: 100 })),
+    ...localResult.items.map((it) => ({
+      type: 'unknown' as ImportType,
+      data: it,
+      confidence: 100,
+    })),
+  ];
 
-    const response = await parseFile({
-      base64Data,
-      fileName: file.name,
-      hintType,
-    });
-
-    return response.data.items as IngestionItem[];
-  } catch (error) {
-    console.warn('Structured file cloud parsing failed, falling back to local parsing:', error);
-    const localResult = await parseWorkbook(file);
-
-    // Map ParseResult to IngestionItem[]
-    const items: IngestionItem[] = [
-      ...localResult.ingredients.map((i) => ({
-        type: 'ingredient' as ImportType,
-        data: i,
-        confidence: 100,
-      })),
-      ...localResult.recipes.map((r) => ({
-        type: 'recipe' as ImportType,
-        data: r,
-        confidence: 100,
-      })),
-      ...localResult.menus.map((m) => ({ type: 'menu' as ImportType, data: m, confidence: 100 })),
-      ...localResult.items.map((it) => ({
-        type: 'unknown' as ImportType,
-        data: it,
-        confidence: 100,
-      })),
-    ];
-
-    return items;
-  }
+  return items;
 };
 
 /**
@@ -170,24 +130,8 @@ export const confirmAndCommit = async (
   defaultType?: string,
   supplierId?: string
 ): Promise<{ success: boolean; count: number }> => {
-  try {
-    const commitImport = httpsCallable<any, { success: boolean; count: number }>(
-      functions,
-      'commitImport'
-    );
-
-    const response = await commitImport({
-      items,
-      outletId,
-      defaultType,
-      supplierId,
-    });
-
-    return response.data;
-  } catch (error) {
-    console.warn('Cloud commit failed, falling back to local commit:', error);
-    return await confirmAndCommitLocal(items, outletId, defaultType, supplierId);
-  }
+  // Directly use local commit
+  return await confirmAndCommitLocal(items, outletId, defaultType, supplierId);
 };
 
 /**

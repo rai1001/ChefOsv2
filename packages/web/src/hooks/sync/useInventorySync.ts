@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
-import { query, where } from 'firebase/firestore';
-import { onSnapshotMockable } from '@/services/mockSnapshot';
+// import { query, where } from 'firebase/firestore';
+// import { onSnapshotMockable } from '@/services/mockSnapshot';
 import { collections } from '@/config/collections';
 import { useStore } from '@/presentation/store/useStore';
 import type { InventoryItem } from '@/types';
@@ -11,10 +11,12 @@ export const useInventorySync = () => {
   const [error, setError] = useState<Error | null>(null);
 
   useEffect(() => {
-    if (import.meta.env.VITE_USE_SUPABASE_READ === 'true') {
+    // Stubbed for Supabase migration
+    const fetchInventory = async () => {
       setLoading(false);
-      return;
-    }
+    };
+    fetchInventory();
+    /*
     if (!activeOutletId) {
       setInventory([]);
       setLoading(false);
@@ -46,6 +48,7 @@ export const useInventorySync = () => {
     );
 
     return () => unsubscribe();
+    */
   }, [activeOutletId, setInventory]);
 
   return { loading, error };

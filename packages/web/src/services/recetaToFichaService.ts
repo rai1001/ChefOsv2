@@ -1,8 +1,7 @@
 import { firestoreService } from '@/services/firestoreService';
-import { collections, COLLECTION_NAMES } from '@/config/collections';
+import { COLLECTIONS as collections, COLLECTION_NAMES } from '@/config/collections';
 import { crearFichaTecnica } from './fichasTecnicasService';
-import { where, CollectionReference } from 'firebase/firestore';
-import type { DocumentData } from 'firebase/firestore';
+import { where, CollectionReference, DocumentData } from '@/utils/mockFirestore';
 import type { Recipe, Ingredient, CreateFichaDTO, IngredienteFicha } from '@/types';
 
 export interface ImportResult {
@@ -22,8 +21,9 @@ async function fichaExisteParaReceta(recetaId: string): Promise<boolean> {
   // Let's check type definition I saw in Step 12...
   // Step 12: `recetaBaseId?: string;` exists.
 
+  const fichasRef = collections.FICHAS_TECNICAS as unknown as CollectionReference<DocumentData>;
   const existing = await firestoreService.query(
-    collections.fichasTecnicas as CollectionReference<DocumentData>,
+    fichasRef,
     {},
     where('recetaBaseId', '==', recetaId),
     where('activa', '==', true)

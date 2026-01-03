@@ -18,6 +18,7 @@ import type { Supplier } from '@/types/suppliers';
 import { proveedoresService } from '@/services/proveedoresService';
 import { firestoreService } from '@/services/firestoreService';
 import { COLLECTIONS } from '@/config/collections';
+import { supabase } from '@/config/supabase';
 
 import { UniversalImporter } from '@/presentation/components/common/UniversalImporter';
 import { ProveedoresList } from '@/presentation/components/proveedores/ProveedoresList';
@@ -95,16 +96,15 @@ export const SupplierPage: React.FC = () => {
 
     setIsUploadingInvoice(true);
     try {
-      const { getStorage, ref, uploadBytes } = await import('firebase/storage');
-      const storage = getStorage();
-
-      // Upload to: restaurants/{id}/invoices/temp_{uuid}.jpg
+      // NOTE: Switched to Supabase Storage. Ensure 'invoices' bucket exists and RLS policies allow upload.
       const fileName = `temp_${Date.now()}_${file.name}`;
-      const storageRef = ref(storage, `restaurants/${activeOutletId}/invoices/${fileName}`);
+      const filePath = `restaurants/${activeOutletId}/invoices/${fileName}`;
 
-      await uploadBytes(storageRef, file);
+      const { data, error } = await supabase.storage.from('invoices').upload(filePath, file);
 
-      // Cloud Function se dispara automáticamente
+      if (error) throw error;
+
+      // Cloud Function se dispara automáticamente (or equivalent Supabase mechanism)
       alert('✅ Factura subida. Procesando...\nRecibirás notificación cuando esté lista.');
     } catch (error) {
       console.error(error);

@@ -2,8 +2,9 @@ import React, { useState } from 'react';
 import Papa from 'papaparse';
 import * as XLSX from 'xlsx';
 import { useStore } from '@/presentation/store/useStore';
-import { db } from '@/config/firebase';
-import { collection, writeBatch, doc, query, where, getDocs } from 'firebase/firestore';
+import { supabase } from '@/config/supabase';
+// import { db } from '@/config/firebase';
+// import { collection, writeBatch, doc, query, where, getDocs } from 'firebase/firestore';
 import { Upload, Download, Loader2, CheckCircle, AlertCircle, FileSpreadsheet } from 'lucide-react';
 import { useToast } from '@/presentation/components/ui';
 
@@ -143,37 +144,38 @@ export const BulkImporter: React.FC<BulkImporterProps> = ({
 
       console.log('[Import] Found unique suppliers:', Array.from(uniqueSupplierNames));
 
-      // Step 2: Check which suppliers already exist in Firestore
+      // Step 2: Check which suppliers already exist in Firestore (Now Supabase)
       const supplierMap = new Map<string, string>(); // name -> supplierId
       let suppliersCreated = 0;
 
       if (uniqueSupplierNames.size > 0) {
         try {
           // Query existing suppliers
-          const suppliersSnapshot = await getDocs(
-            query(collection(db, 'suppliers'), where('outletId', '==', activeOutletId || 'GLOBAL'))
-          );
+          const { data: existingSuppliers, error: fetchError } = await supabase
+            .from('suppliers')
+            .select('id, name')
+            .eq('outletId', activeOutletId || 'GLOBAL');
 
-          console.log('[Import] Existing suppliers found:', suppliersSnapshot.size);
+          if (fetchError) throw fetchError;
 
-          suppliersSnapshot.docs.forEach((doc) => {
-            const data = doc.data();
-            if (data.name) {
-              supplierMap.set(data.name, doc.id);
-              console.log('[Import] Mapped existing supplier:', data.name, '->', doc.id);
+          console.log('[Import] Existing suppliers found:', existingSuppliers?.length);
+
+          existingSuppliers?.forEach((s) => {
+            if (s.name) {
+              supplierMap.set(s.name, s.id);
+              console.log('[Import] Mapped existing supplier:', s.name, '->', s.id);
             }
           });
 
           // Step 3: Create missing suppliers
-          const batch = writeBatch(db);
-          let batchCount = 0;
-
+          const newSuppliers: any[] = [];
           for (const supplierName of uniqueSupplierNames) {
             if (!supplierMap.has(supplierName)) {
-              const supplierRef = doc(collection(db, 'suppliers'));
+              const newId = crypto.randomUUID();
               const supplierData = {
+                id: newId,
                 name: supplierName,
-                organizationId: activeOutletId || 'GLOBAL',
+                // organizationId: activeOutletId || 'GLOBAL', // Schema check needed?
                 outletId: activeOutletId || 'GLOBAL',
                 category: ['FOOD'],
                 paymentTerms: 'NET_30',
@@ -182,30 +184,16 @@ export const BulkImporter: React.FC<BulkImporterProps> = ({
                 createdAt: new Date().toISOString(),
                 updatedAt: new Date().toISOString(),
               };
-
-              console.log('[Import] Creating supplier:', supplierName, supplierData);
-
-              batch.set(supplierRef, supplierData);
-              supplierMap.set(supplierName, supplierRef.id);
+              newSuppliers.push(supplierData);
+              supplierMap.set(supplierName, newId);
               suppliersCreated++;
-              batchCount++;
-
-              // Commit batch if it reaches 500 operations
-              if (batchCount >= 500) {
-                await batch.commit();
-                console.log('[Import] Committed batch of suppliers');
-                batchCount = 0;
-              }
-            } else {
-              console.log('[Import] Supplier already exists:', supplierName);
             }
           }
 
-          // Commit remaining suppliers
-          if (batchCount > 0) {
-            console.log('[Import] Committing final suppliers batch:', batchCount);
-            await batch.commit();
-            console.log('[Import] Suppliers created successfully:', suppliersCreated);
+          if (newSuppliers.length > 0) {
+            const { error: createError } = await supabase.from('suppliers').insert(newSuppliers);
+            if (createError) throw createError;
+            console.log('[Import] Suppliers created successfully:', newSuppliers.length);
           }
         } catch (supplierError: any) {
           console.error('[Import] Error creating suppliers:', supplierError);
@@ -214,7 +202,7 @@ export const BulkImporter: React.FC<BulkImporterProps> = ({
       }
 
       // Step 4: Import ingredients with supplier references
-      const batchSize = 500;
+      const batchSize = 100; // Supabase handles larger batches well, but safe limit
       let imported = 0;
 
       console.log(
@@ -222,56 +210,48 @@ export const BulkImporter: React.FC<BulkImporterProps> = ({
         Object.fromEntries(supplierMap)
       );
 
-      for (let i = 0; i < rows.length; i += batchSize) {
-        const batch = writeBatch(db);
-        const chunk = rows.slice(i, i + batchSize);
+      const allIngredients = [];
 
-        chunk.forEach((row) => {
-          const normalized = normalizeRow(row);
+      for (let i = 0; i < rows.length; i++) {
+        const row = rows[i];
+        const normalized = normalizeRow(row);
 
-          if (!normalized) {
-            console.warn('[Import] Skipping invalid row:', row);
-            return; // Skip invalid rows
+        if (!normalized) {
+          console.warn('[Import] Skipping invalid row:', row);
+          continue;
+        }
+
+        const ingredientData: any = {
+          id: crypto.randomUUID(),
+          name: normalized.name,
+          currentStock: parseFloat(normalized.quantity) || 1,
+          unit: normalized.unit,
+          category: normalized.category,
+          expiryDate: null,
+          outletId: activeOutletId || 'GLOBAL',
+          userId: currentUser!.id,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        };
+
+        // Add supplier reference if provided
+        if (normalized.supplier) {
+          const supplierId = supplierMap.get(normalized.supplier);
+          if (supplierId) {
+            ingredientData.preferredSupplierId = supplierId;
           }
+        }
+        allIngredients.push(ingredientData);
+      }
 
-          const ingredientData: any = {
-            name: normalized.name,
-            currentStock: parseFloat(normalized.quantity) || 1,
-            unit: normalized.unit,
-            category: normalized.category,
-            expiryDate: null,
-            outletId: activeOutletId || 'GLOBAL',
-            userId: currentUser!.id,
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString(),
-          };
+      // Batch insert ingredients
+      for (let i = 0; i < allIngredients.length; i += batchSize) {
+        const chunk = allIngredients.slice(i, i + batchSize);
+        const { error: insertError } = await supabase.from('ingredients').insert(chunk);
 
-          // Add supplier reference if provided
-          if (normalized.supplier) {
-            const supplierId = supplierMap.get(normalized.supplier);
-            if (supplierId) {
-              ingredientData.preferredSupplierId = supplierId;
-              console.log(
-                '[Import] Linked ingredient',
-                normalized.name,
-                'to supplier',
-                normalized.supplier,
-                '(',
-                supplierId,
-                ')'
-              );
-            } else {
-              console.warn('[Import] Supplier not found in map:', normalized.supplier);
-            }
-          }
+        if (insertError) throw insertError;
 
-          const ingredientRef = doc(collection(db, 'ingredients'));
-          batch.set(ingredientRef, ingredientData);
-
-          imported++;
-        });
-
-        await batch.commit();
+        imported += chunk.length;
         setProgress(imported);
         console.log('[Import] Committed batch of', chunk.length, 'ingredients. Total:', imported);
       }

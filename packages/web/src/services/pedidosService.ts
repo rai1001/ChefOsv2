@@ -3,11 +3,7 @@ import { firestoreService } from '@/services/firestoreService';
 import { COLLECTIONS } from '@/config/collections';
 import type { ReorderNeed } from './necesidadesService';
 import type { PurchaseOrder, PurchaseOrderItem, PurchaseStatus } from '@/types/purchases';
-import { collection, where, arrayUnion } from 'firebase/firestore';
-import type { CollectionReference, UpdateData } from 'firebase/firestore';
-import { db } from '@/config/firebase';
 import type { Unit } from '@/types/inventory';
-// import { convertUnit } from '@/utils/units';
 
 export const pedidosService = {
   groupNeedsBySupplier: (needs: ReorderNeed[]): Map<string, ReorderNeed[]> => {
@@ -58,10 +54,7 @@ export const pedidosService = {
     };
 
     // Save to Firestore
-    await firestoreService.create<PurchaseOrder>(
-      collection(db, COLLECTIONS.PURCHASE_ORDERS) as CollectionReference<PurchaseOrder>,
-      order
-    );
+    await firestoreService.create<PurchaseOrder>(COLLECTIONS.PURCHASE_ORDERS, order);
 
     return order;
   },
@@ -87,23 +80,17 @@ export const pedidosService = {
   },
 
   getAll: async (outletId: string): Promise<PurchaseOrder[]> => {
-    return firestoreService.query<PurchaseOrder>(
-      collection(db, COLLECTIONS.PURCHASE_ORDERS) as CollectionReference<PurchaseOrder>,
-      {},
-      where('outletId', '==', outletId)
-    );
+    // Using simple getAll and filter because query constraints are tricky in adapter stub
+    const all = await firestoreService.getAll<PurchaseOrder>(COLLECTIONS.PURCHASE_ORDERS);
+    return all.filter((o) => o.outletId === outletId);
   },
 
   getOrdersByStatus: async (
     outletId: string,
     statuses: PurchaseStatus[]
   ): Promise<PurchaseOrder[]> => {
-    return firestoreService.query<PurchaseOrder>(
-      collection(db, COLLECTIONS.PURCHASE_ORDERS) as CollectionReference<PurchaseOrder>,
-      {},
-      where('outletId', '==', outletId),
-      where('status', 'in', statuses)
-    );
+    const all = await firestoreService.getAll<PurchaseOrder>(COLLECTIONS.PURCHASE_ORDERS);
+    return all.filter((o) => o.outletId === outletId && statuses.includes(o.status));
   },
 
   updateStatus: async (
@@ -112,17 +99,28 @@ export const pedidosService = {
     userId?: string,
     extraData?: Partial<PurchaseOrder>
   ) => {
-    const updateData: UpdateData<PurchaseOrder> = {
+    // Need manual fetch update for array union logic
+    const order = await firestoreService.getById<PurchaseOrder>(
+      COLLECTIONS.PURCHASE_ORDERS,
+      orderId
+    );
+    if (!order) throw new Error('Order not found');
+
+    const updateData: Partial<PurchaseOrder> = {
       ...extraData,
       status,
       updatedAt: new Date().toISOString(),
-      history: arrayUnion({
-        date: new Date().toISOString(),
-        status,
-        userId: userId || 'system',
-        notes: extraData?.notes || '',
-      }),
+      history: [
+        ...(order.history || []),
+        {
+          date: new Date().toISOString(),
+          status,
+          userId: userId || 'system',
+          notes: extraData?.notes || '',
+        },
+      ],
     };
+
     if (status === 'ORDERED') {
       updateData.sentAt = new Date().toISOString();
     }
@@ -166,10 +164,7 @@ export const pedidosService = {
     };
 
     // Save to Firestore
-    await firestoreService.create<PurchaseOrder>(
-      collection(db, COLLECTIONS.PURCHASE_ORDERS) as CollectionReference<PurchaseOrder>,
-      order
-    );
+    await firestoreService.create<PurchaseOrder>(COLLECTIONS.PURCHASE_ORDERS, order);
 
     return order;
   },

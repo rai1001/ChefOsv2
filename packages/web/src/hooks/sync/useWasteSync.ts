@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { onSnapshot, query, where } from 'firebase/firestore';
+// import { onSnapshot, query, where } from 'firebase/firestore';
 import { collections } from '@/config/collections';
 import { useStore } from '@/presentation/store/useStore';
 import type { WasteRecord } from '@/types';
@@ -9,10 +9,12 @@ export const useWasteSync = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (import.meta.env.VITE_USE_SUPABASE_READ === 'true') {
+    // Stubbed for Supabase migration
+    const fetchWaste = async () => {
       setLoading(false);
-      return;
-    }
+    };
+    fetchWaste();
+    /*
     if (!activeOutletId) {
       setWasteRecords([]);
       setLoading(false);
@@ -39,6 +41,7 @@ export const useWasteSync = () => {
     );
 
     return () => unsubscribe();
+    */
   }, [activeOutletId, setWasteRecords]);
 
   return { loading };

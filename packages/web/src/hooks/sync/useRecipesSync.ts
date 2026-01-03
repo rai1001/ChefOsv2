@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react';
-import { query, where } from 'firebase/firestore';
-import { onSnapshotMockable } from '@/services/mockSnapshot';
-import { collections } from '@/config/collections';
+// import { query, where } from 'firebase/firestore';
+// import { onSnapshotMockable } from '@/services/mockSnapshot';
+// import { collections } from '@/config/collections';
 import { useStore } from '@/presentation/store/useStore';
-import type { Recipe } from '@/types';
+// import type { Recipe } from '@/types';
 
 export const useRecipesSync = () => {
   const { activeOutletId, setRecipes } = useStore();
@@ -11,10 +11,14 @@ export const useRecipesSync = () => {
   const [error, setError] = useState<Error | null>(null);
 
   useEffect(() => {
-    if (import.meta.env.VITE_USE_SUPABASE_READ === 'true') {
+    // Stubbed for Supabase migration
+    const fetchRecipes = async () => {
+      // Here we should fetch from Supabase
       setLoading(false);
-      return;
-    }
+    };
+    fetchRecipes();
+
+    /*
     if (!activeOutletId) {
       setRecipes([]);
       setLoading(false);
@@ -45,6 +49,7 @@ export const useRecipesSync = () => {
     );
 
     return () => unsubscribe();
+    */
   }, [activeOutletId, setRecipes]);
 
   return { loading, error };

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { onSnapshot, query, where } from 'firebase/firestore';
+// import { onSnapshot, query, where } from 'firebase/firestore';
 import { collections } from '@/config/collections';
 import { useStore } from '@/presentation/store/useStore';
 import type { Event } from '@/types';
@@ -9,10 +9,12 @@ export const useEventsSync = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (import.meta.env.VITE_USE_SUPABASE_READ === 'true') {
+    // Stubbed for Supabase migration
+    const fetchEvents = async () => {
       setLoading(false);
-      return;
-    }
+    };
+    fetchEvents();
+    /*
     if (!activeOutletId) {
       setEvents([]);
       setLoading(false);
@@ -39,6 +41,7 @@ export const useEventsSync = () => {
     );
 
     return () => unsubscribe();
+    */
   }, [activeOutletId, setEvents]);
 
   return { loading };

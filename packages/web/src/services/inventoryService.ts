@@ -2,7 +2,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { TIME, INVENTORY } from '../constants';
 import type { Ingredient, IngredientBatch, InventoryItem, StockMovement } from '@/types';
 import { firestoreService } from '@/services/firestoreService';
-import { COLLECTIONS, collections } from '@/config/collections';
+import { COLLECTIONS } from '@/config/collections';
 import { supabase } from '@/config/supabase';
 import { supabasePersistenceService } from './supabasePersistenceService';
 
@@ -268,14 +268,10 @@ export const recordPhysicalCount = async (
   // Since we removed Firebase `doc`, let's generate ID
   const movementId = crypto.randomUUID();
 
-  await supabasePersistenceService.set(
-    collections.stockMovements.path || 'stock_movements',
-    movementId,
-    {
-      ...movement,
-      id: movementId,
-    }
-  );
+  await supabasePersistenceService.set('stock_movements', movementId, {
+    ...movement,
+    id: movementId,
+  });
 
   // B. Update Inventory
   await supabasePersistenceService.update(COLLECTIONS.INVENTORY, inventoryItemId, {

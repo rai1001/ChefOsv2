@@ -1,5 +1,5 @@
-import { db } from '@/config/firebase';
-import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
+// import { db } from '@/config/firebase';
+// import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 
 export enum LogLevel {
   INFO = 'info',
@@ -23,20 +23,20 @@ export class LoggingService {
   static async log(level: LogLevel, message: string, context?: any) {
     console[level](`[${level.toUpperCase()}] ${message}`, context || '');
 
-    try {
-      const entry: LogEntry = {
-        level,
-        message,
-        timestamp: serverTimestamp(),
-        context: context ? this.sanitizeContext(context) : null,
-        uid: window.localStorage.getItem('uid') || 'anonymous',
-        path: window.location.pathname,
-      };
+    // try {
+    //   const entry: LogEntry = {
+    //     level,
+    //     message,
+    //     timestamp: serverTimestamp(),
+    //     context: context ? this.sanitizeContext(context) : null,
+    //     uid: window.localStorage.getItem('uid') || 'anonymous',
+    //     path: window.location.pathname,
+    //   };
 
-      await addDoc(collection(db, this.collectionName), entry);
-    } catch (err) {
-      console.error('Failed to write log to Firestore:', err);
-    }
+    //   await addDoc(collection(db, this.collectionName), entry);
+    // } catch (err) {
+    //   console.error('Failed to write log to Firestore:', err);
+    // }
   }
 
   static async info(message: string, context?: any) {
