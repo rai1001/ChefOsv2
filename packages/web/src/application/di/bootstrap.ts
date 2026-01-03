@@ -69,10 +69,8 @@ import { CoreRecipeRepositoryAdapter } from '@/adapters/repositories/CoreRecipeR
 import { CalculateRecipeCostUseCase } from '../use-cases/recipes/CalculateRecipeCostUseCase';
 import { SupabasePurchasingRepository } from '@/infrastructure/repositories/SupabasePurchasingRepository';
 import { SupabaseProductionRepository } from '@/infrastructure/repositories/SupabaseProductionRepository';
-// import { FirebaseProductionRepository } from '@/infrastructure/repositories/FirebaseProductionRepository';
-import { IProductionRepository } from '@/infrastructure/repositories/FirebaseProductionRepository';
-// import { FirebasePurchasingRepository } from '@/infrastructure/repositories/FirebasePurchasingRepository';
-import { IPurchasingRepository } from '@/infrastructure/repositories/FirebasePurchasingRepository';
+import { IProductionTaskRepository } from '@culinaryos/core';
+import { IPurchaseOrderRepository } from '@culinaryos/core';
 import { GetRecipesUseCase } from '../use-cases/recipes/GetRecipesUseCase';
 import { CreateRecipeUseCase } from '../use-cases/recipes/CreateRecipeUseCase';
 import { UpdateRecipeUseCase } from '../use-cases/recipes/UpdateRecipeUseCase';
@@ -80,8 +78,8 @@ import { DeleteRecipeUseCase } from '../use-cases/recipes/DeleteRecipeUseCase';
 
 import { IInventoryRepository } from '@/domain/repositories/IInventoryRepository';
 import { SupabaseInventoryRepository } from '@/infrastructure/repositories/SupabaseInventoryRepository';
-import { FirestoreBatchRepository } from '@/infrastructure/firebase/repositories/FirestoreBatchRepository';
-import { FirestoreTransactionManager } from '@/infrastructure/firebase/repositories/FirestoreTransactionManager';
+import { SupabaseBatchRepository } from '@/infrastructure/repositories/SupabaseBatchRepository';
+import { SupabaseTransactionManager } from '@/infrastructure/repositories/SupabaseTransactionManager';
 import { SupabaseStockTransactionRepository } from '@/infrastructure/repositories/SupabaseStockTransactionRepository'; // FIXED IMPORT
 import { ISupplierRepository } from '@/domain/interfaces/repositories/ISupplierRepository';
 import { SupabaseSupplierRepository } from '@/infrastructure/repositories/SupabaseSupplierRepository';
@@ -119,7 +117,7 @@ import { SupabaseEventRepository } from '@/infrastructure/repositories/SupabaseE
 
 // User Management Imports
 import { IUserRepository } from '@/domain/repositories/IUserRepository';
-import { FirestoreUserRepository } from '@/infrastructure/repositories/FirestoreUserRepository';
+import { SupabaseUserRepository } from '@/infrastructure/repositories/SupabaseUserRepository';
 import { ListUsersUseCase } from '@/application/use-cases/user-management/ListUsersUseCase';
 import { UpdateUserUseCase } from '@/application/use-cases/user-management/UpdateUserUseCase';
 import { ActivateUserUseCase } from '@/application/use-cases/user-management/ActivateUserUseCase';
@@ -199,11 +197,11 @@ export function bootstrap() {
   // Inventory & Stock
   container
     .bind<IBatchRepository>(TYPES.BatchRepository)
-    .to(FirestoreBatchRepository)
+    .to(SupabaseBatchRepository) // SWITCHED TO SUPABASE
     .inSingletonScope();
   container
     .bind<ITransactionManager>(TYPES.TransactionManager)
-    .to(FirestoreTransactionManager)
+    .to(SupabaseTransactionManager) // SWITCHED TO SUPABASE
     .inSingletonScope();
   container
     .bind<IInventoryRepository>(TYPES.InventoryRepository)
@@ -476,20 +474,20 @@ export function bootstrap() {
     .inTransientScope();
 
   container
-    .bind<IProductionRepository>(TYPES.PRODUCTION_REPOSITORY)
+    .bind<IProductionTaskRepository>(TYPES.PRODUCTION_REPOSITORY)
     .to(SupabaseProductionRepository) // FULL SUPABASE
     .inSingletonScope();
   container
-    .bind<IProductionRepository>(TYPES.SupabaseProductionRepository)
+    .bind<IProductionTaskRepository>(TYPES.SupabaseProductionRepository)
     .to(SupabaseProductionRepository)
     .inSingletonScope();
 
   container
-    .bind<IPurchasingRepository>(TYPES.PURCHASING_REPOSITORY)
+    .bind<IPurchaseOrderRepository>(TYPES.PURCHASING_REPOSITORY)
     .to(SupabasePurchasingRepository) // FULL SUPABASE
     .inSingletonScope();
   container
-    .bind<IPurchasingRepository>(TYPES.SupabasePurchasingRepository)
+    .bind<IPurchaseOrderRepository>(TYPES.SupabasePurchasingRepository)
     .to(SupabasePurchasingRepository)
     .inSingletonScope();
 
@@ -543,7 +541,7 @@ export function bootstrap() {
   // User Management
   container
     .bind<IUserRepository>(TYPES.UserRepository)
-    .to(FirestoreUserRepository)
+    .to(SupabaseUserRepository)
     .inSingletonScope();
   container.bind<ListUsersUseCase>(TYPES.ListUsersUseCase).to(ListUsersUseCase).inTransientScope();
   container

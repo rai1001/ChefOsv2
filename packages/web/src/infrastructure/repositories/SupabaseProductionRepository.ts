@@ -1,24 +1,149 @@
 import { injectable } from 'inversify';
 import { supabase } from '@/config/supabase';
-import { ProductionTask, Quantity } from '@culinaryos/core';
-import { IProductionRepository } from './FirebaseProductionRepository';
+import {
+  ProductionTask,
+  Quantity,
+  IProductionTaskRepository,
+  CreateProductionTaskDTO,
+  UpdateProductionTaskDTO,
+  ProductionTaskStatus,
+  ProductionStation,
+  RepositoryOptions,
+} from '@culinaryos/core';
 
 @injectable()
-export class SupabaseProductionRepository implements IProductionRepository {
-  async getTasksByEvent(_eventId: string): Promise<ProductionTask[]> {
+export class SupabaseProductionRepository implements IProductionTaskRepository {
+  async create(dto: CreateProductionTaskDTO, options?: RepositoryOptions): Promise<ProductionTask> {
+    // Stub implementation - Schema mapping might be needed
+    const row = {
+      outlet_id: dto.outletId,
+      recipe_id: dto.fichaId,
+      quantity_planned: dto.quantity.value,
+      unit: dto.quantity.unit.toString(),
+      due_date: dto.scheduledFor.toISOString(),
+      notes: dto.notes,
+      priority: dto.priority,
+      assigned_to: dto.assignedTo,
+      status: 'pending',
+    };
+
+    const { data, error } = await supabase.from('production_tasks').insert(row).select().single();
+    if (error) throw error;
+    return this.mapToDomain(data);
+  }
+
+  async findById(id: string): Promise<ProductionTask | null> {
     const { data, error } = await supabase
       .from('production_tasks')
       .select('*')
-      // .eq('event_id', eventId) // Schema doesn't support eventId yet
-      .limit(50);
+      .eq('id', id)
+      .single();
+    if (error) return null;
+    return this.mapToDomain(data);
+  }
 
+  async findByEvent(eventId: string): Promise<ProductionTask[]> {
+    // Schema doesn't support event_id yet, returning empty or filtering if added later
+    const { data, error } = await supabase.from('production_tasks').select('*').limit(50); // Temporary stub
     if (error) throw error;
     return (data || []).map(this.mapToDomain);
   }
 
-  async createTask(task: ProductionTask): Promise<void> {
-    const { error } = await supabase.from('production_tasks').insert(this.mapToRow(task));
+  async findByOutlet(outletId: string): Promise<ProductionTask[]> {
+    const { data, error } = await supabase
+      .from('production_tasks')
+      .select('*')
+      .eq('outlet_id', outletId);
+    if (error) throw error;
+    return (data || []).map(this.mapToDomain);
+  }
 
+  async findByStation(outletId: string, station: ProductionStation): Promise<ProductionTask[]> {
+    const { data, error } = await supabase
+      .from('production_tasks')
+      .select('*')
+      .eq('outlet_id', outletId)
+      .eq('station', station);
+    if (error) throw error;
+    return (data || []).map(this.mapToDomain);
+  }
+
+  async findByStatus(outletId: string, status: ProductionTaskStatus): Promise<ProductionTask[]> {
+    const { data, error } = await supabase
+      .from('production_tasks')
+      .select('*')
+      .eq('outlet_id', outletId)
+      .eq('status', status);
+    if (error) throw error;
+    return (data || []).map(this.mapToDomain);
+  }
+
+  async findByDateRange(
+    outletId: string,
+    startDate: Date,
+    endDate: Date
+  ): Promise<ProductionTask[]> {
+    const { data, error } = await supabase
+      .from('production_tasks')
+      .select('*')
+      .eq('outlet_id', outletId)
+      .gte('due_date', startDate.toISOString())
+      .lte('due_date', endDate.toISOString());
+    if (error) throw error;
+    return (data || []).map(this.mapToDomain);
+  }
+
+  async update(
+    id: string,
+    dto: UpdateProductionTaskDTO,
+    options?: RepositoryOptions
+  ): Promise<ProductionTask> {
+    const updates: any = {};
+    if (dto.status) updates.status = dto.status;
+
+    if (dto.assignedTo) updates.assigned_to = dto.assignedTo;
+    if (dto.actualDuration) updates.actual_duration = dto.actualDuration;
+    updates.updated_at = new Date().toISOString();
+
+    const { data, error } = await supabase
+      .from('production_tasks')
+      .update(updates)
+      .eq('id', id)
+      .select()
+      .single();
+    if (error) throw error;
+    return this.mapToDomain(data);
+  }
+
+  async updateStatus(
+    id: string,
+    status: ProductionTaskStatus,
+    options?: RepositoryOptions
+  ): Promise<ProductionTask> {
+    const { data, error } = await supabase
+      .from('production_tasks')
+      .update({ status })
+      .eq('id', id)
+      .select()
+      .single();
+    if (error) throw error;
+    return this.mapToDomain(data);
+  }
+
+  async delete(id: string, options?: RepositoryOptions): Promise<void> {
+    const { error } = await supabase.from('production_tasks').delete().eq('id', id);
+    if (error) throw error;
+  }
+
+  // Legacy method compat
+  async getTasksByEvent(eventId: string): Promise<ProductionTask[]> {
+    return this.findByEvent(eventId);
+  }
+
+  async createTask(task: ProductionTask): Promise<void> {
+    // Basic stub mapping to create
+    // await this.create(...) // Skipping full map for now, just void return to satisfy any legacy calls if removed interface
+    const { error } = await supabase.from('production_tasks').insert(this.mapToRow(task));
     if (error) throw error;
   }
 
@@ -27,7 +152,6 @@ export class SupabaseProductionRepository implements IProductionRepository {
       .from('production_tasks')
       .update(this.mapToRowPartial(task))
       .eq('id', id);
-
     if (error) throw error;
   }
 
