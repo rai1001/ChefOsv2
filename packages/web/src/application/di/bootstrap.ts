@@ -14,6 +14,7 @@ import { SupabaseIngredientRepository } from '@/infrastructure/repositories/Supa
 import { IAIService } from '@/domain/interfaces/services/IAIService';
 import { GeminiAdapter } from '@/services/adapters/GeminiAdapter';
 import { OpenAIAdapter } from '@/services/adapters/OpenAIAdapter';
+import { SupabaseAIAdapter } from '@/services/adapters/SupabaseAIAdapter';
 import { aiConfig } from '@/config/aiConfig';
 import { IImportService } from '@/domain/interfaces/services/IImportService';
 import { ExcelImportService } from '@/infrastructure/services/ExcelImportService';
@@ -217,12 +218,16 @@ export function bootstrap() {
     .to(SupabaseStockTransactionRepository)
     .inSingletonScope();
 
-  // Services
-  if (aiConfig.provider === 'openai') {
-    container.bind<IAIService>(TYPES.AIService).to(OpenAIAdapter).inSingletonScope();
-  } else {
-    container.bind<IAIService>(TYPES.AIService).to(GeminiAdapter).inSingletonScope();
-  }
+  // Services - AI
+  // Use SupabaseAIAdapter for secure server-side AI calls via Edge Functions
+  container.bind<IAIService>(TYPES.AIService).to(SupabaseAIAdapter).inSingletonScope();
+
+  // Legacy adapters (commented out, kept for reference)
+  // if (aiConfig.provider === 'openai') {
+  //   container.bind<IAIService>(TYPES.AIService).to(OpenAIAdapter).inSingletonScope();
+  // } else {
+  //   container.bind<IAIService>(TYPES.AIService).to(GeminiAdapter).inSingletonScope();
+  // }
   container.bind<IImportService>(TYPES.ImportService).to(ExcelImportService).inSingletonScope();
 
   // Suppliers

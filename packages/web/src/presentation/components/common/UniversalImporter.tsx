@@ -22,7 +22,7 @@ import { ImportEventsUseCase } from '@/application/use-cases/schedule/ImportEven
 import { ImportType, ImportMode } from '@/types/import';
 import { parseICS } from '@/utils/icsParser';
 
-const IS_FIREBASE_CONFIGURED = false;
+const IS_AI_CONFIGURED = true; // Using Supabase Edge Functions for AI
 
 interface UniversalImporterProps {
   buttonLabel?: string;
@@ -242,13 +242,11 @@ export const UniversalImporter: React.FC<UniversalImporterProps> = ({
                     Smart AI
                   </span>
                   <button
-                    onClick={() => IS_FIREBASE_CONFIGURED && setIsSmartMode(!isSmartMode)}
-                    disabled={!IS_FIREBASE_CONFIGURED}
-                    className={`relative w-10 h-5 rounded-full transition-colors duration-200 outline-none ${isSmartMode ? 'bg-primary' : 'bg-slate-700'} ${!IS_FIREBASE_CONFIGURED ? 'opacity-50 cursor-not-allowed' : ''}`}
+                    onClick={() => IS_AI_CONFIGURED && setIsSmartMode(!isSmartMode)}
+                    disabled={!IS_AI_CONFIGURED}
+                    className={`relative w-10 h-5 rounded-full transition-colors duration-200 outline-none ${isSmartMode ? 'bg-primary' : 'bg-slate-700'} ${!IS_AI_CONFIGURED ? 'opacity-50 cursor-not-allowed' : ''}`}
                     title={
-                      !IS_FIREBASE_CONFIGURED
-                        ? 'IA requiere configuración de Firebase'
-                        : 'Activar IA'
+                      !IS_AI_CONFIGURED ? 'IA requiere configuración de Supabase' : 'Activar IA'
                     }
                   >
                     <div
