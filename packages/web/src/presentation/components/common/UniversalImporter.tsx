@@ -87,20 +87,10 @@ export const UniversalImporter: React.FC<UniversalImporterProps> = ({
         }));
       } else if (isSmartMode) {
         try {
-          // Configure API Key from active outlet if available
-          const activeOutlet = useStore.getState().outlets.find((o) => o.id === activeOutletId);
-          if (
-            activeOutlet?.geminiApiKey &&
-            iaService &&
-            typeof iaService.setApiKey === 'function'
-          ) {
-            iaService.setApiKey(activeOutlet.geminiApiKey);
-          } else if (!activeOutlet?.geminiApiKey) {
-            console.warn('No Gemini API Key found in active outlet');
-            // Fallback to env or let service fail/warn
-          }
+          // Note: API Key is handled server-side in Supabase Edge Functions
+          // No need to configure it from the client
 
-          const result = await iaService.scanDocument(file);
+          const result = await iaService.scanDocument(file, 'invoice');
           // Map AI result items to IngestionItems
           items = result.items.map((i: any) => ({
             type: 'ingredient' as ImportType, // Default assumption or infer from i.category
@@ -158,7 +148,7 @@ export const UniversalImporter: React.FC<UniversalImporterProps> = ({
       if (type === 'ingredient') {
         // Use UseCase for ingredients (Supabase migration)
         const data = finalItems.map((i) => i.data);
-        await importIngredientsUseCase.execute(data);
+        await importIngredientsUseCase.execute(data, activeOutletId || 'GLOBAL');
         count = finalItems.length;
       } else if (type === 'event') {
         // Use UseCase for events

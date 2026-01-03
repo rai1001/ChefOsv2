@@ -84,6 +84,29 @@ export const useStore = create<AppState>()(
         activeOutletId: state.activeOutletId,
         settings: state.settings,
       }),
+      onRehydrateStorage: () => (state) => {
+        // Validate activeOutletId
+        if (
+          state?.activeOutletId &&
+          !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+            state.activeOutletId
+          )
+        ) {
+          console.warn('Invalid UUID detected in storage (activeOutletId), resetting.');
+          state.activeOutletId = null;
+        }
+
+        // Validate outlets list
+        if (state?.outlets) {
+          const validOutlets = state.outlets.filter((o) =>
+            /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(o.id)
+          );
+          if (validOutlets.length !== state.outlets.length) {
+            console.warn('Removed outlets with invalid UUIDs from storage.');
+            state.outlets = validOutlets;
+          }
+        }
+      },
     }
   )
 );
