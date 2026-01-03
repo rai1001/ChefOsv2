@@ -8,9 +8,9 @@ import { LoginWithEmailUseCase } from '../use-cases/auth/LoginWithEmailUseCase';
 
 // Ingredients Module Imports
 import { IIngredientRepository } from '@/domain/interfaces/repositories/IIngredientRepository';
-import { FirebaseIngredientRepository } from '@/infrastructure/repositories/FirebaseIngredientRepository';
+// import { FirebaseIngredientRepository } from '@/infrastructure/repositories/FirebaseIngredientRepository';
 import { SupabaseIngredientRepository } from '@/infrastructure/repositories/SupabaseIngredientRepository';
-import { HybridIngredientRepository } from '@/infrastructure/repositories/HybridIngredientRepository';
+// import { HybridIngredientRepository } from '@/infrastructure/repositories/HybridIngredientRepository';
 import { IAIService } from '@/domain/interfaces/services/IAIService';
 import { GeminiAdapter } from '@/services/adapters/GeminiAdapter';
 import { OpenAIAdapter } from '@/services/adapters/OpenAIAdapter';
@@ -64,20 +64,16 @@ import {
 } from '@culinaryos/core';
 
 import { IRecipeRepository } from '@/domain/interfaces/repositories/IRecipeRepository';
-import { FirebaseRecipeRepository } from '@/infrastructure/repositories/FirebaseRecipeRepository';
+// import { FirebaseRecipeRepository } from '@/infrastructure/repositories/FirebaseRecipeRepository';
 import { SupabaseRecipeRepository } from '@/infrastructure/repositories/SupabaseRecipeRepository'; // NEW IMPORT
 import { CoreRecipeRepositoryAdapter } from '@/adapters/repositories/CoreRecipeRepositoryAdapter';
 import { CalculateRecipeCostUseCase } from '../use-cases/recipes/CalculateRecipeCostUseCase';
 import { SupabasePurchasingRepository } from '@/infrastructure/repositories/SupabasePurchasingRepository';
 import { SupabaseProductionRepository } from '@/infrastructure/repositories/SupabaseProductionRepository';
-import {
-  FirebaseProductionRepository,
-  IProductionRepository,
-} from '@/infrastructure/repositories/FirebaseProductionRepository';
-import {
-  FirebasePurchasingRepository,
-  IPurchasingRepository,
-} from '@/infrastructure/repositories/FirebasePurchasingRepository';
+// import { FirebaseProductionRepository } from '@/infrastructure/repositories/FirebaseProductionRepository';
+import { IProductionRepository } from '@/infrastructure/repositories/FirebaseProductionRepository';
+// import { FirebasePurchasingRepository } from '@/infrastructure/repositories/FirebasePurchasingRepository';
+import { IPurchasingRepository } from '@/infrastructure/repositories/FirebasePurchasingRepository';
 import { GetRecipesUseCase } from '../use-cases/recipes/GetRecipesUseCase';
 import { CreateRecipeUseCase } from '../use-cases/recipes/CreateRecipeUseCase';
 import { UpdateRecipeUseCase } from '../use-cases/recipes/UpdateRecipeUseCase';
@@ -157,23 +153,27 @@ export function bootstrap() {
   // Ingredients
   container
     .bind<IIngredientRepository>(TYPES.IngredientRepository)
-    .to(HybridIngredientRepository)
+    .to(SupabaseIngredientRepository) // FULL SUPABASE
     .inSingletonScope();
 
   // Bind Named Implementations for Hybrid Repository
+  /*
   container
     .bind<IIngredientRepository>(TYPES.FirebaseIngredientRepository)
     .to(FirebaseIngredientRepository)
     .inSingletonScope();
+  */
 
   container
     .bind<IIngredientRepository>(TYPES.SupabaseIngredientRepository)
     .to(SupabaseIngredientRepository)
     .inSingletonScope();
+  /*
   container
     .bind<IIngredientRepository>(TYPES.HybridIngredientRepository)
     .to(HybridIngredientRepository)
     .inSingletonScope();
+  */
   container
     .bind<ICoreIngredientRepository>(TYPES.CoreIngredientRepository)
     .to(CoreIngredientRepositoryAdapter)
@@ -182,12 +182,14 @@ export function bootstrap() {
   // Recipes
   container
     .bind<IRecipeRepository>(TYPES.RecipeRepository)
-    .to(FirebaseRecipeRepository)
+    .to(SupabaseRecipeRepository) // FULL SUPABASE
     .inSingletonScope();
+  /*
   container
     .bind<IRecipeRepository>(TYPES.FirebaseRecipeRepository)
     .to(FirebaseRecipeRepository)
     .inSingletonScope();
+  */
   container
     .bind<IRecipeRepository>(TYPES.SupabaseRecipeRepository)
     .to(SupabaseRecipeRepository)
@@ -208,7 +210,7 @@ export function bootstrap() {
     .inSingletonScope();
   container
     .bind<IInventoryRepository>(TYPES.InventoryRepository)
-    .to(FirebaseInventoryRepository) // Partial migration: Inventory legacy still Firebase
+    .to(FirebaseInventoryRepository) // TODO: Supabase Inventory implementation missing?
     .inSingletonScope();
   container
     .bind<ICoreStockTransactionRepository>(TYPES.StockTransactionRepository)
@@ -478,7 +480,7 @@ export function bootstrap() {
 
   container
     .bind<IProductionRepository>(TYPES.PRODUCTION_REPOSITORY)
-    .to(FirebaseProductionRepository)
+    .to(SupabaseProductionRepository) // FULL SUPABASE
     .inSingletonScope();
   container
     .bind<IProductionRepository>(TYPES.SupabaseProductionRepository)
@@ -487,7 +489,7 @@ export function bootstrap() {
 
   container
     .bind<IPurchasingRepository>(TYPES.PURCHASING_REPOSITORY)
-    .to(FirebasePurchasingRepository)
+    .to(SupabasePurchasingRepository) // FULL SUPABASE
     .inSingletonScope();
   container
     .bind<IPurchasingRepository>(TYPES.SupabasePurchasingRepository)
