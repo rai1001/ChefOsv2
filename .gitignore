@@ -50,3 +50,9 @@ playwright/.cache/
 
 # Secrets
 chefosv2-firebase-adminsdk-fbsvc-26dc01131f.json
+
+# Supabase
+.supabase/
+supabase/.env
+supabase/.env.local
+supabase-cli.bat
