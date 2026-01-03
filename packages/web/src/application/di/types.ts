@@ -11,7 +11,6 @@ export const TYPES = {
   HybridIngredientRepository: Symbol.for('HybridIngredientRepository'),
   CoreIngredientRepository: Symbol.for('CoreIngredientRepository'), // Core interface
   RecipeRepository: Symbol.for('RecipeRepository'),
-  FirebaseRecipeRepository: Symbol.for('FirebaseRecipeRepository'),
   SupabaseRecipeRepository: Symbol.for('SupabaseRecipeRepository'),
   CoreRecipeRepository: Symbol.for('CoreRecipeRepository'),
   SupplierRepository: Symbol.for('SupplierRepository'),

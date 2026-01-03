@@ -39,7 +39,7 @@ interface SidebarProps {
 
 export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
   const user = useAtomValue(userAtom);
-  const { settings } = useStore();
+  const { settings, setCurrentUser } = useStore();
   const isHotel = settings.businessType === 'HOTEL';
 
   return (
@@ -170,6 +170,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
           onClick={async () => {
             try {
               console.log('Sidebar: Starting logout...');
+              setCurrentUser(null);
               localStorage.removeItem('E2E_TEST_USER');
 
               const { container } = await import('@/application/di/Container');
@@ -181,6 +182,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
               window.location.href = '/';
             } catch (err) {
               console.error('Logout error:', err);
+              setCurrentUser(null);
               localStorage.removeItem('E2E_TEST_USER');
               window.location.href = '/';
             }

@@ -18,10 +18,15 @@ import {
 import { LoggingService } from '@/infrastructure/services/LoggingService';
 import { useToast } from '@/presentation/components/ui';
 import { ImportPreviewGrid } from './ImportPreviewGrid';
+import { useInjection } from '@/hooks/useInjection';
+import { TYPES } from '@/application/di/types';
+import { ImportIngredientsUseCase } from '@/application/use-cases/ingredients/ImportIngredientsUseCase';
+import { ImportEventsUseCase } from '@/application/use-cases/schedule/ImportEventsUseCase';
 
 import { ImportType, ImportMode } from '@/types/import';
 import { parseICS } from '@/utils/icsParser';
-import { IS_FIREBASE_CONFIGURED } from '@/config/firebase';
+
+const IS_FIREBASE_CONFIGURED = false;
 
 interface UniversalImporterProps {
   buttonLabel?: string;
@@ -49,6 +54,12 @@ export const UniversalImporter: React.FC<UniversalImporterProps> = ({
   const [importResult, setImportResult] = useState<{ count: number } | null>(null);
   const [status, setStatus] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
   const [isSmartMode, setIsSmartMode] = useState(false);
+
+  // Dependency Injection
+  const importIngredientsUseCase = useInjection<ImportIngredientsUseCase>(
+    TYPES.ImportIngredientsUseCase
+  );
+  const importEventsUseCase = useInjection<ImportEventsUseCase>(TYPES.ImportEventsUseCase);
 
   const resetState = () => {
     setStep('upload');
@@ -121,21 +132,42 @@ export const UniversalImporter: React.FC<UniversalImporterProps> = ({
     setLoading(true);
     setStep('processing');
     try {
+      const type = defaultType || (finalItems.length > 0 ? finalItems[0]?.type : 'unknown');
+
       LoggingService.info('Confirming import', {
         itemsCount: finalItems.length,
         outletId: activeOutletId || 'GLOBAL',
         supplierId: selectedSupplier,
+        type,
       });
-      const result = await confirmAndCommit(
-        finalItems,
-        activeOutletId || 'GLOBAL',
-        defaultType,
-        selectedSupplier
-      );
-      LoggingService.info('Import confirmed', { result });
-      setImportResult({ count: result.count });
+
+      let count = 0;
+
+      if (type === 'ingredient') {
+        // Use UseCase for ingredients (Supabase migration)
+        const data = finalItems.map((i) => i.data);
+        await importIngredientsUseCase.execute(data);
+        count = finalItems.length;
+      } else if (type === 'event') {
+        // Use UseCase for events
+        const data = finalItems.map((i) => i.data);
+        await importEventsUseCase.execute(data);
+        count = finalItems.length;
+      } else {
+        // Legacy fallback for other types
+        const result = await confirmAndCommit(
+          finalItems,
+          activeOutletId || 'GLOBAL',
+          defaultType,
+          selectedSupplier
+        );
+        count = result.count;
+      }
+
+      LoggingService.info('Import confirmed', { count });
+      setImportResult({ count });
       setStep('success');
-      if (onCompleted) onCompleted(result);
+      if (onCompleted) onCompleted({ count });
       addToast('Importación completada con éxito', 'success');
     } catch (error: any) {
       LoggingService.error('Commit error:', error);

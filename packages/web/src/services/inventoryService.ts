@@ -1,19 +1,10 @@
 import { v4 as uuidv4 } from 'uuid';
 import { TIME, INVENTORY } from '../constants';
-import type {
-  Ingredient,
-  IngredientBatch,
-  Event,
-  Menu,
-  Recipe,
-  InventoryItem,
-  StockMovement,
-} from '@/types';
+import type { Ingredient, IngredientBatch, InventoryItem, StockMovement } from '@/types';
 import { firestoreService } from '@/services/firestoreService';
 import { COLLECTIONS, collections } from '@/config/collections';
-import { where, runTransaction, doc, collection, query, getDocs } from 'firebase/firestore';
-import type { DocumentReference } from 'firebase/firestore';
-import { db } from '@/config/firebase';
+import { supabase } from '@/config/supabase';
+import { supabasePersistenceService } from './supabasePersistenceService';
 
 /**
  * Consume stock using FIFO (First In, First Out) method based on expiry dates
@@ -160,105 +151,80 @@ export const getBatchesExpiringSoon = (
  */
 export const deductStockForEvent = async (eventId: string, _userId?: string): Promise<void> => {
   // 1. Fetch Event
-  const event = await firestoreService.getById<Event>(COLLECTIONS.EVENTS, eventId);
-  if (!event?.menuId || !event.outletId) return;
-
-  // 2. Fetch Menu
-  const menu = await firestoreService.getById<Menu>(COLLECTIONS.MENUS, event.menuId);
-  if (!menu?.recipeIds || menu.recipeIds.length === 0) return;
-
-  // 3. Fetch Recipes
-  const recipes: Recipe[] = [];
-  for (const recipeId of menu.recipeIds) {
-    const recipe = await firestoreService.getById<Recipe>(COLLECTIONS.RECIPES, recipeId);
-    if (recipe) recipes.push(recipe);
+  const { data: event, error: eventError } = await supabase
+    .from('events')
+    .select('*')
+    .eq('id', eventId)
+    .single();
+  if (eventError || !event?.menuId || !event.outletId) {
+    console.warn('Event not found or missing menu/outlet', eventError);
+    return;
   }
 
-  if (recipes.length === 0) return;
+  // 2. Fetch Menu
+  const { data: menu, error: menuError } = await supabase
+    .from('menus')
+    .select('*')
+    .eq('id', event.menuId)
+    .single();
+  if (menuError || !menu?.recipeIds || menu.recipeIds.length === 0) return;
+
+  // 3. Fetch Recipes (Optimized with 'in' query)
+  const { data: recipes, error: recipesError } = await supabase
+    .from('recipes')
+    .select('*')
+    .in('id', menu.recipeIds);
+
+  if (recipesError || !recipes || recipes.length === 0) return;
 
   // 4. Calculate Total Ingredient Needs
   const ingredientNeeds: Record<string, number> = {};
 
-  recipes.forEach((recipe) => {
+  recipes.forEach((recipe: any) => {
     const yieldPax = recipe.yieldPax || 1;
     const multiplier = event.pax / yieldPax;
 
-    recipe.ingredients.forEach((ri) => {
+    (recipe.ingredients || []).forEach((ri: any) => {
       const current = ingredientNeeds[ri.ingredientId] || 0;
       ingredientNeeds[ri.ingredientId] = current + ri.quantity * multiplier;
     });
   });
 
-  // 5. Pre-fetch Inventory IDs to enable transaction lookup
-  // Client SDK Transaction cannot "Query", it must "Get" by Reference.
-  // So we find the IDs first.
-  const inventoryItemIds: { ingId: string; invId: string }[] = [];
   const neededIngIds = Object.keys(ingredientNeeds).filter((id) => (ingredientNeeds[id] || 0) > 0);
+  if (neededIngIds.length === 0) return;
 
-  // Chunking 'in' queries (limit 10)
-  for (let i = 0; i < neededIngIds.length; i += 10) {
-    const chunk = neededIngIds.slice(i, i + 10);
-    // We use firestoreService.query or raw getDocs. using raw to be explicit with DB.
-    const q = query(
-      collection(db, COLLECTIONS.INVENTORY),
-      where('ingredientId', 'in', chunk),
-      where('outletId', '==', event.outletId)
-    );
-    const snaps = await getDocs(q);
-    snaps.forEach((d) => {
-      const data = d.data();
-      if (data.ingredientId) {
-        inventoryItemIds.push({ ingId: data.ingredientId, invId: d.id });
-      }
+  // 5. Fetch Inventory Items
+  const { data: inventoryItems, error: invError } = await supabase
+    .from('inventory')
+    .select('*')
+    .eq('outletId', event.outletId)
+    .in('ingredientId', neededIngIds);
+
+  if (invError || !inventoryItems) {
+    console.error('Failed to fetch inventory items', invError);
+    return;
+  }
+
+  // 6. Deduct Stock (Sequential updates mocking transaction)
+  // TODO: Move this to a Supabase Edge Function or RPC for true atomicity
+  for (const item of inventoryItems) {
+    const qtyNeeded = ingredientNeeds[item.ingredientId] || 0;
+    if (qtyNeeded <= 0) continue;
+
+    const batches = item.batches || [];
+    if (batches.length === 0) continue;
+
+    const { newBatches } = consumeStockFIFO(batches, qtyNeeded);
+    const newStock = calculateTotalStock(newBatches);
+
+    await supabasePersistenceService.update(COLLECTIONS.INVENTORY, item.id, {
+      batches: newBatches,
+      stock: newStock,
+      updatedAt: new Date().toISOString(),
     });
   }
 
-  if (inventoryItemIds.length === 0) return;
-
-  // 6. Run Atomic Transaction
-  try {
-    await runTransaction(db, async (transaction) => {
-      // A. Reads (Must come before any writes)
-      const inventoryDocs: {
-        ref: DocumentReference<InventoryItem>;
-        data: InventoryItem;
-        qtyNeeded: number;
-      }[] = [];
-
-      for (const { ingId, invId } of inventoryItemIds) {
-        const itemRef = doc(db, COLLECTIONS.INVENTORY, invId) as DocumentReference<InventoryItem>;
-        const itemSnap = await transaction.get(itemRef);
-
-        if (!itemSnap.exists()) continue;
-
-        const data = itemSnap.data() as InventoryItem;
-        const qtyNeeded = ingredientNeeds[ingId] || 0;
-
-        if (qtyNeeded > 0) {
-          inventoryDocs.push({ ref: itemRef, data, qtyNeeded });
-        }
-      }
-
-      // B. Computation & Writes
-      for (const { ref, data, qtyNeeded } of inventoryDocs) {
-        const batches = data.batches || [];
-        if (batches.length === 0) continue;
-
-        const { newBatches } = consumeStockFIFO(batches, qtyNeeded);
-        const newStock = calculateTotalStock(newBatches);
-
-        transaction.update(ref, {
-          batches: newBatches,
-          stock: newStock,
-          updatedAt: new Date().toISOString(),
-        });
-      }
-    });
-    console.log(`Successfully deducted stock for event ${eventId}`);
-  } catch (e) {
-    console.error('Transaction failed for deductStockForEvent:', e);
-    throw e;
-  }
+  console.log(`Successfully deducted stock for event ${eventId}`);
 };
 
 /**
@@ -278,63 +244,49 @@ export const recordPhysicalCount = async (
   if (!item) throw new Error('Inventory item not found');
 
   // 2. Calculate Variance
-  // Theoretical stock is what the system thinks we have.
-  // Stock is the current active number (which usually matches theoretical until a count).
   const theoretical = item.theoreticalStock ?? item.stock;
   const variance = realCount - theoretical;
 
   const now = new Date().toISOString();
 
-  // 3. Atomic Transaction: Record Movement + Update Inventory
-  try {
-    await runTransaction(db, async (transaction) => {
-      const itemRef = doc(db, COLLECTIONS.INVENTORY, inventoryItemId);
+  // 3. Update (Sequential - effectively atomic if no contention)
 
-      // Re-read inside transaction for safety (optimistic locking)
-      const itemSnap = await transaction.get(itemRef);
-      if (!itemSnap.exists()) throw new Error('Inventory item not found during transaction');
+  // A. Create Stock Movement
+  const movement: Omit<StockMovement, 'id'> = {
+    ingredientId: item.ingredientId || 'standalone',
+    type: 'ADJUSTMENT',
+    quantity: variance,
+    costPerUnit: item.costPerUnit,
+    date: now,
+    referenceId: inventoryItemId,
+    userId: userId,
+    outletId: item.outletId,
+    notes: notes || `Physical count adjustment. Variance: ${finalVarianceToString(variance)}`,
+  };
 
-      // We use the passed realCount, but we ensure the item still exists and we have the lock.
-      // Note: theoretical stock might have changed if another transaction ran?
-      // `recordPhysicalCount` trusts the user's `realCount` is the absolute truth at this moment.
-      // But `variance` depends on `theoretical`.
-      // Let's recalculate variance inside transaction to be 100% accurate?
-      // Yes.
+  // We need a UUID generator instead of doc()
+  // Since we removed Firebase `doc`, let's generate ID
+  const movementId = crypto.randomUUID();
 
-      const currentItem = itemSnap.data() as InventoryItem;
-      // Use current system stock as theoretical
-      const currentTheoretical = currentItem.stock;
-      const finalVariance = realCount - currentTheoretical;
+  await supabasePersistenceService.set(
+    collections.stockMovements.path || 'stock_movements',
+    movementId,
+    {
+      ...movement,
+      id: movementId,
+    }
+  );
 
-      const movementRef = doc(collections.stockMovements); // Generate ID
-      const movement: Omit<StockMovement, 'id'> = {
-        ingredientId: currentItem.ingredientId || 'standalone',
-        type: 'ADJUSTMENT',
-        quantity: finalVariance,
-        costPerUnit: currentItem.costPerUnit,
-        date: now,
-        referenceId: inventoryItemId,
-        userId: userId,
-        outletId: currentItem.outletId,
-        notes: notes || `Physical count adjustment. Variance: ${finalVariance}`,
-      };
-
-      // Writes
-      transaction.set(movementRef, { ...movement, id: movementRef.id }); // Ensure ID is saved if needed, or rely on doc.id
-      transaction.update(itemRef, {
-        stock: realCount,
-        theoreticalStock: realCount,
-        lastPhysicalCount: realCount,
-        lastCountedAt: now,
-        updatedAt: now,
-      });
-
-      // Update return value if needed (mutation) or just rely on success
-    });
-  } catch (e) {
-    console.error('Transaction failed for recordPhysicalCount:', e);
-    throw e;
-  }
+  // B. Update Inventory
+  await supabasePersistenceService.update(COLLECTIONS.INVENTORY, inventoryItemId, {
+    stock: realCount,
+    theoreticalStock: realCount,
+    lastPhysicalCount: realCount,
+    lastCountedAt: now,
+    updatedAt: now,
+  });
 
   return { variance };
 };
+
+const finalVarianceToString = (v: number) => Math.round(v * 100) / 100;

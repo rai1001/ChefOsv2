@@ -64,7 +64,6 @@ import {
 } from '@culinaryos/core';
 
 import { IRecipeRepository } from '@/domain/interfaces/repositories/IRecipeRepository';
-// import { FirebaseRecipeRepository } from '@/infrastructure/repositories/FirebaseRecipeRepository';
 import { SupabaseRecipeRepository } from '@/infrastructure/repositories/SupabaseRecipeRepository'; // NEW IMPORT
 import { CoreRecipeRepositoryAdapter } from '@/adapters/repositories/CoreRecipeRepositoryAdapter';
 import { CalculateRecipeCostUseCase } from '../use-cases/recipes/CalculateRecipeCostUseCase';
@@ -187,12 +186,7 @@ export function bootstrap() {
     .bind<IRecipeRepository>(TYPES.RecipeRepository)
     .to(SupabaseRecipeRepository) // FULL SUPABASE
     .inSingletonScope();
-  /*
-  container
-    .bind<IRecipeRepository>(TYPES.FirebaseRecipeRepository)
-    .to(FirebaseRecipeRepository)
-    .inSingletonScope();
-  */
+
   container
     .bind<IRecipeRepository>(TYPES.SupabaseRecipeRepository)
     .to(SupabaseRecipeRepository)
