@@ -5,22 +5,27 @@ import { useStore } from '@/presentation/store/useStore';
 import type { Role } from '@/types';
 
 interface ProtectedRouteProps {
-    allowedRoles?: Role[];
-    redirectPath?: string;
+  allowedRoles?: Role[];
+  redirectPath?: string;
 }
 
 export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ allowedRoles }) => {
-    const { currentUser } = useStore();
+  const { currentUser } = useStore();
 
-    // 1. Check Roles
-    if (currentUser && allowedRoles && !allowedRoles.includes(currentUser.role)) {
-        return <Navigate to="/dashboard" replace />;
-    }
+  // 0. Check Authentication
+  if (!currentUser) {
+    return <Navigate to="/login" replace />;
+  }
 
-    // 2. Render Protected Content
-    return (
-        <SyncProvider>
-            <Outlet />
-        </SyncProvider>
-    );
+  // 1. Check Roles
+  if (allowedRoles && !allowedRoles.includes(currentUser.role)) {
+    return <Navigate to="/dashboard" replace />;
+  }
+
+  // 2. Render Protected Content
+  return (
+    <SyncProvider>
+      <Outlet />
+    </SyncProvider>
+  );
 };

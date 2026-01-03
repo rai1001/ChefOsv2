@@ -59,10 +59,10 @@ export class SupabaseOutletRepository implements IOutletRepository {
       isActive: row.is_active,
       address: row.address,
       phone: row.phone,
-      autoPurchaseSettings: row.auto_purchase_settings,
-      geminiApiKey: row.gemini_api_key,
-      workspaceAccount: row.workspace_account,
-      outlookAccount: row.outlook_account,
+      autoPurchaseSettings: row.auto_purchase_settings || undefined,
+      geminiApiKey: row.gemini_api_key || undefined,
+      workspaceAccount: row.workspace_account || undefined,
+      outlookAccount: row.outlook_account || undefined,
     };
   }
 
