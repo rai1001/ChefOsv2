@@ -1,10 +1,6 @@
 import React, { useState } from 'react';
 import { useStore } from '@/presentation/store/useStore';
-import {
-  processFileForAnalysis,
-  processStructuredFile,
-  confirmAndCommit,
-} from '@/utils/excelImport';
+import { processStructuredFile, confirmAndCommit } from '@/utils/excelImport';
 import type { IngestionItem } from '@/utils/excelImport';
 import {
   Upload,
@@ -60,6 +56,8 @@ export const UniversalImporter: React.FC<UniversalImporterProps> = ({
     TYPES.ImportIngredientsUseCase
   );
   const importEventsUseCase = useInjection<ImportEventsUseCase>(TYPES.ImportEventsUseCase);
+  // Add AI Service
+  const iaService = useInjection<any>(TYPES.AIService); // Use 'any' or explicit interface if exported
 
   const resetState = () => {
     setStep('upload');
@@ -87,17 +85,31 @@ export const UniversalImporter: React.FC<UniversalImporterProps> = ({
           data: { ...e, status: 'confirmed' },
           confidence: 100,
         }));
-      } else if (isSmartMode && IS_FIREBASE_CONFIGURED) {
+      } else if (isSmartMode) {
         try {
-          items = await processFileForAnalysis(
-            file,
-            template ? JSON.stringify(template) : undefined
-          );
+          // Configure API Key from active outlet if available
+          const activeOutlet = useStore.getState().outlets.find((o) => o.id === activeOutletId);
+          if (
+            activeOutlet?.geminiApiKey &&
+            iaService &&
+            typeof iaService.setApiKey === 'function'
+          ) {
+            iaService.setApiKey(activeOutlet.geminiApiKey);
+          } else if (!activeOutlet?.geminiApiKey) {
+            console.warn('No Gemini API Key found in active outlet');
+            // Fallback to env or let service fail/warn
+          }
+
+          const result = await iaService.scanDocument(file);
+          // Map AI result items to IngestionItems
+          items = result.items.map((i: any) => ({
+            type: 'ingredient' as ImportType, // Default assumption or infer from i.category
+            data: i,
+            confidence: 85,
+          }));
         } catch (aiError: any) {
           console.error('Smart AI Error:', aiError);
-          throw new Error(
-            'El análisis de IA falló. Por favor, desactiva "Smart AI" e intenta subir un archivo Excel o CSV estándar.'
-          );
+          throw new Error('El análisis de IA falló: ' + aiError.message);
         }
       } else {
         // Use processStructuredFile which now has internal fallback to local parseWorkbook
