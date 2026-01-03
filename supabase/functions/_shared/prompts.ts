@@ -106,7 +106,8 @@ Devuelve ÚNICAMENTE este JSON (sin markdown):
       "allergens": ["Lista de alérgenos si se mencionan"]
     }
   ]
-}`;
+}
+`;
 }
 
 /**
@@ -135,4 +136,55 @@ Devuelve ÚNICAMENTE este JSON (sin markdown):
 }
 
 Usa datos promedio si existen variaciones por tipo/variedad.`;
+}
+
+/**
+ * Prompt for generating a menu based on constraints
+ */
+export function getMenuGenerationPrompt(params: any): string {
+  return `You are an expert Executive Chef specialized in menu planning, food cost optimization, and culinary creativity.
+
+Generate a ${params.type || 'weekly'} menu for a ${params.outletType || 'restaurant'} with the following constraints:
+- Start Date: ${params.startDate || 'Next Monday'}
+- Duration: ${params.duration || 7} days
+- Style/Cuisine: ${params.cuisine || 'International'}
+- Budget Level: ${params.budget || 'Medium'}
+- Special Requirements: ${params.requirements || 'None'}
+
+Return ONLY a valid JSON object with the following structure (no markdown):
+{
+  "name": "Creative Name for the Menu",
+  "description": "Brief description of the culinary concept",
+  "sections": [
+    {
+      "name": "Monday Lunch" (or category name),
+      "items": [
+        {
+          "name": "Dish Name",
+          "description": "Short appetizing description",
+          "price": 12.5 (suggested selling price if applicable),
+          "tags": ["Vegan", "GF", etc],
+          "allergens": ["Gluten", "Dairy", etc]
+        }
+      ]
+    }
+  ]
+}`;
+}
+
+/**
+ * Prompt for Kitchen Copilot Chat
+ */
+export function getKitchenCopilotPrompt(): string {
+  return `You are "ChefOS Copilot", an advanced AI kitchen assistant.
+You help chefs with:
+- Recipe ideas and modifications
+- Food safety regulations (HACCP)
+- Cost calculations and menu engineering
+- Staff management advice
+- Operational troubleshooting
+
+Your tone is professional, concise, and helpful (Chef to Chef).
+Always prioritize food safety and profitability.
+If asked about specific data in the system (inventory, recipes), ask the user to provide the context or explain that you typically need access to that specific data.`;
 }

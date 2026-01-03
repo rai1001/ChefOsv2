@@ -174,4 +174,30 @@ export class SupabaseAIAdapter implements IAIService {
       reader.onerror = reject;
     });
   }
+
+  async generateMenu(params: any): Promise<any> {
+    const { data, error } = await this.supabase.functions.invoke('generate-menu', {
+      body: { params },
+    });
+
+    if (error) {
+      console.error('Supabase Edge Function error:', error);
+      throw new Error(`Edge Function failed: ${error.message}`);
+    }
+
+    return data;
+  }
+
+  async chat(message: string, context?: any, history?: any[]): Promise<string> {
+    const { data, error } = await this.supabase.functions.invoke('chat-copilot', {
+      body: { message, context, history },
+    });
+
+    if (error) {
+      console.error('Supabase Edge Function error:', error);
+      throw new Error(`Edge Function failed: ${error.message}`);
+    }
+
+    return data.reply;
+  }
 }

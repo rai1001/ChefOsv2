@@ -94,4 +94,8 @@ export interface IAIService {
     options?: AIRequestOptions
   ): Promise<AIResponse>;
   streamGenerateText(prompt: string, options?: AIRequestOptions): AsyncIterable<string>;
+
+  // High-level AI features
+  generateMenu(params: any): Promise<any>;
+  chat(message: string, context?: any, history?: any[]): Promise<string>;
 }

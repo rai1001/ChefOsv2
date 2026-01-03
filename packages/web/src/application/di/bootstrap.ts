@@ -12,10 +12,7 @@ import { IIngredientRepository } from '@/domain/interfaces/repositories/IIngredi
 import { SupabaseIngredientRepository } from '@/infrastructure/repositories/SupabaseIngredientRepository';
 // import { HybridIngredientRepository } from '@/infrastructure/repositories/HybridIngredientRepository';
 import { IAIService } from '@/domain/interfaces/services/IAIService';
-import { GeminiAdapter } from '@/services/adapters/GeminiAdapter';
-import { OpenAIAdapter } from '@/services/adapters/OpenAIAdapter';
 import { SupabaseAIAdapter } from '@/services/adapters/SupabaseAIAdapter';
-import { aiConfig } from '@/config/aiConfig';
 import { IImportService } from '@/domain/interfaces/services/IImportService';
 import { ExcelImportService } from '@/infrastructure/services/ExcelImportService';
 import { GetIngredientsUseCase } from '../use-cases/ingredients/GetIngredientsUseCase';
@@ -132,7 +129,28 @@ import { DeleteInvitationUseCase } from '@/application/use-cases/user-management
 import { IOutletRepository } from '@/domain/interfaces/repositories/IOutletRepository';
 import { SupabaseOutletRepository } from '@/infrastructure/repositories/SupabaseOutletRepository';
 
+import { IMenuRepository } from '@/domain/interfaces/repositories/IMenuRepository';
+import { SupabaseMenuRepository } from '@/infrastructure/repositories/SupabaseMenuRepository';
+
 export function bootstrap() {
+  // ... existing bindings ...
+
+  // Outlets
+  container
+    .bind<IOutletRepository>(TYPES.OutletRepository)
+    .to(SupabaseOutletRepository)
+    .inSingletonScope();
+  container
+    .bind<IOutletRepository>(TYPES.SupabaseOutletRepository)
+    .to(SupabaseOutletRepository)
+    .inSingletonScope();
+
+  // Menus
+  container
+    .bind<IMenuRepository>(TYPES.MenuRepository)
+    .to(SupabaseMenuRepository)
+    .inSingletonScope();
+
   // Auth
   container
     .bind<IAuthRepository>(TYPES.AuthRepository)
@@ -222,12 +240,6 @@ export function bootstrap() {
   // Use SupabaseAIAdapter for secure server-side AI calls via Edge Functions
   container.bind<IAIService>(TYPES.AIService).to(SupabaseAIAdapter).inSingletonScope();
 
-  // Legacy adapters (commented out, kept for reference)
-  // if (aiConfig.provider === 'openai') {
-  //   container.bind<IAIService>(TYPES.AIService).to(OpenAIAdapter).inSingletonScope();
-  // } else {
-  //   container.bind<IAIService>(TYPES.AIService).to(GeminiAdapter).inSingletonScope();
-  // }
   container.bind<IImportService>(TYPES.ImportService).to(ExcelImportService).inSingletonScope();
 
   // Suppliers

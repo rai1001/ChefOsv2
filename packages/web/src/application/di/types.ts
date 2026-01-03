@@ -100,4 +100,5 @@ export const TYPES = {
   DeleteInvitationUseCase: Symbol.for('DeleteInvitationUseCase'),
   OutletRepository: Symbol.for('OutletRepository'),
   SupabaseOutletRepository: Symbol.for('SupabaseOutletRepository'),
+  MenuRepository: Symbol.for('MenuRepository'),
 };

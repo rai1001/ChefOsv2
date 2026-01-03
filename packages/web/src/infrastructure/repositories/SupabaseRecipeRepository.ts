@@ -156,10 +156,9 @@ export class SupabaseRecipeRepository implements IRecipeRepository {
       row.prep_time,
       row.cook_time,
       ingredients,
-      [], // instructions are jsonb? or array? Schema didn't explicitly add instructions column! Added now? No, schema missed it.
-      // Wait, schema has description, category... let's check schema again.
-      // Schema has: labor_cost, packaging_cost, selling_price, target_cost_percent...
-      // Checking logic below...
+      row.instructions || [],
+      // row.instructions is expected to be text[] or jsonb in Supabase, assuming simple array of strings for now.
+
       row.labor_cost,
       row.packaging_cost,
       row.selling_price,
@@ -171,10 +170,8 @@ export class SupabaseRecipeRepository implements IRecipeRepository {
       row.outlet_id,
       row.image_url,
       row.video_url,
-      [], // allergens not yet in mapped column? Checked schema: allergens text[] exists in ingredients, but recipes?
-      // Schema check: "create table recipes" in my previous step did NOT have allergens or tags or instructions.
-      // I need to update Schema to include instructions, allergens, tags.
-      [],
+      row.allergens || [],
+      row.tags || [],
       row.created_at,
       row.updated_at
     );
@@ -198,6 +195,9 @@ export class SupabaseRecipeRepository implements IRecipeRepository {
     if (recipe.imageUrl !== undefined) data.image_url = recipe.imageUrl;
     if (recipe.videoUrl !== undefined) data.video_url = recipe.videoUrl;
     if (recipe.outletId !== undefined) data.outlet_id = recipe.outletId;
+    if (recipe.instructions !== undefined) data.instructions = recipe.instructions;
+    if (recipe.allergens !== undefined) data.allergens = recipe.allergens;
+    if (recipe.tags !== undefined) data.tags = recipe.tags;
 
     return data;
   }
