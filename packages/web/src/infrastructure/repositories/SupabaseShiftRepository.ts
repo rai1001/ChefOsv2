@@ -1,7 +1,7 @@
 import { injectable } from 'inversify';
 import { supabase } from '@/config/supabase';
 import { IShiftRepository } from '@/domain/interfaces/repositories/IShiftRepository';
-import { Shift } from '@/types';
+import { Shift } from '@/domain/entities/Shift';
 
 @injectable()
 export class SupabaseShiftRepository implements IShiftRepository {
@@ -27,7 +27,7 @@ export class SupabaseShiftRepository implements IShiftRepository {
   }
 
   async saveShift(shift: Shift): Promise<void> {
-    const { outletId, ...rest } = shift as any;
+    const { outletId, ...rest } = shift;
     const { error } = await supabase.from(this.tableName).upsert({
       ...rest,
       outlet_id: outletId,
@@ -35,8 +35,28 @@ export class SupabaseShiftRepository implements IShiftRepository {
     if (error) throw error;
   }
 
+  async saveShifts(shifts: Shift[]): Promise<void> {
+    const data = shifts.map((s) => {
+      const { outletId, ...rest } = s;
+      return {
+        ...rest,
+        outlet_id: outletId,
+      };
+    });
+    const { error } = await supabase.from(this.tableName).upsert(data);
+    if (error) throw error;
+  }
+
   async deleteShift(id: string): Promise<void> {
     const { error } = await supabase.from(this.tableName).delete().eq('id', id);
+    if (error) throw error;
+  }
+
+  async deleteShiftsByDate(date: string, outletId?: string): Promise<void> {
+    let query = supabase.from(this.tableName).delete().eq('date', date);
+    if (outletId) query = query.eq('outlet_id', outletId);
+
+    const { error } = await query;
     if (error) throw error;
   }
 }

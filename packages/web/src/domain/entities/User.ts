@@ -10,6 +10,9 @@ export interface UserProps {
   displayName: string;
   photoURL?: string;
   role: UserRole;
+  active: boolean;
+  allowedOutlets: string[];
+  activeOutletId?: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -35,6 +38,18 @@ export class User {
 
   get role(): UserRole {
     return this.props.role;
+  }
+
+  get active(): boolean {
+    return this.props.active;
+  }
+
+  get allowedOutlets(): string[] {
+    return this.props.allowedOutlets;
+  }
+
+  get activeOutletId(): string | undefined {
+    return this.props.activeOutletId;
   }
 
   isAdmin(): boolean {

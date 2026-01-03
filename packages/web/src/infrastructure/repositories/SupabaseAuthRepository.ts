@@ -42,13 +42,19 @@ export class SupabaseAuthRepository implements IAuthRepository {
   }
 
   async signOut(): Promise<void> {
+    console.log('SupabaseAuthRepository: Signing out...');
     const { error } = await supabase.auth.signOut();
-    if (error) throw error;
+    if (error) {
+      console.error('SupabaseAuthRepository: SignOut Error:', error);
+      throw error;
+    }
+    console.log('SupabaseAuthRepository: SignOut Success');
     this._currentUser = null;
   }
 
   onAuthStateChanged(callback: (user: User | null) => void): () => void {
     const { data } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log(`Supabase Auth Event: ${event}`, !!session);
       if (session?.user) {
         const user = await this.mapToEntity(session.user);
         this._currentUser = user;
@@ -79,6 +85,8 @@ export class SupabaseAuthRepository implements IAuthRepository {
       active: profile?.is_active ?? true,
       allowedOutlets: profile?.allowed_outlet_ids || [],
       activeOutletId: profile?.active_outlet_id,
+      createdAt: profile?.created_at ? new Date(profile.created_at) : new Date(),
+      updatedAt: profile?.updated_at ? new Date(profile.updated_at) : new Date(),
     });
   }
 }

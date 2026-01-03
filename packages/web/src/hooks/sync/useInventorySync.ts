@@ -11,6 +11,10 @@ export const useInventorySync = () => {
   const [error, setError] = useState<Error | null>(null);
 
   useEffect(() => {
+    if (import.meta.env.VITE_USE_SUPABASE_READ === 'true') {
+      setLoading(false);
+      return;
+    }
     if (!activeOutletId) {
       setInventory([]);
       setLoading(false);

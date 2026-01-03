@@ -80,7 +80,7 @@ import { UpdateRecipeUseCase } from '../use-cases/recipes/UpdateRecipeUseCase';
 import { DeleteRecipeUseCase } from '../use-cases/recipes/DeleteRecipeUseCase';
 
 import { IInventoryRepository } from '@/domain/repositories/IInventoryRepository';
-import { FirebaseInventoryRepository } from '@/infrastructure/repositories/FirebaseInventoryRepository';
+import { SupabaseInventoryRepository } from '@/infrastructure/repositories/SupabaseInventoryRepository';
 import { FirestoreBatchRepository } from '@/infrastructure/firebase/repositories/FirestoreBatchRepository';
 import { FirestoreTransactionManager } from '@/infrastructure/firebase/repositories/FirestoreTransactionManager';
 import { SupabaseStockTransactionRepository } from '@/infrastructure/repositories/SupabaseStockTransactionRepository'; // FIXED IMPORT
@@ -106,16 +106,17 @@ import { ImportEventsUseCase } from '../use-cases/schedule/ImportEventsUseCase';
 
 // Employee Module Imports
 import { IEmployeeRepository } from '@/domain/interfaces/repositories/IEmployeeRepository';
-import { FirebaseEmployeeRepository } from '@/infrastructure/repositories/FirebaseEmployeeRepository';
 import { GetEmployeesUseCase } from '../use-cases/employee/GetEmployeesUseCase';
 import { SaveEmployeeUseCase } from '../use-cases/employee/SaveEmployeeUseCase';
 import { DeleteEmployeeUseCase } from '../use-cases/employee/DeleteEmployeeUseCase';
+import { SupabaseEmployeeRepository } from '@/infrastructure/repositories/SupabaseEmployeeRepository';
 
 // Shift & Event Repository Imports
 import { IShiftRepository } from '@/domain/interfaces/repositories/IShiftRepository';
-import { FirebaseShiftRepository } from '@/infrastructure/repositories/FirebaseShiftRepository';
+import { SupabaseShiftRepository } from '@/infrastructure/repositories/SupabaseShiftRepository';
 import { IEventRepository } from '@/domain/interfaces/repositories/IEventRepository';
-import { FirebaseEventRepository } from '@/infrastructure/repositories/FirebaseEventRepository';
+// import { FirebaseEventRepository } from '@/infrastructure/repositories/FirebaseEventRepository'; // Legacy
+import { SupabaseEventRepository } from '@/infrastructure/repositories/SupabaseEventRepository';
 
 // User Management Imports
 import { IUserRepository } from '@/domain/repositories/IUserRepository';
@@ -130,6 +131,8 @@ import { ChangeUserRoleUseCase } from '@/application/use-cases/user-management/C
 import { InviteUserUseCase } from '@/application/use-cases/user-management/InviteUserUseCase';
 import { ListInvitationsUseCase } from '@/application/use-cases/user-management/ListInvitationsUseCase';
 import { DeleteInvitationUseCase } from '@/application/use-cases/user-management/DeleteInvitationUseCase';
+import { IOutletRepository } from '@/domain/interfaces/repositories/IOutletRepository';
+import { SupabaseOutletRepository } from '@/infrastructure/repositories/SupabaseOutletRepository';
 
 export function bootstrap() {
   // Auth
@@ -210,7 +213,7 @@ export function bootstrap() {
     .inSingletonScope();
   container
     .bind<IInventoryRepository>(TYPES.InventoryRepository)
-    .to(FirebaseInventoryRepository) // TODO: Supabase Inventory implementation missing?
+    .to(SupabaseInventoryRepository) // SWITCHED TO SUPABASE
     .inSingletonScope();
   container
     .bind<ICoreStockTransactionRepository>(TYPES.StockTransactionRepository)
@@ -518,7 +521,7 @@ export function bootstrap() {
   // Employee Module
   container
     .bind<IEmployeeRepository>(TYPES.EmployeeRepository)
-    .to(FirebaseEmployeeRepository)
+    .to(SupabaseEmployeeRepository) // SWITCHED TO SUPABASE
     .inSingletonScope();
   container
     .bind<GetEmployeesUseCase>(TYPES.GetEmployeesUseCase)
@@ -536,11 +539,11 @@ export function bootstrap() {
   // Schedule & Events Repositories
   container
     .bind<IShiftRepository>(TYPES.ShiftRepository)
-    .to(FirebaseShiftRepository)
+    .to(SupabaseShiftRepository) // FULL SUPABASE
     .inSingletonScope();
   container
     .bind<IEventRepository>(TYPES.EventRepository)
-    .to(FirebaseEventRepository)
+    .to(SupabaseEventRepository) // FULL SUPABASE
     .inSingletonScope();
 
   // User Management
@@ -585,4 +588,14 @@ export function bootstrap() {
     .bind<DeleteInvitationUseCase>(TYPES.DeleteInvitationUseCase)
     .to(DeleteInvitationUseCase)
     .inTransientScope();
+
+  // Outlets
+  container
+    .bind<IOutletRepository>(TYPES.OutletRepository)
+    .to(SupabaseOutletRepository)
+    .inSingletonScope();
+  container
+    .bind<IOutletRepository>(TYPES.SupabaseOutletRepository)
+    .to(SupabaseOutletRepository)
+    .inSingletonScope();
 }

@@ -20,7 +20,7 @@ import type { EventType } from '@/types';
 import { scanEventOrder } from '@/services/geminiService';
 import { parsePlaningMatrix } from '@/utils/planingParser';
 import type { PlaningEvent } from '@/utils/planingParser';
-import { BEOUploader } from '@/presentation/components/events/BEOUploader';
+// import { BEOUploader } from '@/presentation/components/events/BEOUploader';
 
 interface ParsedEvent {
   name: string;
@@ -390,8 +390,44 @@ export const EventImportModal: React.FC<EventImportModalProps> = ({ onClose, onS
           {!parsedData && matrixEvents.length === 0 && mode !== 'sync' ? (
             <>
               {mode === 'scan' ? (
-                <div className="h-full flex flex-col justify-center">
-                  <BEOUploader />
+                <div
+                  onClick={() => fileInputRef.current?.click()}
+                  className={`border-2 border-dashed border-white/10 rounded-xl p-12 flex flex-col items-center justify-center text-center cursor-pointer hover:bg-white/5 hover:border-primary/50 transition-all ${parsing ? 'opacity-50 pointer-events-none' : ''}`}
+                >
+                  <input
+                    type="file"
+                    ref={fileInputRef}
+                    onChange={handleScanUpload}
+                    className="hidden"
+                    accept=".jpg, .jpeg, .png, .webp, .pdf"
+                  />
+                  {parsing ? (
+                    <>
+                      <Loader2 className="w-10 h-10 text-primary animate-spin mb-4" />
+                      <p className="text-lg font-medium text-white">
+                        Escaneando Orden de Evento...
+                      </p>
+                      <p className="text-sm text-slate-400 mt-2">
+                        La IA está extrayendo datos (fecha, pax, menú)
+                      </p>
+                    </>
+                  ) : error ? (
+                    <>
+                      <AlertCircle className="w-10 h-10 text-red-400 mb-4" />
+                      <p className="text-lg font-medium text-red-400">{error}</p>
+                      <p className="text-sm text-slate-400 mt-2">Click para intentar de nuevo</p>
+                    </>
+                  ) : (
+                    <>
+                      <Camera className="w-10 h-10 text-purple-400 mb-4" />
+                      <p className="text-lg font-medium text-white">
+                        Click para subir BEO (PDF o Imagen)
+                      </p>
+                      <p className="text-sm text-slate-400 mt-2">
+                        La IA detectará automáticamente los detalles.
+                      </p>
+                    </>
+                  )}
                 </div>
               ) : (
                 <div

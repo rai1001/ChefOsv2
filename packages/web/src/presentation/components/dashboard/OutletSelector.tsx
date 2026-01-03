@@ -1,9 +1,8 @@
 import React, { useState } from 'react';
 import { useStore } from '@/presentation/store/useStore';
 import { Store, ChevronDown, Check, Plus, Loader2 } from 'lucide-react';
-import type { Outlet } from '@/types';
-import { addDocument } from '@/services/firestoreService';
-import { collections } from '@/config/collections';
+import type { Outlet, OutletType } from '@/types';
+import { IOutletRepository } from '@/domain/interfaces/repositories/IOutletRepository';
 
 export const OutletSelector: React.FC = () => {
   const { outlets, activeOutletId, setActiveOutletId, addOutlet } = useStore();
@@ -20,15 +19,21 @@ export const OutletSelector: React.FC = () => {
 
     setIsSubmitting(true);
     try {
-      const newOutletData = {
+      const { container } = await import('@/application/di/Container');
+      const { TYPES } = await import('@/application/di/types');
+      const repo = container.get<IOutletRepository>(TYPES.OutletRepository);
+
+      const newId = crypto.randomUUID();
+      const newOutletData: Outlet = {
+        id: newId,
         name: newOutletName,
-        type: 'other',
+        type: 'other' as OutletType,
         isActive: true,
       };
-      const newId = await addDocument(collections.outlets, newOutletData);
-      const newOutlet: Outlet = { id: newId, ...newOutletData } as Outlet;
 
-      addOutlet(newOutlet);
+      await repo.saveOutlet(newOutletData);
+
+      addOutlet(newOutletData);
       setActiveOutletId(newId);
       setIsCreating(false);
       setNewOutletName('');

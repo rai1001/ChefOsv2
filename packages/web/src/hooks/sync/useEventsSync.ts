@@ -9,6 +9,10 @@ export const useEventsSync = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    if (import.meta.env.VITE_USE_SUPABASE_READ === 'true') {
+      setLoading(false);
+      return;
+    }
     if (!activeOutletId) {
       setEvents([]);
       setLoading(false);

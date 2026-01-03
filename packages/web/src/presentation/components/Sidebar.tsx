@@ -29,7 +29,7 @@ import { NavItem } from './molecules/NavItem';
 import { NavGroup } from './molecules/NavGroup';
 import { useAtomValue } from 'jotai';
 import { userAtom } from '@/presentation/store/authAtoms';
-import { getAuth } from 'firebase/auth';
+// import { getAuth } from 'firebase/auth'; // Legacy Firebase
 import { useStore } from '@/presentation/store/useStore';
 
 interface SidebarProps {
@@ -168,9 +168,22 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
         </div>
         <button
           onClick={async () => {
-            const auth = getAuth();
-            await auth.signOut();
-            window.location.href = '/login';
+            try {
+              console.log('Sidebar: Starting logout...');
+              localStorage.removeItem('E2E_TEST_USER');
+
+              const { container } = await import('@/application/di/Container');
+              const { TYPES } = await import('@/application/di/types');
+              const repo = container.get<any>(TYPES.SupabaseAuthRepository);
+              await repo.signOut();
+
+              console.log('Sidebar: Logout successful, redirecting...');
+              window.location.href = '/';
+            } catch (err) {
+              console.error('Logout error:', err);
+              localStorage.removeItem('E2E_TEST_USER');
+              window.location.href = '/';
+            }
           }}
           className="p-2 text-slate-500 hover:text-red-400 transition-colors"
           title="Cerrar Sesión"

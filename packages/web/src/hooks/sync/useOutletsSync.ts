@@ -6,45 +6,55 @@ import { useStore } from '@/presentation/store/useStore';
 import type { Outlet } from '@/types';
 
 export const useOutletsSync = () => {
-    const { setOutlets, setActiveOutletId } = useStore();
-    const [loading, setLoading] = useState(true);
+  const { setOutlets, setActiveOutletId } = useStore();
+  const [loading, setLoading] = useState(true);
 
-    useEffect(() => {
-        // Subscribe to all outlets
-        const q = query(collections.outlets);
+  useEffect(() => {
+    if (import.meta.env.VITE_USE_SUPABASE_READ === 'true') {
+      setLoading(false);
+      return;
+    }
+    // Subscribe to all outlets
+    const q = query(collections.outlets);
 
-        const unsubscribe = onSnapshotMockable(q, 'outlets', (snapshot) => {
-            const outletsData = snapshot.docs.map(doc => ({
-                id: doc.id,
-                ...doc.data()
-            })) as Outlet[];
+    const unsubscribe = onSnapshotMockable(
+      q,
+      'outlets',
+      (snapshot) => {
+        const outletsData = snapshot.docs.map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+        })) as Outlet[];
 
-            console.log(`[Sync] Outlets synced (${outletsData.length})`);
-            setOutlets(outletsData);
+        console.log(`[Sync] Outlets synced (${outletsData.length})`);
+        setOutlets(outletsData);
 
-            // Access current state via store to avoid dependency loop
-            const currentActiveId = useStore.getState().activeOutletId;
+        // Access current state via store to avoid dependency loop
+        const currentActiveId = useStore.getState().activeOutletId;
 
-            // Auto-select logic if none selected or selection invalid
-            if (outletsData.length > 0) {
-                const isValid = outletsData.find(o => o.id === currentActiveId);
-                if (!currentActiveId || !isValid) {
-                    const defaultOutlet = outletsData.find(o => o.type === 'main_kitchen') || outletsData[0];
-                    if (defaultOutlet) {
-                        console.log("Auto-selecting outlet:", defaultOutlet.name);
-                        setActiveOutletId(defaultOutlet.id);
-                    }
-                }
+        // Auto-select logic if none selected or selection invalid
+        if (outletsData.length > 0) {
+          const isValid = outletsData.find((o) => o.id === currentActiveId);
+          if (!currentActiveId || !isValid) {
+            const defaultOutlet =
+              outletsData.find((o) => o.type === 'main_kitchen') || outletsData[0];
+            if (defaultOutlet) {
+              console.log('Auto-selecting outlet:', defaultOutlet.name);
+              setActiveOutletId(defaultOutlet.id);
             }
+          }
+        }
 
-            setLoading(false);
-        }, (error) => {
-            console.error("Error syncing outlets:", error);
-            setLoading(false);
-        });
+        setLoading(false);
+      },
+      (error) => {
+        console.error('Error syncing outlets:', error);
+        setLoading(false);
+      }
+    );
 
-        return () => unsubscribe();
-    }, [setOutlets, setActiveOutletId]); // Removed activeOutletId to prevent infinite re-subscription loop
+    return () => unsubscribe();
+  }, [setOutlets, setActiveOutletId]); // Removed activeOutletId to prevent infinite re-subscription loop
 
-    return { loading };
+  return { loading };
 };

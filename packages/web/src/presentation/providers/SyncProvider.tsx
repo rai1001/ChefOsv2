@@ -13,28 +13,28 @@ import { useHaccpSync } from '@/hooks/sync/useHaccpSync';
 import { useInventorySync } from '@/hooks/sync/useInventorySync';
 
 interface SyncProviderProps {
-    children: React.ReactNode;
+  children: React.ReactNode;
 }
 
 export const SyncProvider: React.FC<SyncProviderProps> = ({ children }) => {
-    // Mount sync hooks here
-    // These hooks will automatically subscribe/unsubscribe based on activeOutletId
+  // Mount sync hooks here
+  // These hooks will automatically subscribe/unsubscribe based on activeOutletId
 
-    // Outlets (Global)
-    useOutletsSync();
+  // Outlets (Global)
+  // useOutletsSync();
 
-    // Outlet-Specific Data
-    useIngredientsSync();
-    useRecipesSync();
-    useMenusSync();
-    useSuppliersSync();
-    useStaffSync();
-    useProductionSync();
-    useEventsSync();
-    usePurchaseOrdersSync();
-    useWasteSync();
-    useHaccpSync();
-    useInventorySync();
+  // Outlet-Specific Data
+  // useIngredientsSync();
+  // useRecipesSync();
+  // useMenusSync();
+  // useSuppliersSync();
+  // useStaffSync();
+  // useProductionSync();
+  // useEventsSync();
+  // usePurchaseOrdersSync();
+  // useWasteSync();
+  // useHaccpSync();
+  // useInventorySync();
 
-    return <>{children}</>;
+  return <>{children}</>;
 };

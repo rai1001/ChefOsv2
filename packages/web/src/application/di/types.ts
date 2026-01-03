@@ -99,4 +99,6 @@ export const TYPES = {
   InviteUserUseCase: Symbol.for('InviteUserUseCase'),
   ListInvitationsUseCase: Symbol.for('ListInvitationsUseCase'),
   DeleteInvitationUseCase: Symbol.for('DeleteInvitationUseCase'),
+  OutletRepository: Symbol.for('OutletRepository'),
+  SupabaseOutletRepository: Symbol.for('SupabaseOutletRepository'),
 };

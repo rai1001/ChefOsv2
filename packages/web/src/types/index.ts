@@ -80,6 +80,7 @@ export type EventType =
   | 'Coffee Break'
   | 'Boda'
   | 'Otros';
+export type EventStatus = 'confirmed' | 'pending' | 'cancelled';
 
 export interface Event {
   id: string;
@@ -92,6 +93,7 @@ export interface Event {
   menu?: Menu;
   notes?: string;
   outletId?: string;
+  status?: EventStatus;
   createdAt?: string;
   updatedAt?: string;
 }
@@ -222,9 +224,11 @@ export interface Employee {
 export type ShiftType = 'MORNING' | 'AFTERNOON' | 'OFF' | 'VACATION' | 'SICK_LEAVE';
 
 export interface Shift {
+  id: string;
   date: string; // YYYY-MM-DD
   employeeId: string;
   type: ShiftType;
+  outletId?: string;
 }
 
 export interface DailySchedule {

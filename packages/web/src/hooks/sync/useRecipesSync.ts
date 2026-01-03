@@ -6,45 +6,46 @@ import { useStore } from '@/presentation/store/useStore';
 import type { Recipe } from '@/types';
 
 export const useRecipesSync = () => {
-    const { activeOutletId, setRecipes } = useStore();
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState<Error | null>(null);
+  const { activeOutletId, setRecipes } = useStore();
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
 
-    useEffect(() => {
-        if (!activeOutletId) {
-            setRecipes([]);
-            setLoading(false);
-            return;
-        }
+  useEffect(() => {
+    if (import.meta.env.VITE_USE_SUPABASE_READ === 'true') {
+      setLoading(false);
+      return;
+    }
+    if (!activeOutletId) {
+      setRecipes([]);
+      setLoading(false);
+      return;
+    }
 
-        setLoading(true);
-        const q = query(
-            collections.recipes,
-            where('outletId', '==', activeOutletId)
-        );
+    setLoading(true);
+    const q = query(collections.recipes, where('outletId', '==', activeOutletId));
 
-        const unsubscribe = onSnapshotMockable(
-            q,
-            'recipes',
-            (snapshot) => {
-                const data = snapshot.docs.map(doc => ({
-                    id: doc.id,
-                    ...doc.data()
-                })) as Recipe[];
+    const unsubscribe = onSnapshotMockable(
+      q,
+      'recipes',
+      (snapshot) => {
+        const data = snapshot.docs.map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+        })) as Recipe[];
 
-                setRecipes(data);
-                setLoading(false);
-            },
-            (err) => {
-                console.error("Error syncing recipes:", err);
-                setError(err);
-                setLoading(false);
-            },
-            activeOutletId
-        );
+        setRecipes(data);
+        setLoading(false);
+      },
+      (err) => {
+        console.error('Error syncing recipes:', err);
+        setError(err);
+        setLoading(false);
+      },
+      activeOutletId
+    );
 
-        return () => unsubscribe();
-    }, [activeOutletId, setRecipes]);
+    return () => unsubscribe();
+  }, [activeOutletId, setRecipes]);
 
-    return { loading, error };
+  return { loading, error };
 };

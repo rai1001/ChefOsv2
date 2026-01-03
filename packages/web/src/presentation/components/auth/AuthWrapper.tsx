@@ -3,7 +3,7 @@ import { useStore } from '@/presentation/store/useStore';
 import { useSetAtom } from 'jotai';
 import { userAtom } from '@/presentation/store/authAtoms';
 import { User as DomainUser } from '@/domain/entities/User';
-import { ShieldCheck, Lock, LogOut, Store } from 'lucide-react';
+import { Lock, LogOut, Store } from 'lucide-react';
 
 interface AuthWrapperProps {
   children: React.ReactNode;
@@ -22,7 +22,6 @@ export const AuthWrapper: React.FC<AuthWrapperProps> = ({ children }) => {
   const [user, setUser] = useState<any | null>(null);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
 
   const { setActiveOutletId, setCurrentUser } = useStore();
   const setUserAtom = useSetAtom(userAtom);
@@ -38,8 +37,8 @@ export const AuthWrapper: React.FC<AuthWrapperProps> = ({ children }) => {
         const repo = container.get<any>(TYPES.SupabaseAuthRepository);
 
         repo.onAuthStateChanged((domainUser: any) => {
+          console.log('Auth State Changed:', domainUser ? 'USER ON' : 'USER OFF');
           if (domainUser) {
-            console.log('Supabase User Detected:', domainUser);
             setUser({
               uid: domainUser.id,
               email: domainUser.email,
@@ -64,6 +63,9 @@ export const AuthWrapper: React.FC<AuthWrapperProps> = ({ children }) => {
               displayName: domainUser.displayName || domainUser.email.split('@')[0],
               photoURL: domainUser.photoURL || undefined,
               role: domainUser.role as any,
+              active: domainUser.active ?? true,
+              allowedOutlets: domainUser.allowedOutlets || [],
+              activeOutletId: domainUser.activeOutletId,
               createdAt: new Date(),
               updatedAt: new Date(),
             });
@@ -93,6 +95,9 @@ export const AuthWrapper: React.FC<AuthWrapperProps> = ({ children }) => {
                   email: userData.email,
                   displayName: userData.name,
                   role: userData.role as any,
+                  active: true,
+                  allowedOutlets: userData.allowedOutlets || [],
+                  activeOutletId: userData.activeOutletId,
                   createdAt: new Date(),
                   updatedAt: new Date(),
                 });
@@ -124,11 +129,15 @@ export const AuthWrapper: React.FC<AuthWrapperProps> = ({ children }) => {
 
   const handleLogout = async () => {
     try {
+      console.log('AuthWrapper: Starting logout...');
+      localStorage.removeItem('E2E_TEST_USER');
+
       const { container } = await import('@/application/di/Container');
       const { TYPES } = await import('@/application/di/types');
       const repo = container.get<any>(TYPES.SupabaseAuthRepository);
       await repo.signOut();
-      localStorage.removeItem('E2E_TEST_USER');
+
+      console.log('AuthWrapper: Logout successful, redirecting...');
       window.location.href = '/';
     } catch (e) {
       console.error('Logout error:', e);

@@ -5,39 +5,44 @@ import { useStore } from '@/presentation/store/useStore';
 import type { Supplier } from '@/types';
 
 export const useSuppliersSync = () => {
-    const { activeOutletId, setSuppliers } = useStore();
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState<Error | null>(null);
+  const { activeOutletId, setSuppliers } = useStore();
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
 
-    useEffect(() => {
-        if (!activeOutletId) {
-            setSuppliers([]);
-            setLoading(false);
-            return;
-        }
+  useEffect(() => {
+    if (import.meta.env.VITE_USE_SUPABASE_READ === 'true') {
+      setLoading(false);
+      return;
+    }
+    if (!activeOutletId) {
+      setSuppliers([]);
+      setLoading(false);
+      return;
+    }
 
-        setLoading(true);
-        const q = query(
-            collections.suppliers,
-            where('outletId', '==', activeOutletId)
-        );
+    setLoading(true);
+    const q = query(collections.suppliers, where('outletId', '==', activeOutletId));
 
-        const unsubscribe = onSnapshot(q, (snapshot) => {
-            const data = snapshot.docs.map(doc => ({
-                id: doc.id,
-                ...doc.data()
-            })) as Supplier[];
+    const unsubscribe = onSnapshot(
+      q,
+      (snapshot) => {
+        const data = snapshot.docs.map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+        })) as Supplier[];
 
-            setSuppliers(data);
-            setLoading(false);
-        }, (err) => {
-            console.error("Error syncing suppliers:", err);
-            setError(err);
-            setLoading(false);
-        });
+        setSuppliers(data);
+        setLoading(false);
+      },
+      (err) => {
+        console.error('Error syncing suppliers:', err);
+        setError(err);
+        setLoading(false);
+      }
+    );
 
-        return () => unsubscribe();
-    }, [activeOutletId, setSuppliers]);
+    return () => unsubscribe();
+  }, [activeOutletId, setSuppliers]);
 
-    return { loading, error };
+  return { loading, error };
 };
