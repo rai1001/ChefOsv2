@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Supabase Admin Panel - ChefOS</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 20px;
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+        .header {
+            background: linear-gradient(135deg, #3ECF8E 0%, #2BA876 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        .header h1 { margin-bottom: 10px; }
+        .header p { opacity: 0.9; }
+        .tabs {
+            display: flex;
+            background: #f8f9fa;
+            border-bottom: 2px solid #dee2e6;
+        }
+        .tab {
+            flex: 1;
+            padding: 15px;
+            text-align: center;
+            cursor: pointer;
+            background: #f8f9fa;
+            border: none;
+            font-size: 16px;
+            transition: all 0.3s;
+        }
+        .tab:hover { background: #e9ecef; }
+        .tab.active {
+            background: white;
+            border-bottom: 3px solid #3ECF8E;
+            font-weight: bold;
+        }
+        .content {
+            padding: 30px;
+        }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+
+        .btn {
+            padding: 12px 24px;
+            background: #3ECF8E;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: all 0.3s;
+            margin: 5px;
+        }
+        .btn:hover { background: #2BA876; transform: translateY(-2px); }
+        .btn-danger { background: #dc3545; }
+        .btn-danger:hover { background: #c82333; }
+
+        .table-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+        .table-card {
+            border: 2px solid #dee2e6;
+            border-radius: 8px;
+            padding: 20px;
+            transition: all 0.3s;
+            cursor: pointer;
+        }
+        .table-card:hover {
+            border-color: #3ECF8E;
+            box-shadow: 0 4px 12px rgba(62, 207, 142, 0.2);
+        }
+        .table-card h3 { color: #495057; margin-bottom: 10px; }
+        .table-card .count {
+            font-size: 32px;
+            font-weight: bold;
+            color: #3ECF8E;
+        }
+        .table-card .columns {
+            font-size: 12px;
+            color: #6c757d;
+            margin-top: 10px;
+        }
+
+        #results {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            white-space: pre-wrap;
+            font-family: 'Courier New', monospace;
+            max-height: 500px;
+            overflow-y: auto;
+            margin-top: 20px;
+        }
+
+        .input-group {
+            margin: 15px 0;
+        }
+        .input-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+            color: #495057;
+        }
+        .input-group input,
+        .input-group textarea,
+        .input-group select {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #dee2e6;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+        .input-group textarea { min-height: 100px; font-family: 'Courier New', monospace; }
+
+        .status { padding: 5px 10px; border-radius: 4px; font-size: 12px; font-weight: bold; }
+        .status-ok { background: #d4edda; color: #155724; }
+        .status-error { background: #f8d7da; color: #721c24; }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #6c757d;
+        }
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #3ECF8E;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔧 Supabase Admin Panel</h1>
+            <p>Gestión completa de la base de datos ChefOS</p>
+            <p style="font-size: 12px; margin-top: 10px;">
+                <strong>Proyecto:</strong> xrgewhvijmrthsnrrxdw |
+                <strong>Auth:</strong> SERVICE_ROLE (Acceso Total)
+            </p>
+        </div>
+
+        <div class="tabs">
+            <button class="tab active" onclick="switchTab('database')">📊 Base de Datos</button>
+            <button class="tab" onclick="switchTab('functions')">⚡ Edge Functions</button>
+            <button class="tab" onclick="switchTab('sql')">💻 SQL Editor</button>
+            <button class="tab" onclick="switchTab('realtime')">🔄 Realtime</button>
+        </div>
+
+        <div class="content">
+            <!-- Database Tab -->
+            <div id="database" class="tab-content active">
+                <h2>Explorador de Tablas</h2>
+                <button class="btn" onclick="loadTables()">🔄 Recargar Tablas</button>
+                <button class="btn" onclick="exportData()">📥 Exportar Datos</button>
+
+                <div id="tables-grid" class="table-grid">
+                    <div class="loading">
+                        <div class="spinner"></div>
+                        <p>Cargando tablas...</p>
+                    </div>
+                </div>
+
+                <div id="table-details" style="margin-top: 30px; display: none;">
+                    <h3 id="selected-table-name"></h3>
+                    <div id="table-data"></div>
+                </div>
+            </div>
+
+            <!-- Functions Tab -->
+            <div id="functions" class="tab-content">
+                <h2>Edge Functions</h2>
+                <button class="btn" onclick="testAllFunctions()">🧪 Probar Todas</button>
+
+                <div id="functions-list" style="margin-top: 20px;">
+                    <div class="loading">Cargando funciones...</div>
+                </div>
+            </div>
+
+            <!-- SQL Tab -->
+            <div id="sql" class="tab-content">
+                <h2>SQL Editor</h2>
+
+                <div class="input-group">
+                    <label>Ejecutar Query SQL:</label>
+                    <textarea id="sql-query" placeholder="SELECT * FROM outlets LIMIT 10;"></textarea>
+                </div>
+
+                <button class="btn" onclick="executeSQL()">▶️ Ejecutar</button>
+                <button class="btn" onclick="loadSampleQueries()">📝 Queries de Ejemplo</button>
+
+                <div id="sql-results"></div>
+            </div>
+
+            <!-- Realtime Tab -->
+            <div id="realtime" class="tab-content">
+                <h2>Realtime Subscriptions</h2>
+                <p>Monitoreo en tiempo real de cambios en las tablas</p>
+
+                <div class="input-group">
+                    <label>Tabla a monitorear:</label>
+                    <select id="realtime-table">
+                        <option value="outlets">outlets</option>
+                        <option value="employees">employees</option>
+                        <option value="orders">orders</option>
+                        <option value="inventory">inventory</option>
+                    </select>
+                </div>
+
+                <button class="btn" onclick="startRealtime()">▶️ Iniciar Monitoreo</button>
+                <button class="btn btn-danger" onclick="stopRealtime()">⏹️ Detener</button>
+
+                <div id="realtime-log" style="margin-top: 20px;"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const SUPABASE_URL = 'https://xrgewhvijmrthsnrrxdw.supabase.co';
+        const SERVICE_ROLE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhyZ2V3aHZpam1ydGhzbnJyeGR3Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NzMzMTEzMywiZXhwIjoyMDgyOTA3MTMzfQ.FXF__BF0lfd2AKeWQ97qjTZSlNqcZCUOSQphP7qpcps';
+
+        const { createClient } = supabase;
+        const supabaseClient = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
+
+        const TABLES = [
+            'outlets', 'employees', 'ingredients', 'recipes',
+            'menus', 'orders', 'purchase_orders', 'suppliers',
+            'inventory', 'schedule'
+        ];
+
+        let realtimeChannel = null;
+
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+
+            event.target.classList.add('active');
+            document.getElementById(tabName).classList.add('active');
+
+            if (tabName === 'database' && document.getElementById('tables-grid').innerHTML.includes('loading')) {
+                loadTables();
+            }
+            if (tabName === 'functions') {
+                loadFunctions();
+            }
+        }
+
+        async function loadTables() {
+            const grid = document.getElementById('tables-grid');
+            grid.innerHTML = '<div class="loading"><div class="spinner"></div><p>Cargando tablas...</p></div>';
+
+            const results = [];
+            for (const tableName of TABLES) {
+                try {
+                    const { count, error } = await supabaseClient
+                        .from(tableName)
+                        .select('*', { count: 'exact', head: true });
+
+                    if (error) {
+                        results.push({ name: tableName, count: 0, error: error.message });
+                    } else {
+                        const { data } = await supabaseClient
+                            .from(tableName)
+                            .select('*')
+                            .limit(1);
+
+                        const columns = data && data.length > 0 ? Object.keys(data[0]) : [];
+                        results.push({ name: tableName, count: count || 0, columns });
+                    }
+                } catch (err) {
+                    results.push({ name: tableName, count: 0, error: err.message });
+                }
+            }
+
+            grid.innerHTML = results.map(table => `
+                <div class="table-card" onclick="viewTableData('${table.name}')">
+                    <h3>${table.name}</h3>
+                    ${table.error
+                        ? `<span class="status status-error">ERROR</span><p style="color: #721c24; font-size: 12px; margin-top: 5px;">${table.error}</p>`
+                        : `
+                            <div class="count">${table.count}</div>
+                            <p style="color: #6c757d; font-size: 14px;">registros</p>
+                            ${table.columns ? `<div class="columns">${table.columns.slice(0, 6).join(', ')}${table.columns.length > 6 ? '...' : ''}</div>` : ''}
+                        `
+                    }
+                </div>
+            `).join('');
+        }
+
+        async function viewTableData(tableName) {
+            const details = document.getElementById('table-details');
+            const tableData = document.getElementById('table-data');
+
+            details.style.display = 'block';
+            document.getElementById('selected-table-name').textContent = `📋 Tabla: ${tableName}`;
+            tableData.innerHTML = '<div class="loading"><div class="spinner"></div><p>Cargando datos...</p></div>';
+
+            const { data, error } = await supabaseClient
+                .from(tableName)
+                .select('*')
+                .limit(10);
+
+            if (error) {
+                tableData.innerHTML = `<div class="status status-error">Error: ${error.message}</div>`;
+                return;
+            }
+
+            tableData.innerHTML = `
+                <p><strong>Mostrando ${data.length} de ${data.length} registros</strong></p>
+                <pre style="background: #f8f9fa; padding: 15px; border-radius: 6px; overflow-x: auto; margin-top: 10px;">${JSON.stringify(data, null, 2)}</pre>
+            `;
+        }
+
+        async function loadFunctions() {
+            const list = document.getElementById('functions-list');
+            const functions = [
+                { name: 'scan-document', description: 'Escanea documentos con Gemini Vision AI' },
+                { name: 'enrich-ingredient', description: 'Enriquece ingredientes con datos nutricionales' },
+                { name: 'chat-copilot', description: 'Chatbot AI para asistencia' },
+                { name: 'generate-menu', description: 'Generación automática de menús' }
+            ];
+
+            list.innerHTML = functions.map(fn => `
+                <div style="border: 2px solid #dee2e6; border-radius: 8px; padding: 20px; margin: 10px 0;">
+                    <h3>⚡ ${fn.name}</h3>
+                    <p style="color: #6c757d; margin: 10px 0;">${fn.description}</p>
+                    <button class="btn" onclick="testFunction('${fn.name}')">🧪 Probar</button>
+                    <div id="result-${fn.name}" style="margin-top: 10px;"></div>
+                </div>
+            `).join('');
+        }
+
+        async function testFunction(name) {
+            const resultDiv = document.getElementById(`result-${name}`);
+            resultDiv.innerHTML = '<div class="loading"><div class="spinner"></div></div>';
+
+            const payloads = {
+                'scan-document': {
+                    imageBase64: 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==',
+                    type: 'invoice'
+                },
+                'enrich-ingredient': { ingredientName: 'tomate' },
+                'chat-copilot': { message: 'Hola', context: {}, history: [] },
+                'generate-menu': { params: { test: true } }
+            };
+
+            try {
+                const { data, error } = await supabaseClient.functions.invoke(name, {
+                    body: payloads[name]
+                });
+
+                if (error) {
+                    resultDiv.innerHTML = `<span class="status status-error">ERROR: ${error.message}</span>`;
+                } else {
+                    resultDiv.innerHTML = `
+                        <span class="status status-ok">✅ Éxito</span>
+                        <pre style="background: #d4edda; padding: 10px; border-radius: 4px; margin-top: 10px; font-size: 12px;">${JSON.stringify(data, null, 2)}</pre>
+                    `;
+                }
+            } catch (err) {
+                resultDiv.innerHTML = `<span class="status status-error">ERROR: ${err.message}</span>`;
+            }
+        }
+
+        async function testAllFunctions() {
+            const functions = ['scan-document', 'enrich-ingredient', 'chat-copilot', 'generate-menu'];
+            for (const fn of functions) {
+                await testFunction(fn);
+            }
+        }
+
+        async function executeSQL() {
+            const query = document.getElementById('sql-query').value;
+            const resultsDiv = document.getElementById('sql-results');
+
+            if (!query.trim()) {
+                alert('Por favor, escribe una query SQL');
+                return;
+            }
+
+            resultsDiv.innerHTML = '<div class="loading"><div class="spinner"></div><p>Ejecutando query...</p></div>';
+
+            try {
+                // Supabase no permite SQL arbitrario con supabase-js, usar tabla directamente
+                alert('Para ejecutar SQL personalizado, usa el SQL Editor en el Dashboard de Supabase:\nhttps://supabase.com/dashboard/project/xrgewhvijmrthsnrrxdw/editor');
+            } catch (err) {
+                resultsDiv.innerHTML = `<div class="status status-error">Error: ${err.message}</div>`;
+            }
+        }
+
+        function loadSampleQueries() {
+            document.getElementById('sql-query').value = `-- Ver todas las tablas
+SELECT table_name
+FROM information_schema.tables
+WHERE table_schema = 'public';
+
+-- Contar registros por tabla
+SELECT 'outlets' as tabla, COUNT(*) as total FROM outlets
+UNION ALL
+SELECT 'employees', COUNT(*) FROM employees;
+
+-- Ver últimas órdenes
+SELECT * FROM orders
+ORDER BY created_at DESC
+LIMIT 10;`;
+        }
+
+        function startRealtime() {
+            const tableName = document.getElementById('realtime-table').value;
+            const logDiv = document.getElementById('realtime-log');
+
+            stopRealtime(); // Detener suscripción anterior si existe
+
+            logDiv.innerHTML = `<div class="status status-ok">Monitoreando tabla: ${tableName}</div><div id="realtime-events"></div>`;
+
+            realtimeChannel = supabaseClient
+                .channel('db-changes')
+                .on('postgres_changes',
+                    { event: '*', schema: 'public', table: tableName },
+                    (payload) => {
+                        const eventsDiv = document.getElementById('realtime-events');
+                        const eventHTML = `
+                            <div style="border-left: 4px solid #3ECF8E; padding: 10px; margin: 10px 0; background: #f8f9fa;">
+                                <strong>${payload.eventType}</strong> - ${new Date().toLocaleTimeString()}
+                                <pre style="margin-top: 5px; font-size: 12px;">${JSON.stringify(payload.new || payload.old, null, 2)}</pre>
+                            </div>
+                        `;
+                        eventsDiv.innerHTML = eventHTML + eventsDiv.innerHTML;
+                    }
+                )
+                .subscribe();
+        }
+
+        function stopRealtime() {
+            if (realtimeChannel) {
+                supabaseClient.removeChannel(realtimeChannel);
+                realtimeChannel = null;
+                const logDiv = document.getElementById('realtime-log');
+                if (logDiv.querySelector('.status-ok')) {
+                    logDiv.innerHTML = '<div class="status status-error">Monitoreo detenido</div>';
+                }
+            }
+        }
+
+        function exportData() {
+            alert('Función de exportación en desarrollo. Por ahora, usa el dashboard:\nhttps://supabase.com/dashboard/project/xrgewhvijmrthsnrrxdw');
+        }
+
+        // Cargar tablas al inicio
+        loadTables();
+    </script>
+</body>
+</html>
