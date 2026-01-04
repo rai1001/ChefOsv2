@@ -3,6 +3,7 @@
  *
  * Enriches ingredient data with nutritional information and allergens
  * Uses Gemini AI to provide detailed nutritional data per EU Regulation 1169/2011
+ * Updated: 2026-01-04 - Using Gemini 2.0 Flash
  */
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';

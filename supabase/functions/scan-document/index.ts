@@ -3,6 +3,7 @@
  *
  * Scans invoices, delivery notes, menus, and other documents using Gemini Vision AI
  * Extracts structured data from images and returns JSON
+ * Updated: 2026-01-04 - Using Gemini 2.0 Flash
  *
  * Used by:
  * - UniversalImporter
