@@ -8,7 +8,7 @@ import type { GeminiRequest, GeminiResponse, AIUsageMetrics, AIRequestOptions } 
 export class GeminiClient {
   private apiKey: string;
   private baseUrl = 'https://generativelanguage.googleapis.com/v1beta/models';
-  private defaultModel = 'gemini-1.5-flash';
+  private defaultModel = 'gemini-2.0-flash-exp';
 
   constructor(apiKey: string) {
     if (!apiKey) {
