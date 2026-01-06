@@ -8,12 +8,9 @@ export class SupabaseOutletRepository implements IOutletRepository {
   private readonly tableName = 'outlets';
 
   async getOutlets(): Promise<Outlet[]> {
-    // Explicitly select columns to avoid schema cache issues (e.g., missing codeTime)
     const { data, error } = await supabase
       .from(this.tableName)
-      .select(
-        'id, name, type, is_active, address, phone, auto_purchase_settings, gemini_api_key, workspace_account, outlook_account'
-      );
+      .select('id, name, type, is_active, address');
 
     if (error) throw error;
 
@@ -24,9 +21,7 @@ export class SupabaseOutletRepository implements IOutletRepository {
   async getOutletById(id: string): Promise<Outlet | null> {
     const { data, error } = await supabase
       .from(this.tableName)
-      .select(
-        'id, name, type, is_active, address, phone, auto_purchase_settings, gemini_api_key, workspace_account, outlook_account'
-      )
+      .select('id, name, type, is_active, address')
       .eq('id', id)
       .single();
 
@@ -58,11 +53,11 @@ export class SupabaseOutletRepository implements IOutletRepository {
       type: row.type,
       isActive: row.is_active,
       address: row.address,
-      phone: row.phone,
-      autoPurchaseSettings: row.auto_purchase_settings || undefined,
-      geminiApiKey: row.gemini_api_key || undefined,
-      workspaceAccount: row.workspace_account || undefined,
-      outlookAccount: row.outlook_account || undefined,
+      phone: undefined,
+      autoPurchaseSettings: undefined,
+      geminiApiKey: undefined,
+      workspaceAccount: undefined,
+      outlookAccount: undefined,
     };
   }
 
@@ -73,11 +68,6 @@ export class SupabaseOutletRepository implements IOutletRepository {
       type: outlet.type,
       is_active: outlet.isActive,
       address: outlet.address,
-      phone: outlet.phone,
-      auto_purchase_settings: outlet.autoPurchaseSettings,
-      gemini_api_key: outlet.geminiApiKey,
-      workspace_account: outlet.workspaceAccount,
-      outlook_account: outlet.outlookAccount,
     };
   }
 
@@ -87,12 +77,6 @@ export class SupabaseOutletRepository implements IOutletRepository {
     if (outlet.type !== undefined) row.type = outlet.type;
     if (outlet.isActive !== undefined) row.is_active = outlet.isActive;
     if (outlet.address !== undefined) row.address = outlet.address;
-    if (outlet.phone !== undefined) row.phone = outlet.phone;
-    if (outlet.autoPurchaseSettings !== undefined)
-      row.auto_purchase_settings = outlet.autoPurchaseSettings;
-    if (outlet.geminiApiKey !== undefined) row.gemini_api_key = outlet.geminiApiKey;
-    if (outlet.workspaceAccount !== undefined) row.workspace_account = outlet.workspaceAccount;
-    if (outlet.outlookAccount !== undefined) row.outlook_account = outlet.outlookAccount;
     return row;
   }
 }
