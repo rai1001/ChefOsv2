@@ -8,6 +8,7 @@ create table if not exists outlets (
   type text not null, 
   address text,
   settings jsonb default '{}'::jsonb,
+  is_active boolean default true,
   created_at timestamptz default now()
 );
 
