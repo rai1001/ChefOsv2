@@ -1,5 +1,20 @@
 import { supabase } from '@/config/supabase';
 
+// Simple camelCase -> snake_case converter for payload keys
+const toSnake = (key: string) => key.replace(/([a-z0-9])([A-Z])/g, '$1_$2').toLowerCase();
+
+const convertKeysToSnake = (data: any): any => {
+  if (Array.isArray(data)) {
+    return data.map(convertKeysToSnake);
+  }
+  if (data && typeof data === 'object') {
+    return Object.fromEntries(
+      Object.entries(data).map(([k, v]) => [toSnake(k), convertKeysToSnake(v)])
+    );
+  }
+  return data;
+};
+
 /**
  * A polyfill for the legacy firestoreService that uses Supabase as a backend.
  * This allows migrating existing Zustand slices without rewriting every call.
@@ -20,9 +35,10 @@ export const supabasePersistenceService = {
   },
 
   async create<T>(collectionName: string, data: any): Promise<string> {
+    const payload = convertKeysToSnake(data);
     const { data: inserted, error } = await supabase
       .from(collectionName)
-      .insert(data)
+      .insert(payload)
       .select()
       .single();
 
@@ -31,13 +47,15 @@ export const supabasePersistenceService = {
   },
 
   async set(collectionName: string, id: string, data: any): Promise<void> {
-    const { error } = await supabase.from(collectionName).upsert({ ...data, id });
+    const payload = convertKeysToSnake({ ...data, id });
+    const { error } = await supabase.from(collectionName).upsert(payload);
 
     if (error) throw error;
   },
 
   async update(collectionName: string, id: string, data: any): Promise<void> {
-    const { error } = await supabase.from(collectionName).update(data).eq('id', id);
+    const payload = convertKeysToSnake(data);
+    const { error } = await supabase.from(collectionName).update(payload).eq('id', id);
 
     if (error) throw error;
   },
@@ -49,7 +67,7 @@ export const supabasePersistenceService = {
   },
 
   async batchSet(collectionName: string, documents: { id: string; data: any }[]): Promise<void> {
-    const dataToUpsert = documents.map((doc) => ({ ...doc.data, id: doc.id }));
+    const dataToUpsert = documents.map((doc) => convertKeysToSnake({ ...doc.data, id: doc.id }));
     const { error } = await supabase.from(collectionName).upsert(dataToUpsert);
 
     if (error) throw error;
