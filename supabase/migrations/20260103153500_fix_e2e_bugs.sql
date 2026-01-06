@@ -14,6 +14,8 @@ CREATE TABLE IF NOT EXISTS schedule (
 
 ALTER TABLE schedule ENABLE ROW LEVEL SECURITY;
 
+-- Make policy idempotent if it already exists
+DROP POLICY IF EXISTS "Enable all access for authenticated users" ON schedule;
 CREATE POLICY "Enable all access for authenticated users" ON schedule
 FOR ALL USING (auth.role() = 'authenticated');
 
