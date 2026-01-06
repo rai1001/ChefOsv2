@@ -25,26 +25,29 @@ export class SupabaseEventRepository implements IEventRepository {
     return (data || []).map((row) => ({
       ...row,
       outletId: row.outlet_id,
+      menuId: (row as any).menu_id,
     })) as Event[];
   }
 
   async saveEvent(event: Event): Promise<void> {
-    const { outletId, ...rest } = event;
+    const { outletId, menuId, ...rest } = event;
     const { error } = await supabase.from(this.tableName).upsert({
       ...rest,
       id: event.id,
       outlet_id: outletId,
+      menu_id: menuId,
     });
     if (error) throw error;
   }
 
   async saveEvents(events: Event[]): Promise<void> {
     const data = events.map((e) => {
-      const { outletId, ...rest } = e;
+      const { outletId, menuId, ...rest } = e;
       return {
         ...rest,
         id: e.id,
         outlet_id: outletId,
+        menu_id: menuId,
       };
     });
     const { error } = await supabase.from(this.tableName).upsert(data);
