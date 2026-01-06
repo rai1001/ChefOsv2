@@ -21,7 +21,7 @@ export const SyncProvider: React.FC<SyncProviderProps> = ({ children }) => {
   // These hooks will automatically subscribe/unsubscribe based on activeOutletId
 
   // Outlets (Global)
-  // useOutletsSync();
+  useOutletsSync();
 
   // Outlet-Specific Data
   // useIngredientsSync();
