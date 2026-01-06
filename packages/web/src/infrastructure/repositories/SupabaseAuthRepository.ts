@@ -53,6 +53,20 @@ export class SupabaseAuthRepository implements IAuthRepository {
   }
 
   onAuthStateChanged(callback: (user: User | null) => void): () => void {
+    // Immediately check current session and invoke callback
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
+      console.log('Initial session on subscribe:', !!session);
+      if (session?.user) {
+        const user = await this.mapToEntity(session.user);
+        this._currentUser = user;
+        callback(user);
+      } else {
+        this._currentUser = null;
+        callback(null);
+      }
+    });
+
+    // Listen for future auth state changes
     const { data } = supabase.auth.onAuthStateChange(async (event, session) => {
       console.log(`Supabase Auth Event: ${event}`, !!session);
       if (session?.user) {

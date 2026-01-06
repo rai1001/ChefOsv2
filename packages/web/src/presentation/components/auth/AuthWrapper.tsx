@@ -36,8 +36,51 @@ export const AuthWrapper: React.FC<AuthWrapperProps> = ({ children }) => {
         const { TYPES } = await import('@/application/di/types');
         const repo = container.get<any>(TYPES.SupabaseAuthRepository);
 
+        // Set up auth state listener (includes immediate callback with current session)
         repo.onAuthStateChanged((domainUser: any) => {
           console.log('Auth State Changed:', domainUser ? 'USER ON' : 'USER OFF');
+
+          // If no user and E2E bypass is enabled, try it
+          if (!domainUser && e2eUserStr && isE2EAllowed) {
+            try {
+              const userData = JSON.parse(e2eUserStr);
+              setUser({
+                uid: userData.id,
+                email: userData.email,
+                displayName: userData.name,
+                photoURL: userData.photoURL,
+              } as any);
+              setUserProfile({
+                uid: userData.id,
+                email: userData.email,
+                role: userData.role,
+                active: true,
+                allowedOutlets: userData.allowedOutlets,
+                defaultOutletId: userData.activeOutletId,
+              });
+              setCurrentUser(userData);
+              const mappedUserForAtom = new DomainUser({
+                id: userData.id,
+                email: userData.email,
+                displayName: userData.name,
+                role: userData.role as any,
+                active: true,
+                allowedOutlets: userData.allowedOutlets || [],
+                activeOutletId: userData.activeOutletId,
+                createdAt: new Date(),
+                updatedAt: new Date(),
+              });
+              setUserAtom(mappedUserForAtom);
+              if (userData.activeOutletId) {
+                setActiveOutletId(userData.activeOutletId);
+              }
+              setLoading(false);
+              return;
+            } catch (e) {
+              console.error('E2E Bypass Failed', e);
+            }
+          }
+
           if (domainUser) {
             setUser({
               uid: domainUser.id,
@@ -70,54 +113,14 @@ export const AuthWrapper: React.FC<AuthWrapperProps> = ({ children }) => {
               updatedAt: new Date(),
             });
             setUserAtom(mappedUserForAtom);
-            setLoading(false);
           } else {
-            if (e2eUserStr && isE2EAllowed) {
-              try {
-                const userData = JSON.parse(e2eUserStr);
-                setUser({
-                  uid: userData.id,
-                  email: userData.email,
-                  displayName: userData.name,
-                  photoURL: userData.photoURL,
-                } as any);
-                setUserProfile({
-                  uid: userData.id,
-                  email: userData.email,
-                  role: userData.role,
-                  active: true,
-                  allowedOutlets: userData.allowedOutlets,
-                  defaultOutletId: userData.activeOutletId,
-                });
-                setCurrentUser(userData);
-                const mappedUserForAtom = new DomainUser({
-                  id: userData.id,
-                  email: userData.email,
-                  displayName: userData.name,
-                  role: userData.role as any,
-                  active: true,
-                  allowedOutlets: userData.allowedOutlets || [],
-                  activeOutletId: userData.activeOutletId,
-                  createdAt: new Date(),
-                  updatedAt: new Date(),
-                });
-                setUserAtom(mappedUserForAtom);
-
-                if (userData.activeOutletId) {
-                  setActiveOutletId(userData.activeOutletId);
-                }
-                setLoading(false);
-                return;
-              } catch (e) {
-                console.error('E2E Bypass Failed', e);
-              }
-            }
             setUser(null);
             setUserProfile(null);
             setCurrentUser(null);
             setUserAtom(null);
-            setLoading(false);
           }
+
+          setLoading(false);
         });
       } catch (e) {
         console.error('Supabase Auth Init Failed', e);
