@@ -61,7 +61,10 @@
       "Bash(export SUPABASE_ACCESS_TOKEN=sbp_6df23c97ffb16723d826963a354c44499361be16)",
       "Bash(git reset:*)",
       "Bash(curl:*)",
-      "Bash(export:*)"
+      "Bash(export:*)",
+      "Bash(code:*)",
+      "Bash(del:*)",
+      "Bash(echo:*)"
     ]
   }
 }

@@ -1,8 +1,6 @@
 import { useEffect, useState } from 'react';
-// import { query, where } from 'firebase/firestore';
-// import { onSnapshotMockable } from '@/services/mockSnapshot';
-import { collections } from '@/config/collections';
 import { useStore } from '@/presentation/store/useStore';
+import { supabase } from '@/config/supabase';
 import type { Ingredient } from '@/types';
 
 import { Quantity, Money, Unit } from '@culinaryos/core';
@@ -13,73 +11,101 @@ export const useIngredientsSync = () => {
   const [error, setError] = useState<Error | null>(null);
 
   useEffect(() => {
-    // Stubbed for Supabase migration
-    const fetchIngredients = async () => {
-      // Here we should fetch from Supabase
-      setLoading(false);
-    };
-    fetchIngredients();
-
-    /*
     if (!activeOutletId) {
       setIngredients([]);
       setLoading(false);
       return;
     }
 
-    setLoading(true);
-    // OPTIMIZED: Query only ingredients for the active outlet
-    const q = query(collections.ingredients, where('outletId', '==', activeOutletId));
+    const fetchIngredients = async () => {
+      try {
+        console.log(`[Sync] Fetching ingredients for outlet ${activeOutletId}...`);
+        setLoading(true);
 
-    const unsubscribe = onSnapshotMockable(
-      q,
-      `ingredients-${activeOutletId}`,
-      (snapshot) => {
-        const data: Ingredient[] = [];
+        const { data, error: fetchError } = await supabase
+          .from('ingredients')
+          .select('*')
+          .eq('outlet_id', activeOutletId);
 
-        snapshot.docs.forEach((doc) => {
-          try {
-            const d = doc.data();
-            // Hydrate Core Value Objects safely
-            const unit = d.currentStock?.unit || d.unit || 'ud';
-            const coreUnit = Unit.from(typeof unit === 'string' ? unit : unit.type || 'ud');
+        if (fetchError) {
+          console.error('[Sync] Error fetching ingredients:', fetchError);
+          setError(fetchError);
+          setLoading(false);
+          return;
+        }
 
-            const currentStock = new Quantity(d.currentStock?.value || d.stock || 0, coreUnit);
-            const minimumStock = new Quantity(d.minimumStock?.value || d.minStock || 0, coreUnit);
-            const lastCost = d.lastCost
-              ? new Money(d.lastCost.amount, d.lastCost.currency)
-              : new Money(d.costPerUnit || 0, 'EUR');
+        const ingredients: Ingredient[] = (data || [])
+          .map((row: any) => {
+            try {
+              const unit = row.current_stock_unit || row.unit || 'ud';
+              const coreUnit = Unit.from(typeof unit === 'string' ? unit : unit.type || 'ud');
 
-            data.push({
-              id: doc.id,
-              ...d,
-              currentStock,
-              minimumStock,
-              lastCost,
-              unit: d.unit,
-              isTrackedInInventory: d.isTrackedInInventory ?? true,
-              suppliers: d.suppliers || [],
-            } as Ingredient);
-          } catch (itemErr) {
-            console.error(`Error hydrating ingredient ${doc.id}:`, itemErr);
-            // Skip broken items to keep UI alive
-          }
-        });
+              const currentStock = new Quantity(
+                row.current_stock_value || row.stock || 0,
+                coreUnit
+              );
+              const minimumStock = new Quantity(
+                row.minimum_stock_value || row.min_stock || 0,
+                coreUnit
+              );
+              const lastCost = row.last_cost_amount
+                ? new Money(row.last_cost_amount, row.last_cost_currency || 'EUR')
+                : new Money(row.cost_per_unit || 0, 'EUR');
 
-        setIngredients(data);
+              return {
+                id: row.id,
+                name: row.name,
+                category: row.category,
+                currentStock,
+                minimumStock,
+                lastCost,
+                unit: row.unit,
+                isTrackedInInventory: row.is_tracked_in_inventory ?? true,
+                suppliers: row.suppliers || [],
+                allergens: row.allergens || [],
+                outletId: row.outlet_id,
+              } as Ingredient;
+            } catch (itemErr) {
+              console.error(`Error hydrating ingredient ${row.id}:`, itemErr);
+              return null;
+            }
+          })
+          .filter(Boolean) as Ingredient[];
+
+        console.log(`[Sync] Ingredients synced (${ingredients.length})`);
+        setIngredients(ingredients);
         setLoading(false);
-      },
-      (err) => {
-        console.error('Error syncing ingredients:', err);
+      } catch (err: any) {
+        console.error('[Sync] Error in fetchIngredients:', err);
         setError(err);
         setLoading(false);
-      },
-      'global'
-    );
+      }
+    };
 
-    return () => unsubscribe();
-    */
-  }, [setIngredients]);
+    fetchIngredients();
+
+    // Set up real-time subscription
+    const channel = supabase
+      .channel(`ingredients-${activeOutletId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'ingredients',
+          filter: `outlet_id=eq.${activeOutletId}`,
+        },
+        (payload) => {
+          console.log('[Sync] Ingredient changed, refetching...', payload);
+          fetchIngredients();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [setIngredients, activeOutletId]);
 
   return { loading, error };
 };

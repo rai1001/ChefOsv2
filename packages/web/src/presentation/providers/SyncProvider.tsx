@@ -24,7 +24,7 @@ export const SyncProvider: React.FC<SyncProviderProps> = ({ children }) => {
   useOutletsSync();
 
   // Outlet-Specific Data
-  // useIngredientsSync();
+  useIngredientsSync();
   // useRecipesSync();
   // useMenusSync();
   // useSuppliersSync();
