@@ -1,0 +1,18 @@
+-- PASO 0: Solo usar si el usuario NO existe en auth.users
+--
+-- NOTA: Este query NO funcionará con la extensión de VS Code
+-- porque requiere permisos de service_role
+--
+-- En su lugar, usa el Dashboard de Supabase:
+-- 1. Ve a: https://app.supabase.com/project/xrgewhvijmrthsnrrxdw/auth/users
+-- 2. Click en "Add User"
+-- 3. Ingresa:
+--    - Email: paypalpago1978@gmail.com
+--    - Password: (establece una contraseña temporal)
+--    - Auto Confirm User: ✅ (marca el checkbox)
+-- 4. Click en "Create User"
+-- 5. Ahora ejecuta step-1-get-user-uuid.sql
+
+-- Este query es solo de referencia (NO ejecutar desde VS Code):
+-- INSERT INTO auth.users (email, encrypted_password, email_confirmed_at)
+-- VALUES ('paypalpago1978@gmail.com', crypt('CONTRASEÑA_TEMPORAL', gen_salt('bf')), now());
