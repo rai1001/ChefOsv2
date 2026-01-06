@@ -26,7 +26,6 @@ import { normalizeDate } from '@/utils/date';
 import type { EventType, GeneratedMenu, Event, Menu } from '@/types';
 import { EventForm } from '@/presentation/components/events/EventForm';
 import { EventImportModal } from '@/presentation/components/events/EventImportModal';
-import { UniversalImporter } from '@/presentation/components/common/UniversalImporter';
 import { MenuGeneratorModal } from '@/presentation/components/ai/MenuGeneratorModal';
 import { DayDetailsModal } from '@/presentation/components/schedule/DayDetailsModal';
 import { EventsSkeleton } from '@/presentation/components/ui/Skeletons';
@@ -230,12 +229,6 @@ export const EventsPage: React.FC = () => {
               <span>Asistente IA</span>
             </button>
             <div className="flex gap-2 bg-[#1a2234] p-1 rounded-xl border border-white/5">
-              <UniversalImporter
-                buttonLabel="Imp."
-                defaultType="event"
-                onCompleted={refreshEvents}
-              />
-              <div className="w-px bg-white/10 my-1" />
               <button
                 onClick={() => setShowImportModal(true)}
                 className="px-3 hover:bg-white/5 rounded-lg text-slate-400 hover:text-white transition-colors"
