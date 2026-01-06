@@ -15,7 +15,9 @@ out/
 .env.*.local
 
 # IDE
-.vscode/
+.vscode/*
+!.vscode/settings.json
+!.vscode/supabase-connection.md
 .idea/
 *.swp
 *.swo

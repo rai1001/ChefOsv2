@@ -1,0 +1,9 @@
+{
+  "supabase.projectUrl": "https://xrgewhvijmrthsnrrxdw.supabase.co",
+  "supabase.enableIntelliSense": true,
+  "supabase.showNotifications": true,
+  "[sql]": {
+    "editor.formatOnSave": true,
+    "editor.defaultFormatter": "supabase.vscode-supabase-extension"
+  }
+}
