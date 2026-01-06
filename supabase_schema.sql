@@ -183,6 +183,7 @@ create table if not exists events (
   type text,
   room text,
   menu_id uuid, -- Link to menus table
+  status text default 'confirmed',
   notes text,
   created_at timestamptz default now(),
   updated_at timestamptz default now()
