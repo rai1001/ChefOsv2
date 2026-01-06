@@ -44,7 +44,6 @@ export class SupabaseEmployeeRepository implements IEmployeeRepository {
       status: employee.status,
       active: employee.active ?? employee.status === 'ACTIVE',
       vacation_allowance: employee.vacationDaysTotal ?? 30,
-      qualification_docs: employee.qualificationDocs || [],
     };
 
     const { error } = await supabase.from(this.tableName).upsert(payload);
