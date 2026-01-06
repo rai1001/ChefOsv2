@@ -151,10 +151,41 @@ export const UniversalImporter: React.FC<UniversalImporterProps> = ({
         await importIngredientsUseCase.execute(data, activeOutletId || 'GLOBAL');
         count = finalItems.length;
       } else if (type === 'event') {
-        // Use UseCase for events
-        const data = finalItems.map((i) => i.data);
+        // Sanitize and de-duplicate events (avoid multi-room duplicates)
+        const seen = new Map<string, any>();
+        finalItems.forEach((i) => {
+          const name = String(i.data.name || '').trim();
+          const date = i.data.date ? String(i.data.date).slice(0, 10) : '';
+          if (!name || !date) return;
+
+          const key = `${name.toLowerCase()}|${date}`;
+          if (seen.has(key)) {
+            // Merge optional fields if missing
+            const existing = seen.get(key);
+            if (!existing.room && i.data.room) existing.room = i.data.room;
+            if (!existing.menuId && i.data.menuId) existing.menuId = i.data.menuId;
+            if (!existing.notes && i.data.notes) existing.notes = i.data.notes;
+            return;
+          }
+
+          const paxVal = Number(i.data.pax || i.data.quantity || 0) || 0;
+          seen.set(key, {
+            id: i.data.id || crypto.randomUUID(),
+            name,
+            date,
+            pax: paxVal,
+            type: (i.data.type as any) || 'Otros',
+            room: i.data.room || i.data.location || i.data.hall || null,
+            notes: i.data.notes || i.data.observations || null,
+            status: (i.data.status as any) || 'confirmed',
+            menuId: i.data.menuId || null,
+            outletId: activeOutletId || 'GLOBAL',
+          });
+        });
+
+        const data = Array.from(seen.values());
         await importEventsUseCase.execute(data);
-        count = finalItems.length;
+        count = data.length;
       } else {
         // Legacy fallback for other types
         const result = await confirmAndCommit(
