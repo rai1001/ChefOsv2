@@ -99,7 +99,7 @@ export const processStructuredFile = async (
   const localResult = await parseWorkbook(file);
 
   // Map ParseResult to IngestionItem[]
-  const items: IngestionItem[] = [
+  let items: IngestionItem[] = [
     ...localResult.ingredients.map((i) => ({
       type: 'ingredient' as ImportType,
       data: i,
@@ -117,6 +117,11 @@ export const processStructuredFile = async (
       confidence: 100,
     })),
   ];
+
+  // Fallback: try a loose parse for simple tables when nothing was detected
+  if (items.length === 0) {
+    items = await parseLooseTable(file, hintType as ImportType | undefined);
+  }
 
   return items;
 };
@@ -701,4 +706,76 @@ export const parseWorkbook = async (file: File): Promise<ParseResult> => {
     reader.onerror = () => reject(new Error('Failed to read file'));
     reader.readAsArrayBuffer(file);
   });
+};
+
+/**
+ * Very permissive parser for flat tables (first sheet only) used when the
+ * structured parser could not classify anything.
+ */
+const parseLooseTable = async (file: File, hintType?: ImportType): Promise<IngestionItem[]> => {
+  const buffer = await file.arrayBuffer();
+  const workbook = XLSX.read(buffer, { type: 'array' });
+  const firstSheetName = workbook.SheetNames[0];
+  if (!firstSheetName) return [];
+
+  const sheet = workbook.Sheets[firstSheetName];
+  if (!sheet) return [];
+
+  const rows = XLSX.utils.sheet_to_json<any>(sheet, { defval: '' });
+  if (rows.length === 0) return [];
+
+  const keys = Object.keys(rows[0]);
+  const findKey = (candidates: string[]) =>
+    keys.find((k) => candidates.includes(normalize(String(k))));
+
+  const nameKey =
+    findKey(['name', 'producto', 'productoarticulo', 'descripcion', 'item']) || keys[0];
+  const unitKey = findKey(['unit', 'unidad', 'formato', 'u']) || '';
+  const priceKey = findKey(['price', 'precio', 'coste', 'cost']) || '';
+  const qtyKey = findKey(['cantidad', 'qty', 'stock', 'conteo']) || '';
+  const categoryKey = findKey(['category', 'tipo', 'familia']) || '';
+  const supplierKey = findKey(['supplier', 'proveedor']) || '';
+
+  const parsed = rows
+    .map((row) => {
+      const rawName = row[nameKey];
+      if (!rawName || String(rawName).trim().length < 2) return null;
+
+      const unit = unitKey
+        ? String(row[unitKey] || 'un')
+            .toLowerCase()
+            .trim()
+        : 'un';
+      const priceRaw = priceKey ? String(row[priceKey] ?? '0') : '0';
+      const qtyRaw = qtyKey ? String(row[qtyKey] ?? '0') : '0';
+
+      const toNumber = (val: string) =>
+        Number(
+          val
+            .replace(/[^\d.,-]/g, '')
+            .replace(',', '.')
+            .trim() || '0'
+        ) || 0;
+
+      const price = toNumber(priceRaw);
+      const quantity = toNumber(qtyRaw);
+      const category = categoryKey ? String(row[categoryKey] || 'other').toLowerCase() : 'other';
+      const supplierName = supplierKey ? String(row[supplierKey] || '').trim() : '';
+
+      return {
+        type: (hintType || 'ingredient') as ImportType,
+        data: {
+          name: String(rawName).trim(),
+          unit: unit,
+          costPerUnit: price,
+          quantity,
+          category,
+          supplier: supplierName || undefined,
+        },
+        confidence: 70,
+      } as IngestionItem;
+    })
+    .filter(Boolean) as IngestionItem[];
+
+  return parsed;
 };
