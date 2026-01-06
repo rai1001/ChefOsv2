@@ -1,8 +1,6 @@
 import { useEffect, useState } from 'react';
-// import { query } from 'firebase/firestore';
-// import { onSnapshotMockable } from '@/services/mockSnapshot';
-import { collections } from '@/config/collections';
 import { useStore } from '@/presentation/store/useStore';
+import { supabase } from '@/config/supabase';
 import type { Outlet } from '@/types';
 
 export const useOutletsSync = () => {
@@ -10,26 +8,27 @@ export const useOutletsSync = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Stubbed for Supabase migration
     const fetchOutlets = async () => {
-      setLoading(false);
-    };
-    fetchOutlets();
-    /*
-    if (import.meta.env.VITE_USE_SUPABASE_READ === 'true') {
-      setLoading(false);
-      return;
-    }
-    // Subscribe to all outlets
-    const q = query(collections.outlets);
+      try {
+        console.log('[Sync] Fetching outlets from Supabase...');
 
-    const unsubscribe = onSnapshotMockable(
-      q,
-      'outlets',
-      (snapshot) => {
-        const outletsData = snapshot.docs.map((doc) => ({
-          id: doc.id,
-          ...doc.data(),
+        const { data, error } = await supabase
+          .from('outlets')
+          .select('id, name, type, is_active, address')
+          .eq('is_active', true);
+
+        if (error) {
+          console.error('[Sync] Error fetching outlets:', error);
+          setLoading(false);
+          return;
+        }
+
+        const outletsData = (data || []).map((row) => ({
+          id: row.id,
+          name: row.name,
+          type: row.type,
+          isActive: row.is_active,
+          address: row.address,
         })) as Outlet[];
 
         console.log(`[Sync] Outlets synced (${outletsData.length})`);
@@ -45,23 +44,42 @@ export const useOutletsSync = () => {
             const defaultOutlet =
               outletsData.find((o) => o.type === 'main_kitchen') || outletsData[0];
             if (defaultOutlet) {
-              console.log('Auto-selecting outlet:', defaultOutlet.name);
+              console.log('[Sync] Auto-selecting outlet:', defaultOutlet.name);
               setActiveOutletId(defaultOutlet.id);
             }
           }
         }
 
         setLoading(false);
-      },
-      (error) => {
-        console.error('Error syncing outlets:', error);
+      } catch (err) {
+        console.error('[Sync] Error in fetchOutlets:', err);
         setLoading(false);
       }
-    );
+    };
 
-    return () => unsubscribe();
-    */
-  }, [setOutlets, setActiveOutletId]); // Removed activeOutletId to prevent infinite re-subscription loop
+    fetchOutlets();
+
+    // Set up real-time subscription
+    const channel = supabase
+      .channel('outlets-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'outlets',
+        },
+        (payload) => {
+          console.log('[Sync] Outlet changed, refetching...', payload);
+          fetchOutlets();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [setOutlets, setActiveOutletId]);
 
   return { loading };
 };
