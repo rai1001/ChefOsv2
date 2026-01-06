@@ -17,3 +17,7 @@ create table if not exists invitations (
 alter table invitations enable row level security;
 drop policy if exists "Public Access Invitations" on invitations;
 create policy "Public Access Invitations" on invitations for all using (true);
+
+-- Ensure employees have qualification_docs jsonb to match UI payloads
+alter table if exists employees
+  add column if not exists qualification_docs jsonb default '[]'::jsonb;

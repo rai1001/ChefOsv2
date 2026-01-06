@@ -226,6 +226,7 @@ create table if not exists employees (
   status text default 'ACTIVE',
   hourly_rate numeric default 0,
   vacation_allowance integer default 30,
+  qualification_docs jsonb default '[]'::jsonb,
   created_at timestamptz default now()
 );
 
