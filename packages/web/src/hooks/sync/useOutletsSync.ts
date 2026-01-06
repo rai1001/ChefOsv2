@@ -8,6 +8,8 @@ export const useOutletsSync = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // NOTE: This hook must fetch outlets from Supabase; it was previously stubbed (Firebase).
+    // Do not early return here: we always try to load outlets and auto-select one.
     const fetchOutlets = async () => {
       try {
         console.log('[Sync] Fetching outlets from Supabase...');
@@ -48,6 +50,9 @@ export const useOutletsSync = () => {
               setActiveOutletId(defaultOutlet.id);
             }
           }
+        } else {
+          // No outlets found; clear active selection to avoid stale IDs
+          setActiveOutletId(null);
         }
 
         setLoading(false);
