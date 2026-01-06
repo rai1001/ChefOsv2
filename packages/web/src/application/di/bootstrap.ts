@@ -135,16 +135,6 @@ import { SupabaseMenuRepository } from '@/infrastructure/repositories/SupabaseMe
 export function bootstrap() {
   // ... existing bindings ...
 
-  // Outlets
-  container
-    .bind<IOutletRepository>(TYPES.OutletRepository)
-    .to(SupabaseOutletRepository)
-    .inSingletonScope();
-  container
-    .bind<IOutletRepository>(TYPES.SupabaseOutletRepository)
-    .to(SupabaseOutletRepository)
-    .inSingletonScope();
-
   // Menus
   container
     .bind<IMenuRepository>(TYPES.MenuRepository)
