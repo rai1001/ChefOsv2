@@ -2,8 +2,12 @@ import {
   CalendarDays,
   Calculator,
   ChefHat,
+  ClipboardCheck,
   ClipboardList,
+  Columns,
   LayoutDashboard,
+  ListChecks,
+  Monitor,
   Package,
   Settings,
   ShoppingCart,
@@ -13,6 +17,7 @@ import {
   UtensilsCrossed,
   Warehouse,
   AlertTriangle,
+  Activity,
   type LucideIcon,
 } from 'lucide-react'
 import type { UXProfile } from '@/features/identity/types'
@@ -46,9 +51,20 @@ export const NAV_BY_PROFILE: Record<UXProfile, NavGroup[]> = {
       ],
     },
     {
+      title: 'Cocina operativa',
+      items: [
+        { label: 'Mise en place', href: '/production/mise-en-place', icon: ListChecks },
+        { label: 'KDS', href: '/production/kds/cocina_caliente', icon: Monitor },
+        { label: 'Kanban', href: '/production/kanban', icon: Columns },
+        { label: 'Lista compras', href: '/production/shopping-list', icon: ShoppingCart },
+      ],
+    },
+    {
       title: 'Stock',
       items: [
         { label: 'Inventario', href: '/inventory', icon: Package },
+        { label: 'Conteos', href: '/inventory/counts', icon: ClipboardCheck },
+        { label: 'Forensics', href: '/inventory/forensics', icon: Activity },
       ],
     },
   ],
@@ -66,8 +82,20 @@ export const NAV_BY_PROFILE: Record<UXProfile, NavGroup[]> = {
         { label: 'Escandallos', href: '/escandallos', icon: Calculator },
         { label: 'Menús', href: '/menus', icon: UtensilsCrossed },
         { label: 'Producción', href: '/production', icon: ClipboardList },
+        { label: 'Mise en place', href: '/production/mise-en-place', icon: ListChecks },
+        { label: 'Kanban', href: '/production/kanban', icon: Columns },
+        { label: 'Lista compras', href: '/production/shopping-list', icon: ShoppingCart },
         { label: 'Compras', href: '/procurement', icon: ShoppingCart },
         { label: 'Inventario', href: '/inventory', icon: Package },
+        { label: 'Conteos', href: '/inventory/counts', icon: ClipboardCheck },
+        { label: 'Forensics', href: '/inventory/forensics', icon: Activity },
+      ],
+    },
+    {
+      title: 'Catálogo',
+      items: [
+        { label: 'Productos', href: '/catalog', icon: Package },
+        { label: 'Proveedores', href: '/catalog/suppliers', icon: Warehouse },
       ],
     },
     {

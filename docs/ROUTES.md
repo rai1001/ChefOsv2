@@ -1,59 +1,62 @@
 
-# Routes (Next.js)
+# Routes — ChefOS v2 (Next.js App Router)
 
-## Auth
-- /login
-- /logout (acción)
-- /select-hotel (si aplica, opcional)
+All routes under `src/app/`. Dashboard routes require auth + hotel membership (AppShell).
 
-## App (layout con AppShell)
-- /app (redirect a /app/dashboard)
-- /app/dashboard
+## Auth (`src/app/(auth)/`)
+- `/login`
+- `/signup`
+- `/forgot-password`
+- `/onboarding` — hotel setup after first sign-in
 
-## Eventos
-- /app/eventos
-- /app/eventos/nuevo
-- /app/eventos/[id]
+## Dashboard (`src/app/(dashboard)/`)
 
-## Producción
-- /app/produccion
-- /app/produccion/nuevo?eventoId=
-- /app/produccion/[id]
+### Dashboard
+- `/dashboard` — KPIs live: eventos, producción, compras, inventario, alertas
 
-## Productos
-- /app/productos
-- /app/productos/nuevo
-- /app/productos/[id]
+### Eventos (M1)
+- `/events` — listado calendario
+- `/events/new`
+- `/events/[id]` — detalle + BEO + reservas de stock + generar workflow
 
-## Proveedores
-- /app/proveedores
-- /app/proveedores/nuevo
-- /app/proveedores/[id]
+### Recetas y menús (M2)
+- `/recipes` — catálogo de recetas
+- `/recipes/new`
+- `/recipes/[id]` — detalle, ingredientes, pasos, state machine
+- `/recipes/[id]/escandallo` — escandallo live vs albarán, sync precios
+- `/escandallos` — simulador sin receta previa
+- `/menus` — catálogo de menús (secciones + recetas)
 
-## Compras/Pedidos
-- /app/pedidos
-- /app/pedidos/nuevo?eventoId=&proveedorId=
-- /app/pedidos/[id]
+### Catálogo (M3)
+- `/catalog` — lista de productos
+- `/catalog/products/[id]`
+- `/catalog/suppliers` — lista de proveedores
+- `/catalog/suppliers/[id]` — 5 tabs: Info / Ofertas / Config / Incidencias / Métricas
 
-## Inventario
-- /app/inventario
-- /app/inventario/recepcion?pedidoId=
-- /app/inventario/lotes/[id]
+### Compras (M4)
+- `/procurement` — solicitudes (PR) y órdenes (PO)
+- `/procurement/requests/new`
+- `/procurement/requests/[id]`
+- `/procurement/orders/[id]`
 
-## Etiquetado/Trazabilidad
-- /app/etiquetas
-- /app/etiquetas/nueva
-- /app/trazabilidad
+### Inventario (M5)
+- `/inventory` — stock levels por producto
+- `/inventory/movements` — historial de movimientos
+- `/inventory/waste` — registro de mermas
+- `/inventory/counts` — sesiones de conteo (full/partial/blind)
+- `/inventory/counts/[id]` — líneas de conteo, aplicar ajustes
+- `/inventory/forensics` — análisis forense de pérdidas por producto
 
-## Mermas
-- /app/mermas
-- /app/mermas/nueva
+### Producción (M6)
+- `/production` — planes de producción diarios
+- `/production/[id]` — detalle de plan
+- `/production/workflows/[id]` — workflow de evento con tareas por departamento + MeP
+- `/production/mise-en-place` — checklists MeP por workflow/departamento
+- `/production/kds/[station]` — KDS por partida (polling 10s)
+- `/production/kanban` — tablero kanban de tareas por workflow
+- `/production/shopping-list` — lista de compra por fecha (ingredientes − stock)
 
-## Alertas
-- /app/alertas
-
-## Automatizaciones
-- /app/automatizaciones
-
-## Ajustes
-- /app/settings (roles, hoteles, etc. mínimo)
+### Reportes / Ajustes
+- `/reports` — placeholder (Etapa 1.5)
+- `/settings` — configuración del hotel
+- `/settings/team` — gestión de equipo y roles

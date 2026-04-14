@@ -59,16 +59,18 @@
 | 00012 | fix_inventory_rpcs | P1 record_waste ownership, P1 transfer_stock split-lot, P2 LEFT JOIN |
 | 00013 | escandallo_live | get_escandallo_live, sync_escandallo_prices |
 | 00014 | catalog_prices | get_catalog_prices (GR price + offer fallback) |
-| 00015 | **m3_extended** | supplier_configs, supplier_incidents, price_history (trigger auto), product_supplier_refs. **PENDIENTE APLICAR A SUPABASE** |
+| 00015 | m3_extended | supplier_configs, supplier_incidents, price_history (trigger auto), product_supplier_refs |
+| 00016 | m5_reservations_counts | stock_reservations, expiry_rules, stock_counts, stock_count_lines; RPCs: reserve_stock_for_event (FIFO), consume/release_reservation, calculate_real_cost, start/submit/review_stock_count, get_stock_forensics; trigger auto_calculate_event_cost |
+| 00017 | m6_workflows_kds | workflows, workflow_tasks, mise_en_place_lists/items, kitchen_orders/items, recurring_task_templates; RPCs: generate_event_workflow, generate_shopping_list, task state machine, mark_mep_item, create_kitchen_order, update_ko_item_status, generate_recurring_tasks, get_workflow_detail |
 
-## Estado actual (2026-04-14 — Sesión 1 de plan completado PRD)
+## Estado actual (2026-04-14 — Sesión 3 de plan completado PRD)
 - D0 Identidad: COMPLETO — auth flow, app shell, sidebar adaptativa (4 perfiles), audit triggers
 - M1 Comercial: COMPLETO — eventos, clientes, state machine, BEO, calendario
 - M2 Recetas: COMPLETO — recetas, ingredientes, pasos, costeo recursivo con cycle detection (E5), sub-recetas, menus, state machine (draft→review→approved→deprecated), ficha tecnica
-- M3 Catalogo: COMPLETO — productos, categorias (12 default), proveedores, ofertas con preferido, aliases, import masivo, FK recipe_ingredients→products
+- M3 Catalogo: COMPLETO — productos, categorias (12 default), proveedores, ofertas con preferido, aliases, import masivo, FK recipe_ingredients→products; M3 extendido: supplier_configs, incidents, price_history, product_supplier_refs
 - M4 Compras: COMPLETO — solicitudes (PR), ordenes (PO), recepcion mercancia (GR), state machines (PR: draft→approved→consolidated, PO: draft→sent→received), consolidacion PRs en POs
-- M5 Inventario: COMPLETO + BUGS FIJADOS — storage_locations, stock_lots (FIFO), stock_movements (ledger), waste_records, auto-stock desde goods_receipts (trigger), alertas stock bajo + caducidad; RPCs: get_stock_levels (LEFT JOIN), record_waste (ownership validation), transfer_stock (split-lot), adjust_stock, check_stock_alerts
-- M6 Produccion: COMPLETO — production_plans (diario), production_plan_items (por receta/departamento), production_tasks, genera plan desde eventos confirmados (event→menu→recipe chain), state machines, items agrupados por partida, progreso por departamento
+- M5 Inventario: COMPLETO + AVANZADO — stock_reservations (FIFO por evento), stock_counts (conteo ciego), stock_count_lines, expiry_rules; RPCs: reserve_stock_for_event, consume/release_reservation, calculate_real_cost, start/submit/review_stock_count, get_stock_forensics; UI: /inventory/counts, /inventory/forensics
+- M6 Produccion: COMPLETO + AVANZADO — production_plans originales + workflows (generate_event_workflow), mise_en_place_lists/items, kitchen_orders KDS (polling 10s), kanban de tareas, shopping list por fecha; UI: /production/workflows/[id], /production/mise-en-place, /production/kds/[station], /production/kanban, /production/shopping-list
 - M7 Dashboard: COMPLETO — get_dashboard_data RPC agrega KPIs de todos los modulos, widgets con datos live (eventos, produccion, compras, inventario, recetas, mermas), alertas stock bajo/caducidad, eventos del dia, barra progreso produccion
 - Escandallos: COMPLETO — /recipes/[id]/escandallo (live vs albarán, sync precios, proyeccion FC%), /escandallos simulador (sin receta previa, busqueda catalogo con precio GR, calculo live, guardar como borrador)
 
@@ -91,15 +93,16 @@
 ## Fase actual: Plan completado PRD en curso
 MVP básico (D0+M1-M7) cerrado. Plan maestro aprobado (todo el PRD: MVP+F2+F3+F4).
 
-**Progreso:** Sesión 1/~14 completada — Etapa 1.1 (M3 extendido)
+**Progreso:** Sesión 3/~14 completada — Etapas 1.1 + 1.2 + 1.3 completas
 **Plan maestro:** `C:\Users\Israel\.claude\plans\misty-petting-haven.md`
 **Estado detallado + roadmap sesiones:** `docs/ESTADO_PLAN_COMPLETADO.md`
 
 ### Próximas etapas pendientes (piezas del MVP según PRD que aún faltan):
-1. **Etapa 1.2** — M5 reservations FIFO + stock_counts (conteo ciego) + forensics + calculate_real_cost
-2. **Etapa 1.3** — M6 workflows + mise_en_place + KDS + generate_shopping_list + plantillas repetitivas
-3. **Etapa 1.4** — M1 BEO PDF + event_operational_impact + calculate_event_cost_estimate
-4. **Etapa 1.5** — M7 alerts + kpi_snapshots + food_cost_by_service/event + cost_variance
+1. ~~**Etapa 1.1** — M3 extendido~~ ✅
+2. ~~**Etapa 1.2** — M5 reservations FIFO + stock_counts (conteo ciego) + forensics + calculate_real_cost~~ ✅
+3. ~~**Etapa 1.3** — M6 workflows + mise_en_place + KDS + generate_shopping_list + plantillas repetitivas~~ ✅
+4. **Etapa 1.4** — M1 BEO PDF + event_operational_impact + calculate_event_cost_estimate
+5. **Etapa 1.5** — M7 alerts + kpi_snapshots + food_cost_by_service/event + cost_variance
 
 ### Fase 2:
 5. M10 Documentos PDF (9 plantillas)
