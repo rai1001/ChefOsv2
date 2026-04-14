@@ -159,6 +159,221 @@ Flujo de precios ya implementado:
 
 ---
 
+## Sesión 4 — Completada (2026-04-14)
+
+### Etapa 1.4 — M1 BEO PDF + event_operational_impact ✅
+
+**Migración creada y aplicada:** `supabase/migrations/00018_m1_beo.sql`
+- Tabla: `event_operational_impact` — impacto por producto/departamento escalado a pax real
+- RPCs: `generate_event_operational_impact`, `calculate_event_cost_estimate`, `get_event_beo` (JSONB completo)
+
+**Frontend:**
+- `src/features/commercial/types/index.ts` — EventBEO, OperationalImpactItem, BeoData + tipos extendidos
+- `src/features/commercial/hooks/use-beo.ts` — useEventBEO, useGenerateOperationalImpact, useCalculateCostEstimate
+- `src/features/commercial/components/beo-document.tsx` — PDF con header, menus, impacto operacional, coste
+- `src/app/(dashboard)/events/[id]/page.tsx` — bloque BEO: coste estimado badge, impacto por depto, botón descargar BEO
+
+**Verificación:** `npm run typecheck` ✅
+
+---
+
+## Sesión 5 — Completada (2026-04-14)
+
+### Etapa 1.5 — M7 Alerts + KPI snapshots ✅
+
+**Migración creada y aplicada:** `supabase/migrations/00019_m7_alerts_kpis.sql`
+- Enums: `alert_type` (stock_low/expiry_soon/waste_spike/food_cost_high/event_unplanned/task_overdue), `alert_severity` (info/warning/critical)
+- Tablas: `alerts`, `kpi_snapshots`
+- RPCs: `generate_daily_snapshot`, `dismiss_alert`, `get_active_alerts`, `get_food_cost_by_event`, `get_food_cost_by_service`, `get_cost_variance_report`
+
+**Frontend:**
+- `src/features/reporting/types/` — tipos Alert, KpiSnapshot, FoodCostByEvent/Service, CostVarianceReport
+- `src/features/reporting/hooks/use-alerts.ts` — useActiveAlerts, useDismissAlert
+- `src/features/reporting/hooks/use-kpis.ts` — useFoodCostByEvent, useFoodCostByService, useCostVarianceReport
+- `src/app/(dashboard)/alerts/page.tsx` — lista de alertas activas con dismiss, badges por severidad
+- `src/app/(dashboard)/reports/page.tsx` — food cost por evento + por servicio + varianza
+- `src/components/shell/sidebar-config.ts` — Alertas en sidebar (oficina + compras)
+
+**Verificación:** `npm run typecheck` ✅
+
+---
+
+## Sesión 6 — Completada (2026-04-14)
+
+### Etapa 2.3 — M10 Documentos PDF (9 plantillas) ✅
+
+**Sin migración** — M10 es módulo de rendering puro. Consume datos de M1/M2/M5/M6/M7.
+
+**Tipos:**
+- `src/features/documents/types/index.ts` — TechSheetData, ShoppingListDocData, KitchenBriefingData, WasteReportData, FoodCostReportData, LabelData, APPCCBlankData
+
+**Documentos PDF creados** (todos en `src/features/documents/components/`):
+- `tech-sheet-document.tsx` — Ficha técnica: header, info grid, alérgenos, tabla ingredientes 7 cols, pasos, coste
+- `production-sheet-document.tsx` — Hoja de producción: workflow detail, tareas por depto, progreso
+- `shopping-list-document.tsx` — Lista compras: por proveedor, qty_needed/available/to_order, coste estimado
+- `kitchen-briefing-document.tsx` — Briefing diario: stats overview, eventos hoy, producción, alertas
+- `waste-report-document.tsx` — Informe mermas: tabla producto/qty/incidencias/valor estimado
+- `food-cost-document.tsx` — Informe food cost (landscape A4): por evento + por tipo servicio
+- `product-label-document.tsx` — Etiquetas lote 2×col: alérgenos, caducidad, trazabilidad (M9 pendiente)
+- `appcc-blank-document.tsx` — Plantilla APPCC imprimible: 4 secciones, firmas, referencia normativa UE
+- `beo-document.tsx` — BEO ya existía desde Etapa 1.4
+
+**Hooks de datos creados** (en `src/features/documents/hooks/`):
+- `use-tech-sheet.ts` — recipe + ingredients + steps + hotel en Promise.all
+- `use-waste-report.ts` — inventory_movements waste, agrupado por producto
+
+**Botones PDF centralizados** (`src/features/documents/components/pdf-buttons.tsx`):
+- Módulo 'use client' que importa ESTÁTICAMENTE PDFDownloadLink + todos los documentos
+- Se importa con `dynamic(() => ..., { ssr: false })` desde las páginas
+- Patrón crítico: evita el crash "su is not a function" de react-pdf reconciler cuando el documento llega como LoadableComponent
+
+**Página hub:**
+- `src/app/(dashboard)/documents/page.tsx` — 7 cards: TechSheet (selector receta), ShoppingList (date picker lazy), Briefing (datos dashboard), Waste (rango fechas), FoodCost (rango fechas), APPCC (date picker), Labels (placeholder M9)
+- Nota contextual: BEO → evento, hoja producción → workflow
+
+**Integración en páginas existentes:**
+- `src/app/(dashboard)/production/workflows/[id]/page.tsx` — botón "Descargar hoja" en header
+- `src/app/(dashboard)/production/shopping-list/page.tsx` — botón PDF inline junto a "Generar lista"
+- `src/components/shell/sidebar-config.ts` — "Documentos PDF" en sidebar cocina + "Documentos" en Análisis de oficina
+
+**Bug crítico resuelto:**
+- Error "su is not a function" en react-pdf reconciler cuando `PDFDownloadLink` recibe un `LoadableComponent` (Next.js `dynamic()`) en vez de un elemento `Document` real
+- Causa: `useDashboard()` sirve datos desde caché TanStack Query (0ms latencia) → componente renderiza antes de que el `dynamic()` individual del documento resuelva
+- Fix: `pdf-buttons.tsx` importa estáticamente todo junto. El `dynamic()` envuelve el botón completo, no el documento aislado
+
+**Verificación:** `npm run typecheck` ✅ (0 errores)
+
+---
+
+## Sesión 7 — Completada (2026-04-14)
+
+### Etapa 2.1 — M8 Automation ✅
+
+**Migración creada y aplicada:** `supabase/migrations/00021_m8_automation.sql`
+
+**Enums nuevos:**
+- `job_type` (generate_workflow / generate_shopping_list / send_notification / generate_snapshot / reserve_stock / calculate_cost / export_pdf)
+- `job_status` (pending / running / completed / failed / cancelled)
+- `log_level` (info / warning / error)
+
+**Tablas nuevas:**
+- `automation_jobs` — cola de jobs con payload JSONB, intentos, backoff, scheduled_at/started_at/completed_at
+- `automation_job_logs` — log de ejecución por job con nivel y mensaje
+- `automation_triggers` — reglas de trigger automático (placeholder para M14)
+
+**RPCs:**
+- `enqueue_job` — inserta job en cola, emite domain event `automation.job_enqueued`
+- `claim_next_job` — worker reclama job con FOR UPDATE SKIP LOCKED (SECURITY DEFINER, no requiere auth.uid)
+- `complete_job` — worker marca job completado, emite `automation.job_completed`
+- `fail_job` — worker marca fallido con backoff exponencial (5^attempt minutos), emite `automation.job_failed`
+- `cancel_job` — usuario cancela job pendiente
+- `get_pending_jobs` — lista para frontend (últimos 50, check_membership)
+- `get_job_logs` — logs de un job específico
+
+**Edge Function desplegada:** `supabase/functions/automation-worker/index.ts`
+- Deno runtime, MAX_CONCURRENT = 3, timeout 30s por job
+- Procesa: generate_workflow, generate_shopping_list, generate_snapshot, reserve_stock, calculate_cost
+- Backoff exponencial en fail_job
+- Deploy: `npx supabase functions deploy automation-worker --project-ref dbtrgnyfmzqsrcoadcrs`
+
+**Frontend:**
+- `src/features/automation/types/index.ts` — JobType, JobStatus, LogLevel, labels, colores, interfaces
+- `src/features/automation/hooks/use-automation.ts` — useJobs (refetch 10s), useJobLogs, useEnqueueJob, useCancelJob
+- `src/app/(dashboard)/automation/page.tsx` — KPI bar + tabla de jobs con logs expandibles, cancel pendientes
+- `src/app/(dashboard)/events/[id]/page.tsx` — bloque "Automatización" con botones "Generar workflow" y "Reservar stock FIFO"
+- `src/components/shell/sidebar-config.ts` — "Automatización" en grupo Admin de oficina (icono Zap)
+- `tsconfig.json` — supabase/functions excluido de compilación TS
+
+**Verificación:** `npm run typecheck` ✅ (0 errores) · Preview ✅ (página + evento)
+
+---
+
+## Sesión 8 — Completada (2026-04-14)
+
+### Etapa 2.4 — M14 Notificaciones ✅
+
+**Migración creada y aplicada:** `supabase/migrations/00022_m14_notifications.sql`
+
+**Enum nuevo:**
+- `notification_type` (event_confirmed / event_completed / task_assigned / stock_alert / job_completed / job_failed / cost_alert / system)
+
+**Tablas nuevas:**
+- `notifications` — por usuario, con severity (reusa alert_severity), title, body, action_url, is_read, read_at
+- `notification_preferences` — preferencias per tipo: in_app (default true), email (default false); unique(user_id, hotel_id, notification_type)
+
+**RPCs:**
+- `create_notification` — SECURITY DEFINER, sin auth check (llamado desde trigger y workers); respeta preferencia in_app
+- `mark_notification_read` — marca leída por usuario actual
+- `mark_all_notifications_read` — marca todas leídas, devuelve count
+- `get_unread_notifications` — últimas N del usuario (todas: leídas y no leídas)
+- `get_notification_count` — badge (no leídas)
+- `get_notification_preferences` — devuelve defaults para tipos sin fila explícita (LEFT JOIN con enum_range)
+- `upsert_notification_preference` — UPSERT, optimistic update en frontend
+
+**Trigger automático:** `trg_auto_notify` en `domain_events` AFTER INSERT
+- `automation.job_completed` → notifica al creador del job
+- `automation.job_failed` → notifica al creador + admins/direction del hotel
+- `event.confirmed` → notifica a superadmin/direction/admin/head_chef
+- `event.completed` → notifica a superadmin/direction/admin
+
+**Edge Function desplegada:** `notification-dispatcher`
+- Webhook POST desde tabla `notifications` (INSERT)
+- Comprueba preferencia email del usuario y lo envía via Resend API
+- Requiere configuración: RESEND_API_KEY en Supabase secrets + Database Webhook apuntando a la función
+
+**Feature identity actualizada:**
+- `src/features/identity/hooks/use-auth.ts` — añadido `useCurrentUser()` (expone User de supabase.auth)
+
+**Frontend:**
+- `src/features/notifications/types/index.ts` — tipos, labels, colores severidad/tipo
+- `src/features/notifications/hooks/use-notifications.ts` — useNotificationCount, useNotifications, useMarkRead, useMarkAllRead, **useNotificationRealtime** (Supabase Realtime subscription por user_id)
+- `src/features/notifications/hooks/use-notification-preferences.ts` — useNotificationPreferences, useUpsertNotificationPreference (optimistic update)
+- `src/components/shell/notification-bell.tsx` — Bell con badge rojo, dropdown (lista notificaciones, mark-all, link settings), dot pulsante por severidad, click outside para cerrar
+- `src/components/shell/topbar.tsx` — reemplazado placeholder por `<NotificationBell>`
+- `src/app/(dashboard)/settings/notifications/page.tsx` — tabla 8 tipos × 2 canales, toggles con guardado automático
+
+**NOTA para activar Realtime:**
+Supabase Dashboard → Database → Replication → Source tables → añadir `notifications`
+
+**Verificación:** `npm run typecheck` ✅ (0 errores) · Preview ✅ (bell, dropdown "Sin notificaciones", preferencias con 8 tipos cargados)
+
+---
+
+## Sesión 9 — Completada (2026-04-14)
+
+### Etapa 2.2 — M9 Compliance APPCC + Etiquetado + Trazabilidad ✅
+
+**Migraciones aplicadas:**
+- `supabase/migrations/00023_m9_compliance.sql` — tablas + RPCs (enums+tablas+seeds)
+- `supabase/migrations/00023_fix_rpcs.sql` — fix `check_membership(auth.uid(), p_hotel_id)`
+
+**Enums nuevos:** `appcc_category`, `appcc_record_status`, `label_type`, `treatment_type`, `label_origin`
+
+**Tablas nuevas:**
+- `appcc_templates` — plantillas APPCC por categoría, punto de control, límite crítico, acción correctora
+- `appcc_records` — registros diarios con upsert por (hotel, template, fecha)
+- `temperature_logs` — registros de temperatura con rango permitido y flag `is_within_range`
+- `labels` — etiquetas con barcode único, caducidad, trazabilidad lote/evento/tarea
+
+**RPCs:** `create_appcc_record` (upsert+domain_event), `log_temperature` (alerta si fuera de rango), `create_label` (barcode CHF-UUID), `print_label`, `get_appcc_records`, `get_temperature_logs`, `get_labels`, `trace_lot` (JSONB completo), `seed_appcc_defaults`
+
+**Seeds:** 20 plantillas APPCC estándar hostelería (4 recepción, 5 almacén, 4 preparación, 3 cocción, 2 enfriamiento, 2 servicio)
+
+**Frontend:**
+- `src/features/compliance/types/index.ts` — enums + labels + colores + interfaces
+- `src/features/compliance/hooks/use-appcc.ts` — useAppccRecords, useCreateAppccRecord, useSeedAppccDefaults
+- `src/features/compliance/hooks/use-temperatures.ts` — useTemperatureLogs, useLogTemperature
+- `src/features/compliance/hooks/use-labels.ts` — useLabels, useCreateLabel, usePrintLabel, useTraceLot
+- `src/app/(dashboard)/compliance/appcc/page.tsx` — checklist diario: filtros fecha+categoría, KPI bar, tabla 20 plantillas, modal registro con estados
+- `src/app/(dashboard)/compliance/temperatures/page.tsx` — KPIs 24h, formulario log rápido, tabla con color-coding
+- `src/app/(dashboard)/compliance/labels/page.tsx` — formulario crear etiqueta (tipo, tratamiento, caducidad con presets), tabla con expiryBadge
+- `src/app/(dashboard)/compliance/trace/[lot_id]/page.tsx` — búsqueda por lot_id, chain completa: lote+movimientos+reservas+etiquetas
+- `src/components/shell/sidebar-config.ts` — grupo COMPLIANCE en perfiles cocina (APPCC+Temperaturas+Etiquetado) y oficina (APPCC+Temperaturas+Etiquetado+Trazabilidad)
+
+**Verificación:** `npm run typecheck` ✅ · Preview ✅ (20 plantillas en vivo, modal con estados, Temperaturas vacío OK, Etiquetado vacío OK)
+
+---
+
 ## Roadmap de sesiones futuras
 
 Cada sesión = 1 etapa (aprox 1–2h). Orden según plan maestro:

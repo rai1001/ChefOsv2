@@ -3,6 +3,8 @@
 import Link from 'next/link'
 import { useActiveHotel } from '@/features/identity/hooks/use-active-hotel'
 import { useDashboard } from '@/features/reporting/hooks/use-dashboard'
+import { useActiveAlerts } from '@/features/reporting/hooks/use-alerts'
+import { ALERT_SEVERITY_COLORS } from '@/features/reporting/types'
 import {
   CalendarDays,
   ShoppingCart,
@@ -14,6 +16,7 @@ import {
   Users,
   TrendingUp,
   Clock,
+  Bell,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -52,6 +55,10 @@ function KpiCard({
 export default function DashboardPage() {
   const { data: hotel } = useActiveHotel()
   const { data: d, isLoading } = useDashboard()
+  const { data: alerts = [] } = useActiveAlerts()
+
+  const criticalAlerts = alerts.filter((a) => a.severity === 'critical')
+  const warningAlerts = alerts.filter((a) => a.severity === 'warning')
 
   if (!hotel) return null
 
@@ -74,6 +81,31 @@ export default function DashboardPage() {
         </div>
       ) : (
         <>
+          {/* Alertas activas (si hay) */}
+          {(criticalAlerts.length > 0 || warningAlerts.length > 0) && (
+            <Link
+              href="/alerts"
+              className="flex items-center justify-between rounded-lg border border-danger/40 bg-danger/5 px-4 py-3 hover:border-danger/60"
+            >
+              <div className="flex items-center gap-3">
+                <Bell className="h-5 w-5 text-danger shrink-0" />
+                <div>
+                  {criticalAlerts.length > 0 && (
+                    <p className="text-sm font-medium text-danger">
+                      {criticalAlerts.length} alerta{criticalAlerts.length !== 1 ? 's' : ''} crítica{criticalAlerts.length !== 1 ? 's' : ''}
+                    </p>
+                  )}
+                  {warningAlerts.length > 0 && (
+                    <p className={cn('text-sm', criticalAlerts.length > 0 ? 'text-text-muted' : 'font-medium text-warning')}>
+                      {warningAlerts.length} aviso{warningAlerts.length !== 1 ? 's' : ''}
+                    </p>
+                  )}
+                </div>
+              </div>
+              <span className="text-xs text-text-muted">Ver todas →</span>
+            </Link>
+          )}
+
           {/* KPI Grid */}
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
             <KpiCard

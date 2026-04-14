@@ -1,8 +1,9 @@
 'use client'
 
 import { HotelSwitcher } from './hotel-switcher'
+import { NotificationBell } from './notification-bell'
 import { useAuth } from '@/features/identity/hooks/use-auth'
-import { Bell, LogOut, User } from 'lucide-react'
+import { LogOut, User } from 'lucide-react'
 import type { ActiveHotel } from '@/features/identity/hooks/use-active-hotel'
 
 interface TopbarProps {
@@ -20,13 +21,8 @@ export function Topbar({ hotel }: TopbarProps) {
       />
 
       <div className="flex items-center gap-2">
-        {/* Notifications (placeholder) */}
-        <button
-          className="rounded-md p-2 text-text-secondary hover:bg-bg-hover hover:text-text-primary"
-          aria-label="Notificaciones"
-        >
-          <Bell className="h-5 w-5" />
-        </button>
+        {/* Notifications — con badge en tiempo real */}
+        <NotificationBell hotelId={hotel.hotel_id} />
 
         {/* User menu */}
         <button

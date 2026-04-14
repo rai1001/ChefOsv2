@@ -1,9 +1,17 @@
 'use client'
 
 import { useState } from 'react'
+import dynamic from 'next/dynamic'
 import { useShoppingList } from '@/features/production/hooks/use-shopping-list'
+import { useActiveHotel } from '@/features/identity/hooks/use-active-hotel'
 import { ShoppingCart, RefreshCw, Package, Warehouse } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import type { ShoppingListDocData } from '@/features/documents/types'
+
+const ShoppingListBtnInline = dynamic(
+  () => import('@/features/documents/components/pdf-buttons').then((m) => m.ShoppingListBtnInline),
+  { ssr: false, loading: () => null }
+)
 
 function todayStr() {
   return new Date().toISOString().slice(0, 10)
@@ -13,6 +21,7 @@ export default function ShoppingListPage() {
   const [date, setDate] = useState(todayStr())
   const [queryDate, setQueryDate] = useState<string | undefined>(undefined)
   const { data: groups, isLoading, refetch } = useShoppingList(queryDate)
+  const { data: hotel } = useActiveHotel()
 
   const handleGenerate = () => {
     setQueryDate(date)
@@ -20,6 +29,10 @@ export default function ShoppingListPage() {
 
   const totalItems = groups?.reduce((s, g) => s + g.items.length, 0) ?? 0
   const totalSuppliers = groups?.length ?? 0
+
+  const docData: ShoppingListDocData | null = groups && queryDate
+    ? { hotel_name: hotel?.hotel_id ?? 'ChefOS v2', date: queryDate, groups }
+    : null
 
   return (
     <div className="p-6 space-y-6 max-w-4xl mx-auto">
@@ -58,6 +71,7 @@ export default function ShoppingListPage() {
           }
           Generar lista
         </button>
+        {docData && <ShoppingListBtnInline data={docData} />}
       </div>
 
       {/* Resultados */}

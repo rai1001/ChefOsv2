@@ -5,12 +5,15 @@ import {
   ClipboardCheck,
   ClipboardList,
   Columns,
+  FileText,
   LayoutDashboard,
   ListChecks,
   Monitor,
   Package,
   Settings,
   ShoppingCart,
+  Tag,
+  Thermometer,
   TrendingUp,
   Truck,
   Users,
@@ -18,6 +21,7 @@ import {
   Warehouse,
   AlertTriangle,
   Activity,
+  Zap,
   type LucideIcon,
 } from 'lucide-react'
 import type { UXProfile } from '@/features/identity/types'
@@ -67,6 +71,20 @@ export const NAV_BY_PROFILE: Record<UXProfile, NavGroup[]> = {
         { label: 'Forensics', href: '/inventory/forensics', icon: Activity },
       ],
     },
+    {
+      title: 'Compliance',
+      items: [
+        { label: 'APPCC', href: '/compliance/appcc', icon: ClipboardCheck },
+        { label: 'Temperaturas', href: '/compliance/temperatures', icon: Thermometer },
+        { label: 'Etiquetado', href: '/compliance/labels', icon: Tag },
+      ],
+    },
+    {
+      title: 'Documentos',
+      items: [
+        { label: 'Documentos PDF', href: '/documents', icon: FileText },
+      ],
+    },
   ],
   oficina: [
     {
@@ -99,14 +117,26 @@ export const NAV_BY_PROFILE: Record<UXProfile, NavGroup[]> = {
       ],
     },
     {
+      title: 'Compliance',
+      items: [
+        { label: 'APPCC', href: '/compliance/appcc', icon: ClipboardCheck },
+        { label: 'Temperaturas', href: '/compliance/temperatures', icon: Thermometer },
+        { label: 'Etiquetado', href: '/compliance/labels', icon: Tag },
+        { label: 'Trazabilidad', href: '/compliance/trace/search', icon: Activity },
+      ],
+    },
+    {
       title: 'Análisis',
       items: [
         { label: 'Reportes', href: '/reports', icon: TrendingUp },
+        { label: 'Alertas', href: '/alerts', icon: AlertTriangle },
+        { label: 'Documentos', href: '/documents', icon: FileText },
       ],
     },
     {
       title: 'Admin',
       items: [
+        { label: 'Automatización', href: '/automation', icon: Zap },
         { label: 'Equipo', href: '/settings/team', icon: Users },
         { label: 'Config', href: '/settings', icon: Settings },
       ],

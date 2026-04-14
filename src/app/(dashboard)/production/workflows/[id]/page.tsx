@@ -2,6 +2,7 @@
 
 import { use } from 'react'
 import Link from 'next/link'
+import dynamic from 'next/dynamic'
 import {
   useWorkflowDetail,
   useStartWorkflowTask,
@@ -18,19 +19,26 @@ import {
   PRIORITY_COLORS,
   type WorkflowTask,
   type Department,
+  type WorkflowDetail,
 } from '@/features/production/types'
+import { useActiveHotel } from '@/features/identity/hooks/use-active-hotel'
 import {
   ArrowLeft,
   Play,
   CheckCircle,
-  AlertCircle,
   Lock,
-  Users,
   Clock,
   CalendarDays,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useState } from 'react'
+
+// PDF — client-side only. Statically bundled in pdf-buttons to avoid
+// react-pdf reconciler crash when document prop is a LoadableComponent.
+const ProductionSheetBtn = dynamic(
+  () => import('@/features/documents/components/pdf-buttons').then((m) => m.ProductionSheetBtn),
+  { ssr: false, loading: () => null }
+)
 
 export default function WorkflowDetailPage({
   params,
@@ -42,6 +50,8 @@ export default function WorkflowDetailPage({
   const startTask = useStartWorkflowTask()
   const blockTask = useBlockWorkflowTask()
   const completeTask = useCompleteWorkflowTask()
+  const { data: hotel } = useActiveHotel()
+  const hotelName = hotel?.hotel_id ?? 'ChefOS v2'
 
   const [blockingTask, setBlockingTask] = useState<string | null>(null)
   const [blockReason, setBlockReason] = useState('')
@@ -99,6 +109,7 @@ export default function WorkflowDetailPage({
             </div>
           )}
         </div>
+        <ProductionSheetBtn detail={detail} hotelName={hotelName} />
       </div>
 
       {/* Progress */}

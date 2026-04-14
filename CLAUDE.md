@@ -62,6 +62,8 @@
 | 00015 | m3_extended | supplier_configs, supplier_incidents, price_history (trigger auto), product_supplier_refs |
 | 00016 | m5_reservations_counts | stock_reservations, expiry_rules, stock_counts, stock_count_lines; RPCs: reserve_stock_for_event (FIFO), consume/release_reservation, calculate_real_cost, start/submit/review_stock_count, get_stock_forensics; trigger auto_calculate_event_cost |
 | 00017 | m6_workflows_kds | workflows, workflow_tasks, mise_en_place_lists/items, kitchen_orders/items, recurring_task_templates; RPCs: generate_event_workflow, generate_shopping_list, task state machine, mark_mep_item, create_kitchen_order, update_ko_item_status, generate_recurring_tasks, get_workflow_detail |
+| 00018 | m1_beo | event_operational_impact tabla+RLS; RPCs: generate_event_operational_impact, calculate_event_cost_estimate, get_event_beo (JSONB completo) |
+| 00019 | m7_alerts_kpis | alerts, kpi_snapshots; enums alert_type/severity; RPCs: generate_daily_snapshot, dismiss_alert, get_active_alerts, get_food_cost_by_event, get_food_cost_by_service, get_cost_variance_report |
 
 ## Estado actual (2026-04-14 — Sesión 3 de plan completado PRD)
 - D0 Identidad: COMPLETO — auth flow, app shell, sidebar adaptativa (4 perfiles), audit triggers
@@ -93,7 +95,7 @@
 ## Fase actual: Plan completado PRD en curso
 MVP básico (D0+M1-M7) cerrado. Plan maestro aprobado (todo el PRD: MVP+F2+F3+F4).
 
-**Progreso:** Sesión 3/~14 completada — Etapas 1.1 + 1.2 + 1.3 completas
+**Progreso:** Sesión 8/~14 completada — Etapas 1.1 + 1.2 + 1.3 + 1.4 + 1.5 + 2.3 + 2.1 + 2.4 completas
 **Plan maestro:** `C:\Users\Israel\.claude\plans\misty-petting-haven.md`
 **Estado detallado + roadmap sesiones:** `docs/ESTADO_PLAN_COMPLETADO.md`
 
@@ -101,13 +103,13 @@ MVP básico (D0+M1-M7) cerrado. Plan maestro aprobado (todo el PRD: MVP+F2+F3+F4
 1. ~~**Etapa 1.1** — M3 extendido~~ ✅
 2. ~~**Etapa 1.2** — M5 reservations FIFO + stock_counts (conteo ciego) + forensics + calculate_real_cost~~ ✅
 3. ~~**Etapa 1.3** — M6 workflows + mise_en_place + KDS + generate_shopping_list + plantillas repetitivas~~ ✅
-4. **Etapa 1.4** — M1 BEO PDF + event_operational_impact + calculate_event_cost_estimate
-5. **Etapa 1.5** — M7 alerts + kpi_snapshots + food_cost_by_service/event + cost_variance
+4. ~~**Etapa 1.4** — M1 BEO PDF + event_operational_impact + calculate_event_cost_estimate~~ ✅
+5. ~~**Etapa 1.5** — M7 alerts + kpi_snapshots + food_cost_by_service/event + cost_variance~~ ✅
 
 ### Fase 2:
-5. M10 Documentos PDF (9 plantillas)
-6. M8 Automation (jobs queue + worker)
-7. M14 Notificaciones
+5. ~~M10 Documentos PDF (9 plantillas)~~ ✅
+6. ~~M8 Automation (jobs queue + worker Edge Function)~~ ✅
+7. ~~M14 Notificaciones (in-app Realtime + email Resend + preferencias)~~ ✅
 8. M9 Compliance APPCC + etiquetado QR + trazabilidad
 
 ### Fase 3:

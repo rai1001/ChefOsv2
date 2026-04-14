@@ -125,3 +125,78 @@ export const EVENT_STATUS_COLORS: Record<EventStatus, string> = {
   cancelled: 'text-danger',
   archived: 'text-text-muted',
 }
+
+// ─── BEO types ────────────────────────────────────────────────────────────────
+
+export interface BeoRecipe {
+  id: string
+  name: string
+  servings_override: number | null
+  unit_cost: number | null
+  yield_pct: number | null
+}
+
+export interface BeoSection {
+  id: string
+  name: string
+  course_type: string | null
+  recipes: BeoRecipe[]
+}
+
+export interface BeoMenu {
+  id: string
+  menu_name: string
+  sort_order: number
+  servings_override: number | null
+  sections: BeoSection[]
+}
+
+export interface BeoImpactItem {
+  product_id: string | null
+  product_name: string
+  quantity_needed: number
+  unit: string | null
+}
+
+export interface BeoImpactByDept {
+  department: string
+  items: BeoImpactItem[]
+}
+
+export interface BeoSpace {
+  space_name: string
+  capacity: number | null
+  setup_style: string | null
+}
+
+export interface BeoClient {
+  id: string
+  name: string
+  email: string | null
+  phone: string | null
+  company: string | null
+}
+
+export interface BeoData {
+  id: string
+  beo_number: string | null
+  name: string
+  event_type: EventType
+  service_type: ServiceType
+  event_date: string
+  start_time: string | null
+  end_time: string | null
+  guest_count: number
+  venue: string | null
+  setup_time: string | null
+  teardown_time: string | null
+  status: EventStatus
+  notes: string | null
+  theoretical_cost: number | null
+  actual_cost: number | null
+  client: BeoClient | null
+  hotel: { id: string; name: string }
+  menus: BeoMenu[]
+  operational_impact: BeoImpactByDept[]
+  spaces: BeoSpace[]
+}
