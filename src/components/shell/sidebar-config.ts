@@ -9,6 +9,7 @@ import {
   TrendingUp,
   Truck,
   Users,
+  UtensilsCrossed,
   Warehouse,
   AlertTriangle,
   type LucideIcon,
@@ -39,6 +40,7 @@ export const NAV_BY_PROFILE: Record<UXProfile, NavGroup[]> = {
       title: 'Recetas',
       items: [
         { label: 'Catálogo', href: '/recipes', icon: ChefHat },
+        { label: 'Menús', href: '/menus', icon: UtensilsCrossed },
       ],
     },
     {
@@ -59,6 +61,7 @@ export const NAV_BY_PROFILE: Record<UXProfile, NavGroup[]> = {
       title: 'Operaciones',
       items: [
         { label: 'Recetas', href: '/recipes', icon: ChefHat },
+        { label: 'Menús', href: '/menus', icon: UtensilsCrossed },
         { label: 'Producción', href: '/production', icon: ClipboardList },
         { label: 'Compras', href: '/procurement', icon: ShoppingCart },
         { label: 'Inventario', href: '/inventory', icon: Package },
