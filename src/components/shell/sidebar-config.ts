@@ -1,5 +1,6 @@
 import {
   CalendarDays,
+  Calculator,
   ChefHat,
   ClipboardList,
   LayoutDashboard,
@@ -40,6 +41,7 @@ export const NAV_BY_PROFILE: Record<UXProfile, NavGroup[]> = {
       title: 'Recetas',
       items: [
         { label: 'Catálogo', href: '/recipes', icon: ChefHat },
+        { label: 'Escandallos', href: '/escandallos', icon: Calculator },
         { label: 'Menús', href: '/menus', icon: UtensilsCrossed },
       ],
     },
@@ -61,6 +63,7 @@ export const NAV_BY_PROFILE: Record<UXProfile, NavGroup[]> = {
       title: 'Operaciones',
       items: [
         { label: 'Recetas', href: '/recipes', icon: ChefHat },
+        { label: 'Escandallos', href: '/escandallos', icon: Calculator },
         { label: 'Menús', href: '/menus', icon: UtensilsCrossed },
         { label: 'Producción', href: '/production', icon: ClipboardList },
         { label: 'Compras', href: '/procurement', icon: ShoppingCart },
