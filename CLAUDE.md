@@ -36,9 +36,13 @@
 - `npx supabase start` — Supabase local
 - `npx supabase db reset` — reset + migraciones + seed
 
+## Supabase
+- Proyecto: dbtrgnyfmzqsrcoadcrs (cuenta raisada1001@gmail.com)
+- Migracion actual: 00001_d0_identity.sql
+
 ## Estado actual
-- PRD completo, estructura de carpetas creada
-- Pendiente: inicializar Next.js, primera migracion, primer modulo (D0 Identidad)
+- D0 Identidad: migracion completa, auth flow, app shell con sidebar adaptativa
+- Pendiente: ejecutar migracion en Supabase, M1 Comercial
 
 ## Fase actual: MVP (Q2 2026)
 Modulos MVP: D0 Identidad, M1 Comercial, M2 Recetas, M3 Catalogo, M4 Compras, M5 Inventario, M6 Produccion, M7 Direccion

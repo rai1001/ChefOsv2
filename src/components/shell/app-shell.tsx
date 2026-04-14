@@ -1,6 +1,7 @@
 'use client'
 
-import { type ReactNode } from 'react'
+import { type ReactNode, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import { Sidebar } from './sidebar'
 import { Topbar } from './topbar'
 import { useActiveHotel, useUXProfile } from '@/features/identity/hooks/use-active-hotel'
@@ -37,11 +38,17 @@ function ShellError({ message }: { message: string }) {
 export function AppShell({ children }: { children: ReactNode }) {
   const { data: hotel, isLoading, error } = useActiveHotel()
   const profile = useUXProfile()
+  const router = useRouter()
+
+  // Redirect a onboarding si no hay membership
+  useEffect(() => {
+    if (!isLoading && (error || !hotel)) {
+      router.push('/onboarding')
+    }
+  }, [isLoading, error, hotel, router])
 
   if (isLoading) return <ShellSkeleton />
-  if (error || !hotel || !profile) {
-    return <ShellError message="No se encontró un hotel activo. Contacta al administrador." />
-  }
+  if (!hotel || !profile) return <ShellSkeleton />
 
   return (
     <div className="flex h-screen bg-bg-primary">

@@ -33,19 +33,23 @@ export async function updateSession(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser()
 
-  // Rutas públicas que no requieren auth
-  const publicPaths = ['/login', '/signup', '/forgot-password', '/callback']
-  const isPublicPath = publicPaths.some((path) =>
+  // Rutas que no requieren auth
+  const authFreePaths = ['/login', '/signup', '/forgot-password', '/callback']
+  const isAuthFreePath = authFreePaths.some((path) =>
     request.nextUrl.pathname.startsWith(path)
   )
 
-  if (!user && !isPublicPath) {
+  // Onboarding requiere auth pero no hotel
+  const isOnboarding = request.nextUrl.pathname.startsWith('/onboarding')
+
+  if (!user && !isAuthFreePath) {
     const url = request.nextUrl.clone()
     url.pathname = '/login'
     return NextResponse.redirect(url)
   }
 
-  if (user && isPublicPath && request.nextUrl.pathname !== '/callback') {
+  // Usuarios autenticados en páginas de auth (excepto callback y onboarding) → redirect a home
+  if (user && isAuthFreePath && request.nextUrl.pathname !== '/callback') {
     const url = request.nextUrl.clone()
     url.pathname = '/'
     return NextResponse.redirect(url)
