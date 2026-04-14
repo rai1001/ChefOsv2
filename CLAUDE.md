@@ -39,7 +39,7 @@
 ## Supabase
 - Proyecto: dbtrgnyfmzqsrcoadcrs (cuenta raisada1001@gmail.com)
 - Hotel test: ec079cf6-13b1-4be5-9e6f-62c8f604cb1e
-- Migraciones: 00001-00010 (D0 + fixes + M1 + M2 + M3 + M4 + M5 + M6)
+- Migraciones: 00001-00011 (D0 + fixes + M1 + M2 + M3 + M4 + M5 + M6 + M7)
 - Ejecutar migraciones: `cat file.sql | npx supabase db query --linked`
 
 ## Estado actual (2026-04-14)
@@ -50,7 +50,7 @@
 - M4 Compras: COMPLETO — solicitudes (PR), ordenes (PO), recepcion mercancia (GR), state machines (PR: draft→approved→consolidated, PO: draft→sent→received), consolidacion PRs en POs
 - M5 Inventario: COMPLETO — storage_locations, stock_lots (FIFO), stock_movements (ledger), waste_records, auto-stock desde goods_receipts (trigger), alertas stock bajo + caducidad, RPCs: get_stock_levels, record_waste, transfer_stock, adjust_stock, check_stock_alerts
 - M6 Produccion: COMPLETO — production_plans (diario), production_plan_items (por receta/departamento), production_tasks, genera plan desde eventos confirmados (event→menu→recipe chain), state machines, items agrupados por partida, progreso por departamento
-- M7 Dashboard: PENDIENTE
+- M7 Dashboard: COMPLETO — get_dashboard_data RPC agrega KPIs de todos los modulos, widgets con datos live (eventos, produccion, compras, inventario, recetas, mermas), alertas stock bajo/caducidad, eventos del dia, barra progreso produccion
 
 ## Patrones establecidos
 - RLS: `is_member_of(hotel_id)` para reads, `get_member_role(hotel_id)` para writes
