@@ -171,12 +171,31 @@ Cada sesión = 1 etapa (aprox 1–2h). Orden según plan maestro:
 
 ### ~~Sesión 3 — Etapa 1.3 (M6 workflows + KDS)~~ ✅ COMPLETADA
 
-### Sesión 4 — Etapa 1.4 (M1 BEO + PDF)
-- Migración `00018_m1_beo.sql`
-- Tabla: `event_operational_impact`
-- RPCs: `get_event_beo`, `calculate_event_cost_estimate`, `generate_event_operational_impact`
-- Deps nuevas: `npm install @react-pdf/renderer`
-- `src/features/commercial/pdf/beo-document.tsx`, API route `/api/events/[id]/beo`
+### Sesión 4 — Etapa 1.4 (M1 BEO + PDF) — EN PROGRESO
+**Migración creada (NO aplicada):** `supabase/migrations/00018_m1_beo.sql`
+- Tabla: `event_operational_impact` (hotel_id, event_id, product_id, product_name, quantity_needed, unit, department; unique event+product+dept)
+- RLS: read para miembros, write para head_chef+
+- RPC `generate_event_operational_impact` — DELETE + INSERT desde event_menus→recipes→ingredients escalados por pax
+- RPC `calculate_event_cost_estimate` — SUM(unit_cost × qty × pax/servings), guarda en events.theoretical_cost
+- RPC `get_event_beo` — JSONB completo: cabecera evento + cliente + hotel + menús anidados + impacto por departamento + espacios
+
+**PENDIENTE para próxima sesión (continuar Etapa 1.4):**
+1. Aplicar migración: `cat supabase/migrations/00018_m1_beo.sql | npx supabase db query --linked`
+2. `npm install @react-pdf/renderer`
+3. `src/features/commercial/types/index.ts` — añadir EventBEO, OperationalImpactItem, etc.
+4. `src/features/commercial/hooks/use-beo.ts` — useEventBEO, useGenerateOperationalImpact, useCalculateCostEstimate
+5. `src/features/commercial/pdf/beo-document.tsx` — ReactPDF Document (dynamic import con ssr:false)
+6. `src/features/commercial/pdf/beo-download-button.tsx` — PDFDownloadLink wrapper
+7. Expandir `src/app/(dashboard)/events/[id]/page.tsx`:
+   - Bloque coste estimado (badge FC%)
+   - Bloque impacto operacional (tabla por departamento, botón generar)
+   - Botones: Descargar BEO, Generar workflow, Reservar stock
+8. `npm run typecheck`
+
+**Nota sobre ReactPDF en Next.js:**
+- Usar `dynamic(() => import(...), { ssr: false })` para el PDFDownloadLink
+- Fuentes: Helvetica base es suficiente para acentos del español básico; si falla usar Courier
+- No crear API route — usar PDFDownloadLink client-side (más simple y fiable con App Router)
 
 ### Sesión 5 — Etapa 1.5 (M7 alerts + KPIs)
 - Migración `00019_m7_alerts_kpis.sql`
