@@ -22,6 +22,8 @@ export default function InventoryPage() {
   const { data: levels, isLoading } = useStockLevels()
   const { data: alerts } = useStockAlerts()
   const [filter, setFilter] = useState<'all' | 'alerts'>('all')
+  const now = new Date()
+  const threeDaysFromNow = new Date(now.getTime() + 3 * 86400000)
 
   const displayLevels = filter === 'alerts'
     ? levels?.filter((l) => l.alert_level !== 'ok')
@@ -217,8 +219,8 @@ export default function InventoryPage() {
                   <td className="px-4 py-3 text-sm">
                     {level.earliest_expiry ? (
                       <span className={cn(
-                        new Date(level.earliest_expiry) <= new Date() ? 'text-danger font-medium' :
-                        new Date(level.earliest_expiry) <= new Date(Date.now() + 3 * 86400000) ? 'text-warning' :
+                        new Date(level.earliest_expiry) <= now ? 'text-danger font-medium' :
+                        new Date(level.earliest_expiry) <= threeDaysFromNow ? 'text-warning' :
                         'text-text-secondary'
                       )}>
                         {new Date(level.earliest_expiry).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })}

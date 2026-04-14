@@ -578,94 +578,178 @@ export default function RecipeEditorPage() {
           </div>
         )}
 
-        {/* COST TAB */}
-        {activeTab === 'cost' && (
-          <div className="space-y-6">
-            <div className="grid grid-cols-3 gap-6">
-              <div className="rounded-md border border-border p-4 text-center">
-                <p className="text-xs text-text-muted uppercase tracking-wider">Coste total</p>
-                <p className="mt-2 text-2xl font-bold text-text-primary">
-                  {recipe.total_cost.toFixed(2)} EUR
-                </p>
-              </div>
-              <div className="rounded-md border border-border p-4 text-center">
-                <p className="text-xs text-text-muted uppercase tracking-wider">Coste / ración</p>
-                <p className="mt-2 text-2xl font-bold text-text-primary">
-                  {recipe.cost_per_serving.toFixed(2)} EUR
-                </p>
-                <p className="mt-1 text-xs text-text-muted">{recipe.servings} raciones</p>
-              </div>
-              <div className="rounded-md border border-border p-4 text-center">
-                <p className="text-xs text-text-muted uppercase tracking-wider">% Food Cost</p>
-                <p
-                  className={cn(
-                    'mt-2 text-2xl font-bold',
-                    recipe.food_cost_pct > 35
-                      ? 'text-danger'
-                      : recipe.food_cost_pct > 30
-                        ? 'text-warning'
-                        : 'text-success'
-                  )}
-                >
-                  {recipe.food_cost_pct.toFixed(1)}%
-                </p>
-                {recipe.target_price && (
-                  <p className="mt-1 text-xs text-text-muted">
-                    PVP: {recipe.target_price.toFixed(2)} EUR
+        {/* COST TAB — Escandallo */}
+        {activeTab === 'cost' && (() => {
+          const TARGET_FC_PCT = 28 // benchmark hosteleria
+          const pvpSugerido = recipe.cost_per_serving > 0
+            ? recipe.cost_per_serving / (TARGET_FC_PCT / 100)
+            : null
+          const ingLines = (ingredients ?? []).map((ing) => ({
+            ...ing,
+            lineCost: ing.quantity_net * ing.unit_cost,
+          }))
+          const ingTotal = ingLines.reduce((acc, i) => acc + i.lineCost, 0)
+
+          return (
+            <div className="space-y-6">
+              {/* KPI row */}
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                <div className="rounded-md border border-border bg-bg-primary p-3 text-center">
+                  <p className="text-xs text-text-muted uppercase tracking-wider">Coste total</p>
+                  <p className="mt-1.5 text-xl font-bold text-text-primary">
+                    {recipe.total_cost.toFixed(2)}
+                    <span className="ml-1 text-xs font-normal text-text-muted">EUR</span>
                   </p>
+                </div>
+                <div className="rounded-md border border-border bg-bg-primary p-3 text-center">
+                  <p className="text-xs text-text-muted uppercase tracking-wider">Coste / ración</p>
+                  <p className="mt-1.5 text-xl font-bold text-text-primary">
+                    {recipe.cost_per_serving.toFixed(2)}
+                    <span className="ml-1 text-xs font-normal text-text-muted">EUR</span>
+                  </p>
+                  <p className="mt-0.5 text-xs text-text-muted">{recipe.servings} raciones</p>
+                </div>
+                <div className="rounded-md border border-border bg-bg-primary p-3 text-center">
+                  <p className="text-xs text-text-muted uppercase tracking-wider">Food cost %</p>
+                  <p className={cn(
+                    'mt-1.5 text-xl font-bold',
+                    recipe.food_cost_pct > 35 ? 'text-danger' :
+                    recipe.food_cost_pct > 30 ? 'text-warning' : 'text-success'
+                  )}>
+                    {recipe.food_cost_pct.toFixed(1)}%
+                  </p>
+                  <p className="mt-0.5 text-xs text-text-muted">objetivo ≤ {TARGET_FC_PCT}%</p>
+                </div>
+                <div className="rounded-md border border-border bg-bg-primary p-3 text-center">
+                  <p className="text-xs text-text-muted uppercase tracking-wider">PVP sugerido</p>
+                  <p className="mt-1.5 text-xl font-bold text-accent">
+                    {pvpSugerido ? `${pvpSugerido.toFixed(2)}` : '—'}
+                    {pvpSugerido && <span className="ml-1 text-xs font-normal text-text-muted">EUR</span>}
+                  </p>
+                  {recipe.target_price && (
+                    <p className="mt-0.5 text-xs text-text-muted">
+                      objetivo: {recipe.target_price.toFixed(2)} EUR
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              {/* Recalculate action */}
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={() => calculateCost.mutate(recipeId)}
+                  disabled={calculateCost.isPending}
+                  className="flex items-center gap-2 rounded-md bg-accent px-4 py-2 text-sm font-medium text-white hover:bg-accent-hover disabled:opacity-50"
+                >
+                  <Calculator className="h-4 w-4" />
+                  {calculateCost.isPending ? 'Calculando...' : 'Recalcular escandallo'}
+                </button>
+                {calculateCost.isSuccess && calculateCost.data && (
+                  <span className="text-xs text-success">
+                    Actualizado — ingredientes: {calculateCost.data.ingredient_cost.toFixed(2)} EUR
+                    {calculateCost.data.sub_recipe_cost > 0 &&
+                      ` / sub-recetas: ${calculateCost.data.sub_recipe_cost.toFixed(2)} EUR`}
+                  </span>
+                )}
+                {calculateCost.error && (
+                  <span className="text-xs text-danger" role="alert">
+                    {(calculateCost.error as Error).message}
+                  </span>
                 )}
               </div>
-            </div>
 
-            <button
-              onClick={() => calculateCost.mutate(recipeId)}
-              disabled={calculateCost.isPending}
-              className="flex items-center gap-2 rounded-md bg-accent px-4 py-2 text-sm font-medium text-white hover:bg-accent-hover disabled:opacity-50"
-            >
-              <Calculator className="h-4 w-4" />
-              {calculateCost.isPending ? 'Calculando...' : 'Recalcular coste'}
-            </button>
-
-            {calculateCost.error && (
-              <p className="text-sm text-danger" role="alert">
-                {(calculateCost.error as Error).message}
-              </p>
-            )}
-
-            {/* Ingredient cost breakdown */}
-            {ingredients && ingredients.length > 0 && (
-              <div>
-                <h3 className="text-sm font-medium text-text-primary mb-2">Desglose por ingrediente</h3>
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="border-b border-border text-left text-xs uppercase tracking-wider text-text-muted">
-                      <th className="pb-2">Ingrediente</th>
-                      <th className="pb-2">Neto</th>
-                      <th className="pb-2">Coste/ud</th>
-                      <th className="pb-2 text-right">Coste línea</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {ingredients.map((ing) => (
-                      <tr key={ing.id} className="border-b border-border/50 last:border-0">
-                        <td className="py-1.5 text-text-primary">{ing.ingredient_name}</td>
-                        <td className="py-1.5 text-text-secondary">
-                          {ing.quantity_net.toFixed(3)} {ing.unit?.abbreviation ?? ''}
-                        </td>
-                        <td className="py-1.5 text-text-secondary">
-                          {ing.unit_cost.toFixed(2)}
-                        </td>
-                        <td className="py-1.5 text-right text-text-primary font-medium">
-                          {(ing.quantity_net * ing.unit_cost).toFixed(2)} EUR
-                        </td>
+              {/* Ingredient breakdown table */}
+              {ingLines.length > 0 ? (
+                <div>
+                  <h3 className="mb-3 text-xs font-medium uppercase tracking-wider text-text-muted">
+                    Desglose de ingredientes
+                  </h3>
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b border-border text-left text-xs uppercase tracking-wider text-text-muted">
+                        <th className="pb-2">Ingrediente</th>
+                        <th className="pb-2 text-right">Bruto</th>
+                        <th className="pb-2 text-right">Merma</th>
+                        <th className="pb-2 text-right">Neto</th>
+                        <th className="pb-2 text-right">€/ud</th>
+                        <th className="pb-2 text-right">Línea EUR</th>
+                        <th className="pb-2 text-right">% coste</th>
+                        <th className="pb-2 w-24"></th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </div>
-        )}
+                    </thead>
+                    <tbody>
+                      {ingLines.map((ing) => {
+                        const pct = ingTotal > 0 ? (ing.lineCost / ingTotal) * 100 : 0
+                        return (
+                          <tr key={ing.id} className="border-b border-border/50 last:border-0">
+                            <td className="py-2 text-text-primary font-medium">
+                              {ing.ingredient_name}
+                              {ing.preparation_notes && (
+                                <span className="ml-1 text-xs font-normal text-text-muted">
+                                  ({ing.preparation_notes})
+                                </span>
+                              )}
+                            </td>
+                            <td className="py-2 text-right text-text-secondary">
+                              {ing.quantity_gross}
+                              {ing.unit && <span className="ml-0.5 text-text-muted">{ing.unit.abbreviation}</span>}
+                            </td>
+                            <td className="py-2 text-right text-text-muted">{ing.waste_pct}%</td>
+                            <td className="py-2 text-right text-text-secondary">
+                              {ing.quantity_net.toFixed(3)}
+                              {ing.unit && <span className="ml-0.5 text-text-muted">{ing.unit.abbreviation}</span>}
+                            </td>
+                            <td className="py-2 text-right text-text-secondary">
+                              {ing.unit_cost > 0 ? ing.unit_cost.toFixed(3) : '—'}
+                            </td>
+                            <td className={cn(
+                              'py-2 text-right font-medium',
+                              ing.lineCost > 0 ? 'text-text-primary' : 'text-text-muted'
+                            )}>
+                              {ing.lineCost > 0 ? ing.lineCost.toFixed(2) : '—'}
+                            </td>
+                            <td className="py-2 text-right text-text-muted">
+                              {pct > 0 ? `${pct.toFixed(1)}%` : '—'}
+                            </td>
+                            <td className="py-2 pl-3">
+                              {pct > 0 && (
+                                <div className="h-1.5 w-full rounded-full bg-bg-hover overflow-hidden">
+                                  <div
+                                    className={cn(
+                                      'h-full rounded-full',
+                                      pct > 40 ? 'bg-warning' : 'bg-accent'
+                                    )}
+                                    style={{ width: `${Math.min(pct, 100)}%` }}
+                                  />
+                                </div>
+                              )}
+                            </td>
+                          </tr>
+                        )
+                      })}
+                    </tbody>
+                    <tfoot>
+                      <tr className="border-t-2 border-border">
+                        <td colSpan={5} className="pt-2 text-xs font-medium uppercase tracking-wider text-text-muted">
+                          Total ingredientes
+                        </td>
+                        <td className="pt-2 text-right font-bold text-text-primary">
+                          {ingTotal.toFixed(2)}
+                        </td>
+                        <td className="pt-2 text-right text-text-muted">100%</td>
+                        <td />
+                      </tr>
+                    </tfoot>
+                  </table>
+                </div>
+              ) : (
+                <p className="text-sm text-text-muted">
+                  Sin ingredientes. Añade ingredientes en la pestaña Ingredientes y recalcula el escandallo.
+                </p>
+              )}
+            </div>
+          )
+        })()}
 
         {/* ALLERGENS TAB */}
         {activeTab === 'allergens' && (

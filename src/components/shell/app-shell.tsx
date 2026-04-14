@@ -40,14 +40,16 @@ export function AppShell({ children }: { children: ReactNode }) {
   const profile = useUXProfile()
   const router = useRouter()
 
-  // Redirect a onboarding si no hay membership
+  // Redirect a onboarding solo si no hay membership (data null sin error)
+  // Los errores transitorios (red, timeout) muestran ShellError — no redirigen
   useEffect(() => {
-    if (!isLoading && (error || !hotel)) {
+    if (!isLoading && !error && !hotel) {
       router.push('/onboarding')
     }
   }, [isLoading, error, hotel, router])
 
   if (isLoading) return <ShellSkeleton />
+  if (error) return <ShellError message="Error al cargar el perfil. Comprueba tu conexión." />
   if (!hotel || !profile) return <ShellSkeleton />
 
   return (
