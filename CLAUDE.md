@@ -38,11 +38,25 @@
 
 ## Supabase
 - Proyecto: dbtrgnyfmzqsrcoadcrs (cuenta raisada1001@gmail.com)
-- Migracion actual: 00001_d0_identity.sql
+- Hotel test: ec079cf6-13b1-4be5-9e6f-62c8f604cb1e
+- Migraciones: 00001-00008 (D0 + fixes + M1 + M2 + M3 + M4)
+- Ejecutar migraciones: `cat file.sql | npx supabase db query --linked`
 
-## Estado actual
-- D0 Identidad: migracion completa, auth flow, app shell con sidebar adaptativa
-- Pendiente: ejecutar migracion en Supabase, M1 Comercial
+## Estado actual (2026-04-14)
+- D0 Identidad: COMPLETO — auth flow, app shell, sidebar adaptativa, audit triggers
+- M1 Comercial: COMPLETO — eventos, clientes, state machine, BEO, calendario
+- M2 Recetas: COMPLETO — recetas, ingredientes, pasos, costeo recursivo con cycle detection (E5), sub-recetas, menus, state machine (draft→review→approved→deprecated), ficha tecnica
+- M3 Catalogo: COMPLETO — productos, categorias (12 default), proveedores, ofertas con preferido, aliases, import masivo, FK recipe_ingredients→products
+- M4 Compras: COMPLETO — solicitudes (PR), ordenes (PO), recepcion mercancia (GR), state machines (PR: draft→approved→consolidated, PO: draft→sent→received), consolidacion PRs en POs
+- M5 Inventario: PENDIENTE
+- M6 Produccion: PENDIENTE
+- M7 Dashboard: PENDIENTE
+
+## Patrones establecidos
+- RLS: `is_member_of(hotel_id)` para reads, `get_member_role(hotel_id)` para writes
+- RPCs: `check_membership()` al inicio, `emit_event()` para domain events
+- Triggers: `audit_trigger_fn()` en tablas clave, `set_updated_at()` para timestamps
+- Frontend: tipos con const arrays + labels, hooks TanStack Query, paginas con skeleton/empty/table
 
 ## Fase actual: MVP (Q2 2026)
 Modulos MVP: D0 Identidad, M1 Comercial, M2 Recetas, M3 Catalogo, M4 Compras, M5 Inventario, M6 Produccion, M7 Direccion
