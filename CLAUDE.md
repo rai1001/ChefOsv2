@@ -115,6 +115,15 @@
 3. Añadir `APP_BASE_URL` en Supabase Dashboard → Edge Functions → Secrets
 4. Verificar que el webhook DB de `notifications` manda `Authorization: Bearer <service_role>`
 
+## Testing roadmap (URGENTE — pendiente crear)
+Plan completo en `docs/TESTING_ROADMAP.md`. Estado: 7 tests pasando (4 unit + 3 E2E smoke). Siguiente nivel requiere 5 fases (~5 sesiones CC total):
+- **Fase A** — Seed determinista (`supabase/seed.sql`) — BLOQUEANTE
+- **Fase B** — 5 E2E de flujos críticos (evento, producción, pedido, merma, trazabilidad)
+- **Fase C** — Tests RLS/seguridad (cierra los 3 findings Codex)
+- **Fase D** — Extract de funciones puras a `src/lib/domain/` (oportunista, 90% coverage ahí)
+- **Fase E** — CI GitHub Actions
+Recomendación: arrancar con Opción A (Fase A + C) antes de piloto.
+
 ## Patrones establecidos
 - RLS: `is_member_of(hotel_id)` para reads **metadata**, `get_member_role(hotel_id)` para writes **y para reads de columnas sensibles** (credentials, tokens, payloads operativos)
 - RPCs: `check_membership()` al inicio; si toca operación sensible, pasar `array['superadmin','direction','admin']::public.app_role[]` como tercer argumento
