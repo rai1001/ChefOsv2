@@ -4,7 +4,11 @@
 
 ## Design System
 
-**SIEMPRE leer [DESIGN.md](DESIGN.md) antes de cualquier decisión visual o de UI.**
+**Orden de lectura obligatorio al tocar UI:**
+1. Abre **[`/design-system`](src/app/design-system/page.tsx)** en dev (`npm run dev` → `localhost:3000/design-system`) — referencia viva con todos los patrones.
+2. Consulta **[DESIGN.md](DESIGN.md)** para la spec completa (tokens, tipografía, reglas).
+3. Consulta **[docs/DESIGN_COOKBOOK.md](docs/DESIGN_COOKBOOK.md)** para recetas copy-paste (añadir pantalla, enum de estado, KPI, modal, purga light-mode).
+4. Consulta **[docs/DESIGN_MIGRATION.md](docs/DESIGN_MIGRATION.md)** para estado del rollout y decisiones.
 
 Resumen de decisiones clave (ver DESIGN.md para especificación completa):
 - Fuentes: Syne (display) · DM Sans (body) · DM Mono (datos/números) · JetBrains Mono (badges/IDs)
