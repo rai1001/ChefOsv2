@@ -39,8 +39,8 @@ export default function SupplierDetailPage() {
   if (isLoading) {
     return (
       <div className="space-y-6">
-        <div className="h-8 w-48 animate-pulse rounded bg-bg-hover" />
-        <div className="h-64 animate-pulse rounded-lg bg-bg-hover" />
+        <div className="h-8 w-48 skeleton" />
+        <div className="h-64 skeleton rounded-lg" />
       </div>
     )
   }
@@ -356,7 +356,7 @@ function ConfigTab({ supplierId }: { supplierId: string }) {
     })
   }
 
-  if (isLoading) return <div className="h-48 animate-pulse rounded-lg bg-bg-hover" />
+  if (isLoading) return <div className="h-48 skeleton rounded-lg" />
 
   return (
     <form onSubmit={handleSave} className="rounded-lg border border-border bg-bg-card p-6 space-y-4">
@@ -564,7 +564,7 @@ function IncidentsTab({ supplierId }: { supplierId: string }) {
 function MetricsTab({ supplierId }: { supplierId: string }) {
   const { data: metrics, isLoading } = useSupplierMetrics(supplierId)
 
-  if (isLoading) return <div className="h-32 animate-pulse rounded-lg bg-bg-hover" />
+  if (isLoading) return <div className="h-32 skeleton rounded-lg" />
   if (!metrics) return null
 
   const rate = metrics.completion_rate_pct

@@ -123,7 +123,7 @@ function ScheduleGrid({ hotelId }: { hotelId: string }) {
     return (
       <div className="space-y-2">
         {[...Array(4)].map((_, i) => (
-          <div key={i} className="h-10 bg-bg-hover rounded-lg animate-pulse" />
+          <div key={i} className="h-10 skeleton rounded-lg" />
         ))}
       </div>
     )
@@ -433,7 +433,7 @@ function ShiftsTab({ hotelId }: { hotelId: string }) {
       {isLoading ? (
         <div className="space-y-2">
           {[...Array(3)].map((_, i) => (
-            <div key={i} className="h-10 bg-bg-hover rounded-lg animate-pulse" />
+            <div key={i} className="h-10 skeleton rounded-lg" />
           ))}
         </div>
       ) : shifts.length === 0 ? (
@@ -694,7 +694,7 @@ function RulesTab({ hotelId }: { hotelId: string }) {
     return (
       <div className="space-y-2">
         {[...Array(3)].map((_, i) => (
-          <div key={i} className="h-10 bg-bg-hover rounded-lg animate-pulse" />
+          <div key={i} className="h-10 skeleton rounded-lg" />
         ))}
       </div>
     )

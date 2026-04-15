@@ -11,10 +11,8 @@ import {
   ChefHat,
   ClipboardList,
   Trash2,
-  AlertTriangle,
   Users,
   TrendingUp,
-  Clock,
   Bell,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -127,6 +125,145 @@ function CommandBand({
   )
 }
 
+function OperationalFeed({
+  d,
+  alerts,
+}: {
+  d: NonNullable<ReturnType<typeof useDashboard>['data']>
+  alerts: ReturnType<typeof useActiveAlerts>['data']
+}) {
+  type Item = {
+    key: string
+    variant: 'urgent' | 'warning' | 'success' | 'info'
+    title: string
+    sub: string
+    right: string
+    rightSub: string
+    href: string
+  }
+
+  const items: Item[] = []
+
+  // Alertas críticas / warnings desde useActiveAlerts
+  for (const a of (alerts ?? []).slice(0, 5)) {
+    const variant: Item['variant'] =
+      a.severity === 'critical' ? 'urgent' : a.severity === 'warning' ? 'warning' : 'info'
+    items.push({
+      key: `alert-${a.id}`,
+      variant,
+      title: a.title,
+      sub: new Date(a.created_at).toLocaleString('es-ES', {
+        day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit',
+      }),
+      right: a.message ?? '',
+      rightSub: a.alert_type,
+      href: '/alerts',
+    })
+  }
+
+  // Stock bajo
+  if (d.inventory.low_stock_count > 0) {
+    items.push({
+      key: 'low-stock',
+      variant: 'urgent',
+      title: `${d.inventory.low_stock_count} producto${d.inventory.low_stock_count !== 1 ? 's' : ''} en STOCK BAJO`,
+      sub: 'Reposición recomendada antes del próximo servicio',
+      right: String(d.inventory.low_stock_count),
+      rightSub: 'Por debajo del mínimo',
+      href: '/inventory',
+    })
+  }
+
+  // Caducidades próximas
+  if (d.inventory.expiring_7d > 0) {
+    items.push({
+      key: 'expiring',
+      variant: 'warning',
+      title: `${d.inventory.expiring_7d} lote${d.inventory.expiring_7d !== 1 ? 's' : ''} caduca en 7 días`,
+      sub: 'Priorizar consumo en próximos servicios',
+      right: `${d.inventory.expiring_7d}`,
+      rightSub: 'Lotes',
+      href: '/inventory',
+    })
+  }
+
+  // Pedidos pendientes
+  if (d.procurement.pending_orders > 0) {
+    items.push({
+      key: 'po',
+      variant: 'info',
+      title: `${d.procurement.pending_orders} pedido${d.procurement.pending_orders !== 1 ? 's' : ''} enviado${d.procurement.pending_orders !== 1 ? 's' : ''} al proveedor`,
+      sub: 'Pendientes de recepción',
+      right: d.procurement.orders_value > 0 ? `€ ${Number(d.procurement.orders_value).toFixed(0)}` : '—',
+      rightSub: 'Importe total',
+      href: '/procurement',
+    })
+  }
+
+  // Solicitudes pendientes aprobación
+  if (d.procurement.pending_requests > 0) {
+    items.push({
+      key: 'pr',
+      variant: 'warning',
+      title: `${d.procurement.pending_requests} solicitud${d.procurement.pending_requests !== 1 ? 'es' : ''} de compra por aprobar`,
+      sub: 'Revisa antes de generar los pedidos',
+      right: String(d.procurement.pending_requests),
+      rightSub: 'Pendientes',
+      href: '/procurement',
+    })
+  }
+
+  // Eventos confirmados hoy/próximos
+  if (d.events.today.length === 0 && d.events.upcoming_7d > 0) {
+    items.push({
+      key: 'upcoming',
+      variant: 'success',
+      title: `${d.events.upcoming_7d} evento${d.events.upcoming_7d !== 1 ? 's' : ''} confirmado${d.events.upcoming_7d !== 1 ? 's' : ''} esta semana`,
+      sub: `${d.events.total_pax_7d} comensales total`,
+      right: String(d.events.upcoming_7d),
+      rightSub: 'Próximos 7d',
+      href: '/events',
+    })
+  }
+
+  if (items.length === 0) {
+    return (
+      <div className="space-y-2">
+        <p className="kpi-label">Feed operativo</p>
+        <div className="status-rail success flex items-center justify-between rounded-r-md bg-bg-card px-4 py-3">
+          <div>
+            <p className="text-sm font-medium text-text-primary">Todo en orden</p>
+            <p className="mt-0.5 text-xs text-text-muted">0 alertas · 0 pedidos pendientes · 0 caducidades próximas</p>
+          </div>
+          <p className="font-data text-base text-success" style={{ fontVariantNumeric: 'tabular-nums' }}>OK</p>
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <div className="space-y-2">
+      <p className="kpi-label">Feed operativo</p>
+      {items.map((it) => (
+        <Link
+          key={it.key}
+          href={it.href}
+          className={cn('status-rail flex items-center justify-between rounded-r-md bg-bg-card px-4 py-3 hover:bg-bg-hover transition-colors', it.variant)}
+        >
+          <div className="min-w-0 flex-1 pr-4">
+            <p className="text-sm font-medium text-text-primary truncate">{it.title}</p>
+            <p className="mt-0.5 text-xs text-text-muted truncate">{it.sub}</p>
+          </div>
+          <div className="text-right shrink-0">
+            <p className="font-data text-base text-text-primary" style={{ fontVariantNumeric: 'tabular-nums' }}>{it.right}</p>
+            <p className="text-xs text-text-muted">{it.rightSub}</p>
+          </div>
+        </Link>
+      ))}
+    </div>
+  )
+}
+
 function KpiCard({
   label,
   value,
@@ -181,8 +318,8 @@ export default function DashboardPage() {
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
             <div key={i} className="rounded-lg border border-border bg-bg-card p-4">
-              <div className="h-3 w-20 animate-pulse rounded bg-bg-hover" />
-              <div className="mt-3 h-7 w-12 animate-pulse rounded bg-bg-hover" />
+              <div className="h-3 w-20 skeleton" />
+              <div className="mt-3 h-7 w-12 skeleton" />
             </div>
           ))}
         </div>
@@ -254,38 +391,8 @@ export default function DashboardPage() {
             />
           </div>
 
-          {/* Alerts row */}
-          {(d.inventory.low_stock_count > 0 || d.inventory.expiring_7d > 0 || d.procurement.pending_requests > 0) && (
-            <div className="grid gap-4 md:grid-cols-3">
-              {d.inventory.low_stock_count > 0 && (
-                <Link href="/inventory" className="flex items-center gap-3 rounded-lg border border-danger/30 bg-danger/5 p-4 hover:border-danger/50">
-                  <AlertTriangle className="h-5 w-5 text-danger shrink-0" />
-                  <div>
-                    <p className="text-sm font-medium text-danger">{d.inventory.low_stock_count} productos stock bajo</p>
-                    <p className="text-xs text-text-muted">Requieren reposicion</p>
-                  </div>
-                </Link>
-              )}
-              {d.inventory.expiring_7d > 0 && (
-                <Link href="/inventory" className="flex items-center gap-3 rounded-lg border border-warning/30 bg-warning/5 p-4 hover:border-warning/50">
-                  <Clock className="h-5 w-5 text-warning shrink-0" />
-                  <div>
-                    <p className="text-sm font-medium text-warning">{d.inventory.expiring_7d} lotes caducan (7d)</p>
-                    <p className="text-xs text-text-muted">Revisar caducidades</p>
-                  </div>
-                </Link>
-              )}
-              {d.procurement.pending_requests > 0 && (
-                <Link href="/procurement" className="flex items-center gap-3 rounded-lg border border-info/30 bg-info/5 p-4 hover:border-info/50">
-                  <ShoppingCart className="h-5 w-5 text-info shrink-0" />
-                  <div>
-                    <p className="text-sm font-medium text-info">{d.procurement.pending_requests} solicitudes pendientes</p>
-                    <p className="text-xs text-text-muted">Por aprobar</p>
-                  </div>
-                </Link>
-              )}
-            </div>
-          )}
+          {/* Feed operativo — left-border rails (DESIGN.md §Dashboard) */}
+          <OperationalFeed d={d} alerts={alerts} />
 
           {/* Second row: recipes + waste */}
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">

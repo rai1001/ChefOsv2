@@ -32,7 +32,7 @@ export default function MiseEnPlacePage() {
           Workflow activo
         </label>
         {loadingWf ? (
-          <div className="h-10 rounded-lg bg-surface animate-pulse" />
+          <div className="skeleton h-10 rounded-lg" />
         ) : activeWorkflows.length === 0 ? (
           <div className="text-sm text-text-muted py-2">
             No hay workflows activos. Genera uno desde el detalle de un evento.
@@ -59,7 +59,7 @@ export default function MiseEnPlacePage() {
       {/* Listas MeP */}
       {selectedWorkflow && loadingLists && (
         <div className="space-y-2">
-          {[1, 2, 3].map((i) => <div key={i} className="h-14 rounded-md bg-surface animate-pulse" />)}
+          {[1, 2, 3].map((i) => <div key={i} className="h-14 skeleton rounded-md" />)}
         </div>
       )}
 
@@ -146,7 +146,7 @@ function MepListCard({
           {isLoading ? (
             <div className="p-4 space-y-2">
               {[1, 2, 3].map((i) => (
-                <div key={i} className="h-8 rounded bg-bg-sidebar animate-pulse" />
+                <div key={i} className="skeleton h-8 rounded" />
               ))}
             </div>
           ) : items?.length === 0 ? (

@@ -89,8 +89,8 @@ export default function RecipeEditorPage() {
   if (isLoading) {
     return (
       <div className="space-y-6">
-        <div className="h-8 w-48 animate-pulse rounded bg-bg-hover" />
-        <div className="h-64 animate-pulse rounded-lg bg-bg-hover" />
+        <div className="h-8 w-48 skeleton" />
+        <div className="h-64 skeleton rounded-lg" />
       </div>
     )
   }

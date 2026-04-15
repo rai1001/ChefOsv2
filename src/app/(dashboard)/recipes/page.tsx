@@ -85,10 +85,10 @@ export default function RecipesPage() {
           <div className="space-y-0">
             {[1, 2, 3, 4, 5].map((i) => (
               <div key={i} className="flex items-center gap-4 border-b border-border p-4 last:border-0">
-                <div className="h-4 w-40 animate-pulse rounded bg-bg-hover" />
-                <div className="h-4 w-24 animate-pulse rounded bg-bg-hover" />
-                <div className="h-4 w-16 animate-pulse rounded bg-bg-hover" />
-                <div className="h-4 w-20 animate-pulse rounded bg-bg-hover" />
+                <div className="h-4 w-40 skeleton" />
+                <div className="h-4 w-24 skeleton" />
+                <div className="h-4 w-16 skeleton" />
+                <div className="h-4 w-20 skeleton" />
               </div>
             ))}
           </div>

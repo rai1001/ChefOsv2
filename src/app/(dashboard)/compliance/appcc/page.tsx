@@ -74,7 +74,7 @@ export default function AppccPage() {
     return (
       <div className="p-6 space-y-3">
         {Array.from({ length: 8 }).map((_, i) => (
-          <div key={i} className="h-12 bg-bg-hover rounded animate-pulse" />
+          <div key={i} className="h-12 skeleton" />
         ))}
       </div>
     );

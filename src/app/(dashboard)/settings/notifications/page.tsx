@@ -119,7 +119,7 @@ export default function NotificationSettingsPage() {
         {isLoading ? (
           <div className="space-y-2 p-4">
             {Array.from({ length: 8 }).map((_, i) => (
-              <div key={i} className="h-8 animate-pulse rounded bg-bg-sidebar" />
+              <div key={i} className="h-8 skeleton" />
             ))}
           </div>
         ) : (

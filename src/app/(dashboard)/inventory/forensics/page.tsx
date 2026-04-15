@@ -130,10 +130,10 @@ export default function ForensicsPage() {
 
       {selectedProduct && isLoading && (
         <div className="space-y-3">
-          <div className="h-24 rounded-md bg-surface animate-pulse" />
+          <div className="h-24 skeleton rounded-md" />
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             {[1, 2, 3, 4].map((i) => (
-              <div key={i} className="h-20 rounded-md bg-surface animate-pulse" />
+              <div key={i} className="h-20 skeleton rounded-md" />
             ))}
           </div>
         </div>

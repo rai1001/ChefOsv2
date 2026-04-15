@@ -252,7 +252,7 @@ export default function AgentsPage() {
       {isLoading ? (
         <div className="space-y-3">
           {[1, 2, 3].map(i => (
-            <div key={i} className="h-28 rounded-lg bg-bg-card border border-border animate-pulse" />
+            <div key={i} className="h-28 rounded-lg skeleton" />
           ))}
         </div>
       ) : suggestions.length === 0 ? (

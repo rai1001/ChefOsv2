@@ -167,7 +167,7 @@ export default function AgentsConfigPage() {
       {isLoading ? (
         <div className="space-y-3">
           {[1, 2, 3, 4, 5].map(i => (
-            <div key={i} className="h-20 rounded-lg bg-bg-card border border-border animate-pulse" />
+            <div key={i} className="h-20 rounded-lg skeleton" />
           ))}
         </div>
       ) : (

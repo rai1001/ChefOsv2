@@ -90,7 +90,7 @@ export default function TraceLotPage({ params }: { params: Promise<{ lot_id: str
       {isLoading && (
         <div className="space-y-4">
           {Array.from({ length: 4 }).map((_, i) => (
-            <div key={i} className="h-32 bg-bg-hover rounded-md animate-pulse" />
+            <div key={i} className="h-32 skeleton rounded-md" />
           ))}
         </div>
       )}

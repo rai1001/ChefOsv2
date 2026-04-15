@@ -146,6 +146,55 @@ code, kbd, samp {
   color: var(--color-text-muted);
 }
 
+/* Empty state (DESIGN.md §Polish) — patrón uniforme en toda la app */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 48px 24px;
+  color: var(--color-text-muted);
+}
+.empty-state > svg {
+  width: 48px;
+  height: 48px;
+  color: var(--color-text-muted);
+  opacity: 0.5;
+  margin-bottom: 12px;
+}
+.empty-state-title {
+  font-family: var(--font-sans);
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--color-text-secondary);
+  margin: 0;
+}
+.empty-state-hint {
+  font-size: 13px;
+  color: var(--color-text-muted);
+  margin-top: 4px;
+}
+
+/* Skeleton homogéneo para estados loading */
+.skeleton {
+  background-color: var(--color-bg-hover);
+  border-radius: var(--radius-sm);
+  animation: pulse 1.8s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: 0.5; }
+}
+
+/* Botones: nunca desactivar outline en focus-visible */
+button:focus-visible,
+a:focus-visible,
+[role="button"]:focus-visible {
+  outline: 2px solid var(--color-border-focus);
+  outline-offset: 2px;
+}
+
 /* Touch target mínimo para tablet/cocina */
 .touch-target {
   min-width: 48px;

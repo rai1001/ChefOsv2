@@ -207,7 +207,7 @@ export default function TemperaturesPage() {
 
       {/* Logs table */}
       {isLoading ? (
-        <div className="space-y-2">{Array.from({length: 5}).map((_,i) => <div key={i} className="h-10 bg-bg-hover rounded animate-pulse" />)}</div>
+        <div className="space-y-2">{Array.from({length: 5}).map((_,i) => <div key={i} className="h-10 skeleton" />)}</div>
       ) : logs.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-16 text-text-muted gap-3">
           <Thermometer className="h-10 w-10" />

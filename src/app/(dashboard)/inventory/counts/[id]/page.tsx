@@ -66,10 +66,10 @@ export default function StockCountDetailPage({
   if (loadingCount) {
     return (
       <div className="p-6">
-        <div className="h-8 w-48 rounded bg-surface animate-pulse mb-4" />
+        <div className="h-8 w-48 skeleton rounded mb-4" />
         <div className="space-y-2">
           {[1, 2, 3, 4, 5].map((i) => (
-            <div key={i} className="h-12 rounded-md bg-surface animate-pulse" />
+            <div key={i} className="h-12 skeleton rounded-md" />
           ))}
         </div>
       </div>
@@ -219,7 +219,7 @@ export default function StockCountDetailPage({
       {loadingLines && (
         <div className="space-y-1">
           {[1, 2, 3].map((i) => (
-            <div key={i} className="h-12 rounded-md bg-surface animate-pulse" />
+            <div key={i} className="h-12 skeleton rounded-md" />
           ))}
         </div>
       )}

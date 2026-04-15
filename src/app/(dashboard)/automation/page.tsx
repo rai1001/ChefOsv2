@@ -194,7 +194,7 @@ export default function AutomationPage() {
         {isLoading ? (
           <div className="space-y-2 p-4">
             {Array.from({ length: 5 }).map((_, i) => (
-              <div key={i} className="h-8 animate-pulse rounded bg-bg-sidebar" />
+              <div key={i} className="h-8 skeleton" />
             ))}
           </div>
         ) : !jobs || jobs.length === 0 ? (

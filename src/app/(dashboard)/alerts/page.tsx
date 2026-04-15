@@ -135,7 +135,7 @@ export default function AlertsPage() {
       {isLoading && (
         <div className="space-y-3">
           {[1, 2, 3].map((i) => (
-            <div key={i} className="h-20 animate-pulse rounded-lg bg-bg-card" />
+            <div key={i} className="skeleton h-20 rounded-lg" />
           ))}
         </div>
       )}

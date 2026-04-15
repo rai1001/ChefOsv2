@@ -282,7 +282,7 @@ export default function PersonnelPage() {
       {isLoading ? (
         <div className="space-y-2">
           {[...Array(5)].map((_, i) => (
-            <div key={i} className="h-12 bg-bg-hover rounded-lg animate-pulse" />
+            <div key={i} className="h-12 skeleton rounded-lg" />
           ))}
         </div>
       ) : filtered.length === 0 ? (

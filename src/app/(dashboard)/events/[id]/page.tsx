@@ -280,8 +280,8 @@ export default function EventDetailPage({ params }: { params: Promise<{ id: stri
   if (isLoading) {
     return (
       <div className="space-y-4">
-        <div className="h-8 w-64 animate-pulse rounded bg-bg-card" />
-        <div className="h-48 animate-pulse rounded-lg bg-bg-card" />
+        <div className="h-8 w-64 skeleton rounded" />
+        <div className="h-48 skeleton rounded-lg" />
       </div>
     )
   }

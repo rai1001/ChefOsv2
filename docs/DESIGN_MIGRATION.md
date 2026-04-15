@@ -3,7 +3,7 @@
 > Plan ejecutable y tracker vivo del rollout del design system **Industrial Control Surface** ([DESIGN.md](../DESIGN.md)) sobre toda la app.
 > Referencia visual: [`/design-system`](../src/app/design-system/page.tsx).
 
-Última actualización: **2026-04-15** · Sesión 15 · Fase activa: **F4 cerrada → F5 (polish) TODO**
+Última actualización: **2026-04-15** · Sesión 15 · Fase activa: **F5 cerrada — DS rollout completo**
 
 ---
 
@@ -148,13 +148,32 @@ Migrar cada tabla a:
 - `bg-surface-alt` → `bg-bg-sidebar`
 - `bg-bg-muted` → `bg-bg-sidebar`
 
-### F5 — Polish ⏳ TODO
+### F5 — Polish ✅ DONE (Sesión 15)
 
-- Emptyness states: Lucide icon 48px + mensaje + CTA secundario (no primary accent).
-- Loading skeletons: homogenizar en `bg-bg-hover` con `animate-pulse`.
-- Toasts y notificaciones: usar `badge-status` en cabecera + texto en DM Sans.
-- Modales: radius 10px (DESIGN.md §Layout).
-- Focus visible en todos los interactivos (ya está en `globals.css` pero validar 1 ciclo completo).
+**Utility classes nuevas en `globals.css`:**
+- `.skeleton` con `@keyframes pulse` propio (reemplaza el mix de `animate-pulse + bg-bg-hover + bg-bg-muted + bg-surface + bg-bg-sidebar` que había en 30+ sitios).
+- `.empty-state`, `.empty-state-title`, `.empty-state-hint` con icono 48px, opacity 0.5, texto centrado (patrón DESIGN.md §Polish).
+- Focus ring sobre `button`, `a`, `[role="button"]`: `outline: 2px solid var(--color-border-focus)`.
+
+**Skeletons homogeneizados:** barrido sed en `src/app/**/*.tsx` — 30+ ocurrencias colapsadas a la clase `.skeleton`. 0 residuales `animate-pulse` en pantallas.
+
+**Dashboard · nuevo componente `OperationalFeed`:** reemplaza el "Alerts row" (3 cards) con una lista vertical de left-border rails (DESIGN.md §Dashboard banda de mando). Agrega:
+- Alertas activas (severity → variant)
+- Stock bajo · caducidades próximas → urgent/warning
+- POs pendientes de recepción → info (con importe total en DM Mono a la derecha)
+- PRs pendientes de aprobación → warning
+- Fallback "Todo en orden" con rail success cuando no hay items (evita hueco vacío)
+
+Cada item tiene: `<Link href>` + `status-rail {variant}` + título · sub a la izquierda, valor DM Mono · metadata a la derecha.
+
+**notification-bell:** skeleton interno migrado a `.skeleton`.
+
+### Cierre F5 — criterios
+
+- `npm run typecheck` → ✅ 0 errores.
+- `npm run lint` → ✅ 0 errores, 41 warnings (todos preexistentes).
+- Dashboard real reproduce el patrón visual del mockup: banda de mando (3 cards con rail) + KPI grid + **feed operativo con left-border rails** + KPI grid 2.
+- Console errors en preview → 0.
 
 ---
 

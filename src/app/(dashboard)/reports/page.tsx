@@ -49,7 +49,7 @@ function VarianceBadge({ pct }: { pct: number | null }) {
 function FoodCostByEventTable({ from, to }: { from: string; to: string }) {
   const { data = [], isLoading } = useFoodCostByEvent(from, to)
 
-  if (isLoading) return <div className="h-40 animate-pulse rounded bg-bg-card" />
+  if (isLoading) return <div className="h-40 skeleton rounded" />
 
   if (data.length === 0) {
     return (
@@ -98,7 +98,7 @@ function FoodCostByEventTable({ from, to }: { from: string; to: string }) {
 function FoodCostByServiceTable({ from, to }: { from: string; to: string }) {
   const { data = [], isLoading } = useFoodCostByService(from, to)
 
-  if (isLoading) return <div className="h-40 animate-pulse rounded bg-bg-card" />
+  if (isLoading) return <div className="h-40 skeleton rounded" />
 
   if (data.length === 0) {
     return (
@@ -147,7 +147,7 @@ function FoodCostByServiceTable({ from, to }: { from: string; to: string }) {
 function CostVarianceTable({ from, to }: { from: string; to: string }) {
   const { data = [], isLoading } = useCostVarianceReport(from, to, 5)
 
-  if (isLoading) return <div className="h-40 animate-pulse rounded bg-bg-card" />
+  if (isLoading) return <div className="h-40 skeleton rounded" />
 
   if (data.length === 0) {
     return (

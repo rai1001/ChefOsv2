@@ -59,10 +59,10 @@ export default function WorkflowDetailPage({
   if (isLoading) {
     return (
       <div className="p-6 space-y-4">
-        <div className="h-8 w-64 rounded bg-surface animate-pulse" />
+        <div className="h-8 w-64 skeleton rounded" />
         <div className="grid grid-cols-2 gap-4">
           {[1, 2, 3, 4].map((i) => (
-            <div key={i} className="h-40 rounded-md bg-surface animate-pulse" />
+            <div key={i} className="h-40 skeleton rounded-md" />
           ))}
         </div>
       </div>
