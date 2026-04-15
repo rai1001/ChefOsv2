@@ -115,14 +115,20 @@
 3. Añadir `APP_BASE_URL` en Supabase Dashboard → Edge Functions → Secrets
 4. Verificar que el webhook DB de `notifications` manda `Authorization: Bearer <service_role>`
 
-## Testing roadmap (URGENTE — pendiente crear)
-Plan completo en `docs/TESTING_ROADMAP.md`. Estado: 7 tests pasando (4 unit + 3 E2E smoke). Siguiente nivel requiere 5 fases (~5 sesiones CC total):
-- **Fase A** — Seed determinista (`supabase/seed.sql`) — BLOQUEANTE
-- **Fase B** — 5 E2E de flujos críticos (evento, producción, pedido, merma, trazabilidad)
-- **Fase C** — Tests RLS/seguridad (cierra los 3 findings Codex)
-- **Fase D** — Extract de funciones puras a `src/lib/domain/` (oportunista, 90% coverage ahí)
-- **Fase E** — CI GitHub Actions
-Recomendación: arrancar con Opción A (Fase A + C) antes de piloto.
+## Testing (estado 2026-04-15 — Fases A+B+C+E completadas)
+Plan completo en `docs/TESTING_ROADMAP.md`.
+
+**20 tests pasando** en 22.8s:
+- 4 unit (`src/lib/utils.test.ts`) — 1.5s
+- 16 E2E (3 smoke + 4 flujos + 9 RLS) — 21.3s
+
+- ✅ **Fase A** — seed idempotente (`scripts/seed-test.ts`, `npm run db:seed`) — hotel test aislado `11111111-...` con 7 usuarios uno por rol, 2 clientes, 10 productos + stock, integraciones PMS/POS
+- ✅ **Fase B parcial** — 4 E2E flujos críticos (evento draft→pending, PR, merma, label). Flujo 2 (producción) defer: requiere seed con menús+recetas
+- ✅ **Fase C** — 9 tests RLS cierran los 3 audits Codex (credentials, sync auth, whitelist+config)
+- ⏳ **Fase D** — Extract oportunista de funciones puras a `src/lib/domain/` (hacer a medida que refactorices)
+- ✅ **Fase E** — CI GitHub Actions en `.github/workflows/ci.yml` (jobs: lint-typecheck, test-unit, build, test-e2e gated por `vars.E2E_ENABLED`)
+
+**Pendiente manual en GitHub:** añadir secrets (`NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`) + variable `E2E_ENABLED=true` + branch protection sobre `main`.
 
 ## Patrones establecidos
 - RLS: `is_member_of(hotel_id)` para reads **metadata**, `get_member_role(hotel_id)` para writes **y para reads de columnas sensibles** (credentials, tokens, payloads operativos)

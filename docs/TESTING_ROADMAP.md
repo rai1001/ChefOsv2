@@ -276,8 +276,38 @@ Eso es "90% de verdad" para ChefOS v2.
 - [x] Playwright + chromium instalados (commit `114bf8e`)
 - [x] `vitest.config.ts`, `playwright.config.ts`, `vitest.setup.ts` creados
 - [x] Infra probada con 4 unit + 3 E2E pasando
-- [ ] `@vitest/coverage-v8` (para Fase D)
-- [ ] `wait-on` dev dep (para CI)
+- [x] **Fase A completa** — seed idempotente (commit `e47574f` + `6a9cc40`)
+- [x] **Fase B parcial** — 4 E2E de flujos (commit `6a9cc40`). Flujo 2 (producción) defer por falta de menús/recetas en seed.
+- [x] **Fase C completa** — 9 tests RLS cierran Codex (commit `5627868`)
+- [x] **Fase E completa** — CI GitHub Actions (archivo `.github/workflows/ci.yml`)
+- [ ] `@vitest/coverage-v8` (para Fase D cuando se haga extract oportunista)
+- [x] `wait-on` dev dep (para CI E2E)
+
+## Estado actual (2026-04-15)
+
+- **4 unit tests** (`src/lib/utils.test.ts`) — pasan en 1.5s
+- **16 E2E tests** — pasan en 21.3s:
+  - 3 smoke (login + regresión ISSUE-001 escandallo + ISSUE-005 BEO)
+  - 4 flujos (1 evento draft→pending, 3 PR create, 4 waste, 5 label)
+  - 9 RLS (3 credentials + 4 sync auth + 2 whitelist/config)
+- **CI** listo en `.github/workflows/ci.yml` con 4 jobs: lint-typecheck, test-unit, build, test-e2e (este último gated por `vars.E2E_ENABLED == 'true'` hasta que Israel configure secrets en GitHub)
+
+## Acciones manuales pendientes para activar CI completo
+
+En GitHub → Settings del repo `rai1001/ChefOsv2`:
+
+1. **Secrets** (Settings → Secrets and variables → Actions → New repository secret):
+   - `NEXT_PUBLIC_SUPABASE_URL`
+   - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+   - `SUPABASE_SERVICE_ROLE_KEY` (rotar primero, ver alerta de 2026-04-15)
+
+2. **Variable** (misma sección → Variables):
+   - `E2E_ENABLED = true` (activa el job test-e2e)
+
+3. **Branch protection** (Settings → Branches → main → Branch protection rule):
+   - Require status checks to pass: `lint-typecheck`, `test-unit`, `build`, opcionalmente `test-e2e`
+
+Hasta que esto esté hecho, el workflow correrá en cada push pero test-e2e se saltará.
 
 ---
 
