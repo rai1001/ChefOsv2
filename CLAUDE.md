@@ -72,8 +72,10 @@
 | 00025 | m12_integrations | pms_integrations, pos_integrations, integration_sync_logs; enums pms_type/pos_type/integration_status/sync_log_status; job_type+sync_pms/sync_pos; RPCs: create/update/disable pms+pos, trigger_pms/pos_sync, mark_sync_complete, get_pms/pos_integrations, get_sync_logs |
 | 00026 | m13_hr | personnel, shift_definitions, schedule_rules, schedule_assignments; enums personnel_role/contract_type/shift_type/schedule_origin/schedule_status; RPCs: create/update_personnel, create/update_shift_definition, create/update/delete_schedule_rule, generate_monthly_schedule, update/delete_assignment, get_personnel/shift_definitions/schedule_rules/schedule_assignments |
 | 00027 | m15_agents | agent_configs, agent_suggestions; enums agent_type/suggestion_status/suggestion_action; job_type+=run_agent; 10 RPCs agentes (price_watcher, waste_analyzer, stock_optimizer, recipe_cost_alert, compliance_reminder, event_planner, shopping_optimizer, kds_coordinator, post_event, forecast_prep) + get/approve/reject/upsert_config; trigger event.confirmed→event_planner, event.completed→post_event; seed 10 configs hotel test |
+| 00028 | security_hardening | Codex audit round 1: SELECT policies pms/pos_integrations restringidas a admin+ (credentials ya no exfiltrables por cualquier miembro); trigger_pms/pos_sync + get_integration_sync_logs exigen rol admin+ (push_kitchen_orders exige direction+); search_path=public en 18 funciones M15; REVOKE EXECUTE en run_*_agent + _create_agent_suggestion a service_role |
+| 00029 | sync_type_and_config_validation | Codex audit round 2: whitelist sync_type (errcode P0003 en valores fuera de lista); validación config.push_kitchen_orders/sync_sales/sync_occupancy/sync_reservations activa antes de encolar job |
 
-## Estado actual (2026-04-15 — Sesión 11 de plan completado PRD)
+## Estado actual (2026-04-15 — Sesión 13: QA + Codex security audit)
 - D0 Identidad: COMPLETO — auth flow, app shell, sidebar adaptativa (4 perfiles), audit triggers
 - M1 Comercial: COMPLETO — eventos, clientes, state machine, BEO, calendario
 - M2 Recetas: COMPLETO — recetas, ingredientes, pasos, costeo recursivo con cycle detection (E5), sub-recetas, menus, state machine (draft→review→approved→deprecated), ficha tecnica
@@ -92,10 +94,35 @@
 - P2 app-shell.tsx: errores transitorios → ShellError, solo redirige a onboarding si !hotel sin error
 - QA 404s: /reports, /settings, /settings/team (placeholders creados)
 
+## Bugs cerrados (/qa 2026-04-15)
+- ISSUE-001: Date.now() en render de escandallo/page.tsx → useState+setInterval (React 19 purity)
+- ISSUE-002: 12 comillas sin escapar en JSX → `&ldquo;/&rdquo;` (7 archivos)
+- ISSUE-003: Date.now() en simulador escandallos → useRef counter
+- ISSUE-004: setState síncrono en useEffect de agents/config → render-phase state sync
+- ISSUE-005: BEO PDF rompía build Turbopack (dynamic sobre @react-pdf/renderer external) → wrapper BeoBtn en pdf-buttons.tsx
+- Resultado: `npm run build` compila 48 rutas, lint 0 errores (antes 25), typecheck limpio
+
+## Security hardening (Codex audit 2026-04-15)
+- CRITICAL resuelto: policies SELECT sobre pms_integrations/pos_integrations restringidas a admin+ (credentials ya no exfiltrables por PostgREST)
+- HIGH #1 resuelto: notification-dispatcher exige Bearer == SUPABASE_SERVICE_ROLE_KEY + reconstruye email desde DB (no confía en payload) + safeUrl solo rutas internas
+- HIGH #2 resuelto: trigger_pms_sync/trigger_pos_sync/get_integration_sync_logs exigen rol admin+; push_kitchen_orders exige direction+
+- Defense in depth: whitelist de sync_type + validación config activa antes de encolar
+- Bonus: search_path=public en 18 funciones SECURITY DEFINER de M15 + REVOKE EXECUTE a service_role en RPCs service-only
+
+## Acciones manuales pendientes post-hardening
+1. Rotar credenciales de las 5 integraciones de prueba (Mews/OPERA/Lightspeed/Simphony/etc) — pudieron haber sido leídas antes del fix
+2. `npx supabase functions deploy notification-dispatcher --linked`
+3. Añadir `APP_BASE_URL` en Supabase Dashboard → Edge Functions → Secrets
+4. Verificar que el webhook DB de `notifications` manda `Authorization: Bearer <service_role>`
+
 ## Patrones establecidos
-- RLS: `is_member_of(hotel_id)` para reads, `get_member_role(hotel_id)` para writes
-- RPCs: `check_membership()` al inicio, `emit_event()` para domain events
+- RLS: `is_member_of(hotel_id)` para reads **metadata**, `get_member_role(hotel_id)` para writes **y para reads de columnas sensibles** (credentials, tokens, payloads operativos)
+- RPCs: `check_membership()` al inicio; si toca operación sensible, pasar `array['superadmin','direction','admin']::public.app_role[]` como tercer argumento
 - Triggers: `audit_trigger_fn()` en tablas clave, `set_updated_at()` para timestamps
+- SECURITY DEFINER: SIEMPRE `set search_path = public` (hijacking mitigation)
+- RPCs service-only (worker-invoked): `REVOKE EXECUTE ... FROM public, anon, authenticated` + `GRANT EXECUTE ... TO service_role`
+- Edge Functions con service_role: SIEMPRE validar `Authorization` header antes de crear el cliente Supabase (patrón automation-worker)
+- PDFs con @react-pdf/renderer: dynamic() SOLO sobre el botón completo (pdf-buttons.tsx), nunca sobre el documento o sobre la lib externa (rompe Turbopack SSR)
 - Frontend: tipos con const arrays + labels, hooks TanStack Query, paginas con skeleton/empty/table
 - Escandallo live: useEscandalloLive (refetchOnWindowFocus, 2min interval), useSyncEscandalloPrices
 - Precios: GR price (ultimo albarán aceptado) > offer price (proveedor preferido) > manual

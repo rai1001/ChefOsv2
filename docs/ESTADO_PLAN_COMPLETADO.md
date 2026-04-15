@@ -598,6 +598,46 @@ Cada sesión = 1 etapa (aprox 1–2h). Orden según plan maestro:
 
 ---
 
+## Sesión 13 — Completada (2026-04-15): QA + Codex security audit
+
+### `/qa` — 5 issues detectados, 5 fijados
+
+| Issue | Severidad | Fix | Commit |
+|---|---|---|---|
+| ISSUE-001 | Alta | `recipes/[id]/escandallo/page.tsx:101` Date.now() en render viola React 19 purity → useState+setInterval | `77ee43f` |
+| ISSUE-002 | Baja | 12 comillas sin escapar en JSX (7 archivos) → `&ldquo;/&rdquo;` | `043346e` |
+| ISSUE-003 | Alta | `escandallos/page.tsx:77` Date.now() → useRef counter | `9669708` |
+| ISSUE-004 | Media | `agents/config/page.tsx:39` setState síncrono en useEffect → render-phase state sync | `f10a3fa` |
+| ISSUE-005 | **CRÍTICA** | `events/[id]/page.tsx` BEO PDF rompía `npm run build` Turbopack SSR → wrapper `BeoBtn` en `pdf-buttons.tsx` | `7b06d6d` |
+
+**Antes → Después:** build roto → OK (48 rutas), lint 25 errores → 0, typecheck limpio, consola sin errores.
+
+### Codex security audit (round 1 + round 2)
+
+**Migración `00028_security_hardening.sql` (commit `f7a5bad`):**
+- **CRITICAL** — Policies SELECT sobre `pms_integrations` / `pos_integrations` permitían a cualquier miembro exfiltrar `credentials` vía PostgREST. Restringidas a admin+.
+- **HIGH #2** — `trigger_pms_sync` / `trigger_pos_sync` / `get_integration_sync_logs` solo comprobaban membership. Ahora exigen rol admin+ (`push_kitchen_orders` exige direction+).
+- **Bonus** — 18 funciones SECURITY DEFINER de M15 sin `SET search_path = public`. Añadido. REVOKE EXECUTE + GRANT service_role sobre `run_*_agent`, `_create_agent_suggestion`, `run_all_automejora_agents`.
+
+**Edge function `notification-dispatcher` (commit `0ed3c16`):**
+- **HIGH #1** — Aceptaba cualquier caller con JWT válido (relé de phishing potencial). Añadido check Bearer == `SUPABASE_SERVICE_ROLE_KEY`. `safeUrl` rechaza URLs absolutas. Email se reconstruye desde DB por `id`, no se confía en el payload.
+
+**Migración `00029_sync_type_and_config_validation.sql` (commit `789354b`) — defense in depth:**
+- Whitelist de `sync_type` (errcode P0003 si sale de la lista).
+- Validación `config.push_kitchen_orders` / `sync_sales` / etc. activa en la integración antes de encolar.
+
+### Acciones manuales pendientes post-hardening
+1. Rotar credenciales de las 5 integraciones de prueba (Mews/OPERA/Lightspeed/Simphony/etc) — pudieron haber sido leídas entre Etapa 3.2 y 00028.
+2. `npx supabase functions deploy notification-dispatcher --linked`
+3. Añadir `APP_BASE_URL` en Supabase Dashboard → Edge Functions → Secrets.
+4. Verificar que el webhook DB de `notifications` manda `Authorization: Bearer <service_role>`.
+
+### Memoria Claude actualizada
+- `patterns_react_pdf.md` — añadida re-ocurrencia ISSUE-005 + acción preventiva.
+- `security_rls_credentials.md` (nuevo) — regla general para tablas con secretos.
+
+---
+
 ## Cómo retomar en siguiente sesión
 
 1. Abrir Claude Code desde `C:\APLICACIONES\ChefOsv2`
