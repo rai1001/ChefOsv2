@@ -74,8 +74,12 @@
 | 00027 | m15_agents | agent_configs, agent_suggestions; enums agent_type/suggestion_status/suggestion_action; job_type+=run_agent; 10 RPCs agentes (price_watcher, waste_analyzer, stock_optimizer, recipe_cost_alert, compliance_reminder, event_planner, shopping_optimizer, kds_coordinator, post_event, forecast_prep) + get/approve/reject/upsert_config; trigger event.confirmed→event_planner, event.completed→post_event; seed 10 configs hotel test |
 | 00028 | security_hardening | Codex audit round 1: SELECT policies pms/pos_integrations restringidas a admin+ (credentials ya no exfiltrables por cualquier miembro); trigger_pms/pos_sync + get_integration_sync_logs exigen rol admin+ (push_kitchen_orders exige direction+); search_path=public en 18 funciones M15; REVOKE EXECUTE en run_*_agent + _create_agent_suggestion a service_role |
 | 00029 | sync_type_and_config_validation | Codex audit round 2: whitelist sync_type (errcode P0003 en valores fuera de lista); validación config.push_kitchen_orders/sync_sales/sync_occupancy/sync_reservations activa antes de encolar job |
+| 00030 | security_audit_fixes | Auditorías Antigraviti+Codex round 3: IDOR create_hotel (tenant check + current_user bypass); check_membership(uuid) overload para HR; enqueue_job bloquea sync_pms/sync_pos/run_agent; triggers events+recipes protegen state-machine de UPDATE directo; drop agent_suggestions_update policy; approve_suggestion whitelist enqueue+fix contrato sync_recipe_costs (product_id→recipe expansion); página /reset-password |
+| 00031 | fix_m9_rpcs | Fix check_membership calls en RPCs de M9 compliance (renombrado desde 00023_fix_rpcs — colisión resuelta) |
+| 00032 | fix_m12_sync_logs | Fix policies insert/update en integration_sync_logs: solo via SECURITY DEFINER RPCs (renombrado desde 00026_m12_security_fixes — colisión resuelta) |
+| 00033 | fix_notifications_rls | Codex audit round 4: añade is_member_of(hotel_id) a notif_read_own, notif_update_own, prefs_own — tenant isolation en notifications |
 
-## Estado actual (2026-04-15 — Sesión 13: QA + Codex security audit)
+## Estado actual (2026-04-15 — Sesión 14: Security audit fixes + Codex review fixes)
 - D0 Identidad: COMPLETO — auth flow, app shell, sidebar adaptativa (4 perfiles), audit triggers
 - M1 Comercial: COMPLETO — eventos, clientes, state machine, BEO, calendario
 - M2 Recetas: COMPLETO — recetas, ingredientes, pasos, costeo recursivo con cycle detection (E5), sub-recetas, menus, state machine (draft→review→approved→deprecated), ficha tecnica

@@ -75,9 +75,9 @@ jobs:
       - name: Seed test hotel
         run: npm run db:seed
 
-      # Arrancar dev server en background
+      # Arrancar dev server en background (puerto sincronizado con E2E_PORT)
       - name: Start Next.js dev server
-        run: npm run dev &
+        run: npm run dev -- --port $E2E_PORT &
 
       # Esperar a que el server responda
       - name: Wait for dev server
