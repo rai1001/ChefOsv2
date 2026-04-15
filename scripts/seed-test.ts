@@ -261,6 +261,32 @@ async function createDomainData() {
 
   console.log(`   ✓ 2 clientes, 3 unidades, 1 categoría, 10 productos, 2 proveedores, 10 ofertas`)
 
+  // Storage location + stock inicial (100 unidades por producto, unit_cost=precio oferta)
+  const { error: locErr } = await supabase.from('storage_locations').insert({
+    id: '90000000-0000-0000-0000-000000000001',
+    hotel_id: HOTEL_ID,
+    name: 'Almacén principal (seed)',
+    location_type: 'refrigerated',
+  })
+  if (locErr) throw new Error(`storage_location: ${locErr.message}`)
+
+  const { data: offersData } = await supabase.from('supplier_offers').select('product_id, unit_price').eq('hotel_id', HOTEL_ID)
+  const priceByProduct = new Map((offersData ?? []).map((o) => [o.product_id, Number(o.unit_price)]))
+
+  const stockLots = products.map((p, i) => ({
+    hotel_id: HOTEL_ID,
+    product_id: p.id,
+    storage_location_id: '90000000-0000-0000-0000-000000000001',
+    lot_number: `LOT-SEED-${i + 1}`,
+    expiry_date: new Date(Date.now() + 30 * 86400000).toISOString().slice(0, 10),
+    initial_quantity: 100,
+    current_quantity: 100,
+    unit_cost: priceByProduct.get(p.id) ?? 10,
+  }))
+  const { error: lotErr } = await supabase.from('stock_lots').insert(stockLots)
+  if (lotErr) throw new Error(`stock_lots: ${lotErr.message}`)
+  console.log(`   ✓ 1 storage location, ${stockLots.length} stock_lots (100 ud cada uno)`)
+
   // 1 evento en estado draft (tests de transición lo harán avanzar)
   const { error: evErr } = await supabase.from('events').insert({
     id: '80000000-0000-0000-0000-000000000001',

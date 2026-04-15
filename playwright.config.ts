@@ -12,6 +12,8 @@ export default defineConfig({
   retries: process.env.CI ? 2 : 0,
   workers: process.env.CI ? 1 : 2,
   reporter: process.env.CI ? 'github' : 'list',
+  // Seed determinista una sola vez antes de toda la suite. Skip con E2E_SKIP_SEED=1.
+  globalSetup: process.env.E2E_SKIP_SEED ? undefined : './e2e/global-setup.ts',
   use: {
     baseURL: BASE_URL,
     trace: 'on-first-retry',
