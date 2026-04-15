@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo, useId } from 'react'
+import { useState, useMemo, useId, useRef } from 'react'
 import Link from 'next/link'
 import { useCatalogPrices } from '@/features/recipes/hooks/use-escandallo'
 import { useCreateRecipe } from '@/features/recipes/hooks/use-recipes'
@@ -39,6 +39,7 @@ function calcNet(qty: number, waste: number) {
 
 export default function EscandallosPage() {
   const uid = useId()
+  const lineCounter = useRef(0)
   const router = useRouter()
   const { data: catalog, isLoading: loadingCatalog } = useCatalogPrices()
   const createRecipe = useCreateRecipe()
@@ -74,7 +75,7 @@ export default function EscandallosPage() {
     const p = catalog?.find((c) => c.product_id === productId)
     if (!p) return
     const newLine: SimLine = {
-      id: `${uid}-${Date.now()}`,
+      id: `${uid}-${lineCounter.current++}`,
       product_id: p.product_id,
       ingredient_name: p.product_name,
       unit_abbreviation: p.unit_abbreviation ?? '',
@@ -94,7 +95,7 @@ export default function EscandallosPage() {
     e.preventDefault()
     if (!manualName || !manualQty) return
     const newLine: SimLine = {
-      id: `${uid}-${Date.now()}`,
+      id: `${uid}-${lineCounter.current++}`,
       product_id: null,
       ingredient_name: manualName,
       unit_abbreviation: manualUnit,
