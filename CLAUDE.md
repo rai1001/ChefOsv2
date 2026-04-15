@@ -64,8 +64,15 @@
 | 00017 | m6_workflows_kds | workflows, workflow_tasks, mise_en_place_lists/items, kitchen_orders/items, recurring_task_templates; RPCs: generate_event_workflow, generate_shopping_list, task state machine, mark_mep_item, create_kitchen_order, update_ko_item_status, generate_recurring_tasks, get_workflow_detail |
 | 00018 | m1_beo | event_operational_impact tabla+RLS; RPCs: generate_event_operational_impact, calculate_event_cost_estimate, get_event_beo (JSONB completo) |
 | 00019 | m7_alerts_kpis | alerts, kpi_snapshots; enums alert_type/severity; RPCs: generate_daily_snapshot, dismiss_alert, get_active_alerts, get_food_cost_by_event, get_food_cost_by_service, get_cost_variance_report |
+| 00020 | fixes_code_review | varios fixes post code-review |
+| 00021 | m8_automation | automation_jobs, automation_job_logs, automation_triggers; enums job_type/status; RPCs: enqueue_job, claim_next_job, complete_job, fail_job, cancel_job, get_pending_jobs, get_job_logs |
+| 00022 | m14_notifications | notifications, notification_preferences; enum notification_type; RPCs: create_notification, mark_read/all, get_unread, get_count, get_preferences, upsert_preference; trigger trg_auto_notify |
+| 00023 | m9_compliance | appcc_templates, appcc_records, temperature_logs, labels; enums appcc_category/record_status/label_type; RPCs: create_appcc_record, log_temperature, create_label, trace_lot, seed_appcc_defaults (20 plantillas) |
+| 00024 | security_fixes | REVOKE/GRANT worker+notify RPCs a service_role; backoff cap 120min; XSS fix email |
+| 00025 | m12_integrations | pms_integrations, pos_integrations, integration_sync_logs; enums pms_type/pos_type/integration_status/sync_log_status; job_type+sync_pms/sync_pos; RPCs: create/update/disable pms+pos, trigger_pms/pos_sync, mark_sync_complete, get_pms/pos_integrations, get_sync_logs |
+| 00026 | m13_hr | personnel, shift_definitions, schedule_rules, schedule_assignments; enums personnel_role/contract_type/shift_type/schedule_origin/schedule_status; RPCs: create/update_personnel, create/update_shift_definition, create/update/delete_schedule_rule, generate_monthly_schedule, update/delete_assignment, get_personnel/shift_definitions/schedule_rules/schedule_assignments |
 
-## Estado actual (2026-04-14 — Sesión 3 de plan completado PRD)
+## Estado actual (2026-04-15 — Sesión 11 de plan completado PRD)
 - D0 Identidad: COMPLETO — auth flow, app shell, sidebar adaptativa (4 perfiles), audit triggers
 - M1 Comercial: COMPLETO — eventos, clientes, state machine, BEO, calendario
 - M2 Recetas: COMPLETO — recetas, ingredientes, pasos, costeo recursivo con cycle detection (E5), sub-recetas, menus, state machine (draft→review→approved→deprecated), ficha tecnica
@@ -95,7 +102,7 @@
 ## Fase actual: Plan completado PRD en curso
 MVP básico (D0+M1-M7) cerrado. Plan maestro aprobado (todo el PRD: MVP+F2+F3+F4).
 
-**Progreso:** Sesión 8/~14 completada — Etapas 1.1 + 1.2 + 1.3 + 1.4 + 1.5 + 2.3 + 2.1 + 2.4 completas
+**Progreso:** Sesión 11/~14 completada — Etapas 1.1 + 1.2 + 1.3 + 1.4 + 1.5 + 2.3 + 2.1 + 2.4 + 2.2 + 3.2 + 3.3 completas
 **Plan maestro:** `C:\Users\Israel\.claude\plans\misty-petting-haven.md`
 **Estado detallado + roadmap sesiones:** `docs/ESTADO_PLAN_COMPLETADO.md`
 
@@ -110,11 +117,11 @@ MVP básico (D0+M1-M7) cerrado. Plan maestro aprobado (todo el PRD: MVP+F2+F3+F4
 5. ~~M10 Documentos PDF (9 plantillas)~~ ✅
 6. ~~M8 Automation (jobs queue + worker Edge Function)~~ ✅
 7. ~~M14 Notificaciones (in-app Realtime + email Resend + preferencias)~~ ✅
-8. M9 Compliance APPCC + etiquetado QR + trazabilidad
+8. ~~M9 Compliance APPCC + etiquetado QR + trazabilidad~~ ✅
 
 ### Fase 3:
-9. M12 Integraciones PMS/POS (Mews, OPERA, Lightspeed, Simphony)
-10. M13 RRHH y turnos
+9. ~~M12 Integraciones PMS/POS (Mews, OPERA, Lightspeed, Simphony)~~ ✅ (00025)
+10. ~~M13 RRHH y turnos~~ ✅ (00026)
 11. M15 Agentes autónomos (5 automejora + 5 coordinación evento)
 12. M11 Analytics + ML/Forecast
 

@@ -1,6 +1,6 @@
 # Estado del Plan de Completado ChefOS v2
 
-> **Última sesión:** 2026-04-14 (Israel + Claude)
+> **Última sesión:** 2026-04-15 (Israel + Claude)
 > **Plan maestro:** `C:\Users\Israel\.claude\plans\misty-petting-haven.md`
 > **Alcance aprobado:** TODO el PRD (MVP + Fase 2 + Fase 3 + Fase 4) con OCR + PDF
 
@@ -374,6 +374,105 @@ Supabase Dashboard → Database → Replication → Source tables → añadir `n
 
 ---
 
+## Sesión 10 — Completada (2026-04-15)
+
+### Etapa 3.2 — M12 Integraciones PMS/POS ✅
+
+**Migración creada y aplicada:** `supabase/migrations/00025_m12_integrations.sql`
+
+**Enums nuevos:**
+- `pms_type` (mews / opera_cloud / cloudbeds / protel)
+- `pos_type` (lightspeed / simphony / square / revel)
+- `integration_status` (draft / active / error / disabled)
+- `sync_log_status` (running / success / partial / failed)
+- `job_type` extendido con `sync_pms` y `sync_pos`
+
+**Tablas nuevas:**
+- `pms_integrations` — credenciales + config por tipo de PMS; unique (hotel_id, pms_type)
+- `pos_integrations` — credenciales + config por tipo de POS; unique (hotel_id, pos_type)
+- `integration_sync_logs` — audit trail inmutable con check: exactamente una FK (pms o pos) no-null
+
+**RPCs:**
+- `create_pms_integration` / `create_pos_integration` — crea integración + domain event
+- `update_pms_integration` / `update_pos_integration` — actualiza nombre/credentials/config; si cambian credentials → reset status a 'draft'
+- `disable_pms_integration` / `disable_pos_integration` — desactiva integración
+- `trigger_pms_sync(hotel_id, integration_id, sync_type)` — crea log 'running' + encola job automation; devuelve log_id
+- `trigger_pos_sync(hotel_id, integration_id, sync_type)` — ídem para POS
+- `mark_sync_complete` — SECURITY DEFINER solo service_role; cierra log + actualiza estado integración
+- `get_pms_integrations` / `get_pos_integrations` — sin credentials (nunca al frontend)
+- `get_integration_sync_logs` — últimos N logs con filtros opcionales por integración
+
+**Adaptadores TypeScript** (`src/features/integrations/adapters/`):
+- `base.ts` — interfaces PmsAdapter, PosAdapter, OccupancyData, ReservationData, SalesData, ConnectionTestResult
+- `mews.ts` — Mews Connector API v1 (api_token + property_id + environment)
+- `opera-cloud.ts` — OPERA Cloud REST API v21.5+ (OAuth client_credentials)
+- `lightspeed.ts` — Lightspeed Restaurant API v3 (access_token simplificado)
+- `simphony.ts` — Oracle Simphony Cloud (auth + transaction services)
+
+**Frontend:**
+- `src/features/integrations/types/index.ts` — tipos, labels, colores, PMS/POS_CREDENTIAL_FIELDS (campos dinámicos)
+- `src/features/integrations/hooks/use-integrations.ts` — 12 hooks TanStack Query
+- `src/app/(dashboard)/settings/integrations/page.tsx` — lista PMS/POS en tabs + KPI bar + historial sync (polling 10s)
+- `src/app/(dashboard)/settings/integrations/new/page.tsx` — wizard 4 pasos: categoría → tipo → credenciales → test
+- `src/components/shell/sidebar-config.ts` — "Integraciones" en grupo Admin de oficina (icono Plug)
+
+**automation-worker extendido:**
+- Casos `sync_pms` y `sync_pos` con stubs demo (testConnection/fetchOccupancy/fetchSales/pushKitchenOrders)
+- En producción, reemplazar stubs por llamadas reales a los adaptadores
+
+**Seguridad:** credentials nunca se devuelven al frontend; `mark_sync_complete` restringido a service_role
+
+**Verificación:** `npm run typecheck` ✅ (0 errores) · Migración aplicada ✅
+
+---
+
+## Sesión 11 — Completada (2026-04-15)
+
+### Etapa 3.3 — M13 RRHH y Turnos ✅
+
+**Migración creada y aplicada:** `supabase/migrations/00026_m13_hr.sql`
+
+**Enums nuevos:**
+- `personnel_role` (chef_ejecutivo / sous_chef / chef_partida / cocinero / ayudante / pastelero / sumiller / camarero / otro)
+- `contract_type` (indefinido / temporal / formacion / autonomo / becario)
+- `shift_type` (normal / refuerzo / evento)
+- `schedule_origin` (regla / evento / ajuste)
+- `schedule_status` (propuesto / confirmado / cancelado)
+
+**Tablas nuevas:**
+- `personnel` — personal operativo con rol, contrato, horas semanales, notas, activo flag
+- `shift_definitions` — turnos reutilizables (nombre único por hotel, inicio, fin, tipo); unique (hotel_id, name)
+- `schedule_rules` — reglas automáticas: rol + days_of_week (int[]) + turno + min_persons + prioridad; unique (hotel_id, personnel_role, shift_definition_id)
+- `schedule_assignments` — asignaciones del cuadrante; unique (personnel_id, assignment_date, shift_definition_id)
+
+**RPCs:**
+- `create_personnel` / `update_personnel` — CRUD empleados con emit_event
+- `create_shift_definition` / `update_shift_definition` — CRUD turnos
+- `create_schedule_rule` / `update_schedule_rule` / `delete_schedule_rule` — CRUD reglas con toggle activo
+- `generate_monthly_schedule` — itera cada día del mes, aplica reglas según days_of_week, asigna personal disponible por rol con ON CONFLICT DO NOTHING (idempotente)
+- `update_assignment` — cicla estado (propuesto→confirmado→cancelado→propuesto)
+- `delete_assignment` — elimina asignación individual
+- `get_personnel` — lista con activos por defecto, JOIN shift_assignments count
+- `get_shift_definitions` / `get_schedule_rules` / `get_schedule_assignments` — lecturas tipadas con JOINs
+
+**Frontend:**
+- `src/features/hr/types/index.ts` — tipos Personnel, ShiftDefinition, ScheduleRule, ScheduleAssignment + const arrays + labels + formatTime / shiftDurationHours
+- `src/features/hr/hooks/use-hr.ts` — 15 hooks TanStack Query
+- `src/app/(dashboard)/hr/personnel/page.tsx` — tabla empleados + modal create/edit (rol, contrato, horas, notas, toggle activo)
+- `src/app/(dashboard)/hr/schedule/page.tsx` — 3 tabs:
+  - **Cuadrante:** grid mensual sticky (personas × días), celda = turno abreviado coloreado (gris=propuesto, verde=confirmado, rojo=cancelado), clic cyclea estado, botón "Generar mes"
+  - **Turnos:** tabla shift_definitions + modal create/edit + toggle activo
+  - **Reglas:** tabla schedule_rules + modal create (selector días L/M/X/J/V/S/D) + toggle activo + delete
+- Patrón Tailwind puro (sin shadcn/ui): `text-text-primary / border-border / bg-bg-card`, modales `fixed inset-0 bg-black/50 z-50`, errores por state local
+
+**Sidebar:**
+- Grupo "Personal" añadido en perfil `oficina`: Empleados (/hr/personnel) + Horarios (/hr/schedule)
+- "Mi horario" añadido en perfil `cocina` (icono Calendar, link /hr/schedule)
+
+**Verificación:** `npm run typecheck` ✅ (0 errores) · Migración aplicada a cloud ✅
+
+---
+
 ## Roadmap de sesiones futuras
 
 Cada sesión = 1 etapa (aprox 1–2h). Orden según plan maestro:
@@ -425,8 +524,8 @@ Cada sesión = 1 etapa (aprox 1–2h). Orden según plan maestro:
 - 9: Etapa 2.2 M9 Compliance APPCC + etiquetado QR + trazabilidad
 
 ### Sesiones 10–13 — Fase 3
-- 10: Etapa 3.2 M12 Integraciones PMS/POS (Mews, OPERA, Lightspeed, Simphony)
-- 11: Etapa 3.3 M13 RRHH y turnos
+- 10: ~~Etapa 3.2 M12 Integraciones PMS/POS (Mews, OPERA, Lightspeed, Simphony)~~ ✅
+- 11: ~~Etapa 3.3 M13 RRHH y turnos~~ ✅ (00026 aplicada — personnel, shift_definitions, schedule_rules, schedule_assignments; /hr/personnel + /hr/schedule)
 - 12: Etapa 3.4 M15 Agentes autónomos (5 automejora + 5 coordinación evento)
 - 13: Etapa 3.1 M11 Analytics + ML/Forecast (requiere 180d datos — dejar para último)
 

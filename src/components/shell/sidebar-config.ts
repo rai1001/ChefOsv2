@@ -22,6 +22,9 @@ import {
   AlertTriangle,
   Activity,
   Zap,
+  Plug,
+  UserCog,
+  CalendarRange,
   type LucideIcon,
 } from 'lucide-react'
 import type { UXProfile } from '@/features/identity/types'
@@ -85,6 +88,12 @@ export const NAV_BY_PROFILE: Record<UXProfile, NavGroup[]> = {
         { label: 'Documentos PDF', href: '/documents', icon: FileText },
       ],
     },
+    {
+      title: 'Personal',
+      items: [
+        { label: 'Mi horario', href: '/hr/schedule', icon: CalendarRange },
+      ],
+    },
   ],
   oficina: [
     {
@@ -134,11 +143,19 @@ export const NAV_BY_PROFILE: Record<UXProfile, NavGroup[]> = {
       ],
     },
     {
+      title: 'Personal',
+      items: [
+        { label: 'Empleados',  href: '/hr/personnel', icon: UserCog },
+        { label: 'Horarios',   href: '/hr/schedule',  icon: CalendarRange },
+      ],
+    },
+    {
       title: 'Admin',
       items: [
-        { label: 'Automatización', href: '/automation', icon: Zap },
-        { label: 'Equipo', href: '/settings/team', icon: Users },
-        { label: 'Config', href: '/settings', icon: Settings },
+        { label: 'Automatización',  href: '/automation',              icon: Zap },
+        { label: 'Integraciones',   href: '/settings/integrations',   icon: Plug },
+        { label: 'Equipo',          href: '/settings/team',           icon: Users },
+        { label: 'Config',          href: '/settings',                icon: Settings },
       ],
     },
   ],
