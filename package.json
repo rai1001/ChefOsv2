@@ -10,7 +10,8 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "db:seed": "tsx scripts/seed-test.ts"
   },
   "dependencies": {
     "@react-pdf/renderer": "^4.4.1",
@@ -42,6 +43,7 @@
     "eslint-config-next": "16.2.3",
     "jsdom": "^29.0.2",
     "tailwindcss": "^4",
+    "tsx": "^4.21.0",
     "typescript": "^5",
     "vitest": "^4.1.4"
   }
