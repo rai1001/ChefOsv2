@@ -2,6 +2,20 @@
 
 > Control operativo de cocina multi-servicio para hoteles, catering y eventos
 
+## Design System
+
+**SIEMPRE leer [DESIGN.md](DESIGN.md) antes de cualquier decisión visual o de UI.**
+
+Resumen de decisiones clave (ver DESIGN.md para especificación completa):
+- Fuentes: Syne (display) · DM Sans (body) · DM Mono (datos/números) · JetBrains Mono (badges/IDs)
+- Tamaño base: **17.6px** (110%)
+- Accent único: `#e8e4dc` (Tungsten White) — SOLO CTA primario y nav activo. Nada más.
+- Alertas: `#c0392b` urgente · `#b87333` warning (cobre) · `#5a7a5a` success
+- Estado: left-border 3px de color — sin badges de fondo, sin columnas de estado aparte
+- Dashboard: banda de mando (turno/servicio/bloqueadores) encima de KPIs
+- Radio: 8px cards/botones · 4px tablas/inputs · 10px modales
+- Sin gradientes · sin glassmorphism · sin sombras llamativas · sin emojis
+
 ## Stack
 - Next.js 16+ (App Router), React 19, TypeScript 5 strict
 - Supabase (PostgreSQL 17, Auth, RLS, RPCs, Storage, Edge Functions)

@@ -98,13 +98,13 @@ export default function NewIntegrationPage() {
       <div className="flex items-center gap-3 mb-8">
         <button
           onClick={() => router.push('/settings/integrations')}
-          className="p-2 rounded-lg hover:bg-gray-100 text-gray-500"
+          className="p-2 rounded-lg hover:bg-bg-hover text-text-muted"
         >
           <ArrowLeft className="h-4 w-4" />
         </button>
         <div>
-          <h1 className="text-xl font-semibold text-gray-900">Nueva integración</h1>
-          <p className="text-sm text-gray-500">Conecta tu PMS o POS en 4 pasos</p>
+          <h1 className="text-text-primary">Nueva integración</h1>
+          <p className="text-sm text-text-muted">Conecta tu PMS o POS en 4 pasos</p>
         </div>
       </div>
 
@@ -121,11 +121,11 @@ export default function NewIntegrationPage() {
               <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-medium ${
                 done   ? 'bg-green-500 text-white' :
                 active ? 'bg-blue-600 text-white'  :
-                         'bg-gray-200 text-gray-500'
+                         'bg-border text-text-muted'
               }`}>
                 {done ? <Check className="h-3.5 w-3.5" /> : i + 1}
               </div>
-              {i < 3 && <div className={`h-0.5 w-6 ${done ? 'bg-green-300' : 'bg-gray-200'}`} />}
+              {i < 3 && <div className={`h-0.5 w-6 ${done ? 'bg-green-300' : 'bg-border'}`} />}
             </div>
           )
         })}
@@ -134,17 +134,17 @@ export default function NewIntegrationPage() {
       {/* PASO 1: Categoría */}
       {step === 'category' && (
         <div className="space-y-4">
-          <h2 className="text-base font-medium text-gray-800">¿Qué tipo de sistema quieres conectar?</h2>
+          <h2 className="text-base font-medium text-text-primary">¿Qué tipo de sistema quieres conectar?</h2>
           {(['pms', 'pos'] as const).map((cat) => (
             <button
               key={cat}
               onClick={() => { setCategory(cat); setStep('type') }}
-              className="w-full text-left p-4 rounded-xl border-2 border-gray-200 hover:border-blue-400 hover:bg-blue-50 transition-colors"
+              className="w-full text-left p-4 rounded-xl border-2 border-border hover:border-blue-400 hover:bg-bg-card transition-colors"
             >
-              <div className="font-medium text-gray-900">
+              <div className="font-medium text-text-primary">
                 {cat === 'pms' ? 'PMS — Property Management System' : 'POS — Point of Sale'}
               </div>
-              <div className="text-sm text-gray-500 mt-0.5">
+              <div className="text-sm text-text-muted mt-0.5">
                 {cat === 'pms'
                   ? 'Sincroniza ocupación, reservas y previsión de pax'
                   : 'Sincroniza ventas y empuja comandas de cocina'}
@@ -157,7 +157,7 @@ export default function NewIntegrationPage() {
       {/* PASO 2: Tipo de sistema */}
       {step === 'type' && (
         <div className="space-y-3">
-          <h2 className="text-base font-medium text-gray-800">
+          <h2 className="text-base font-medium text-text-primary">
             Selecciona el {isPms ? 'PMS' : 'POS'}
           </h2>
           {(isPms ? PMS_TYPES : POS_TYPES).map(([type, label]) => (
@@ -168,17 +168,17 @@ export default function NewIntegrationPage() {
                 else setPosType(type as PosType)
                 setStep('credentials')
               }}
-              className="w-full text-left p-4 rounded-xl border-2 border-gray-200 hover:border-blue-400 hover:bg-blue-50 transition-colors"
+              className="w-full text-left p-4 rounded-xl border-2 border-border hover:border-blue-400 hover:bg-bg-card transition-colors"
             >
-              <div className="font-medium text-gray-900">{label}</div>
-              <div className="text-sm text-gray-500 mt-0.5">
+              <div className="font-medium text-text-primary">{label}</div>
+              <div className="text-sm text-text-muted mt-0.5">
                 {isPms
                   ? PMS_DESCRIPTIONS[type as PmsType]
                   : POS_DESCRIPTIONS[type as PosType]}
               </div>
             </button>
           ))}
-          <button onClick={() => setStep('category')} className="text-sm text-gray-500 hover:text-gray-700 mt-2">
+          <button onClick={() => setStep('category')} className="text-sm text-text-muted hover:text-text-secondary mt-2">
             ← Volver
           </button>
         </div>
@@ -187,34 +187,34 @@ export default function NewIntegrationPage() {
       {/* PASO 3: Credenciales */}
       {step === 'credentials' && (
         <div className="space-y-5">
-          <h2 className="text-base font-medium text-gray-800">Credenciales de acceso</h2>
-          <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 text-sm text-amber-800">
+          <h2 className="text-base font-medium text-text-primary">Credenciales de acceso</h2>
+          <div className="bg-bg-card border border-warning/40 rounded-lg p-3 text-sm text-warning">
             Las credenciales se almacenan de forma segura y nunca se devuelven al frontend.
           </div>
 
           {/* Nombre de la integración */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Nombre (para identificarla)</label>
+            <label className="block text-sm font-medium text-text-secondary mb-1">Nombre (para identificarla)</label>
             <input
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder={isPms ? 'Mews Hotel Principal' : 'Lightspeed Restaurante'}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
 
           {/* Campos dinámicos por tipo */}
           {fields.map((field) => (
             <div key={field.key}>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-text-secondary mb-1">
                 {field.label} {field.required && <span className="text-red-500">*</span>}
               </label>
               {field.type === 'select' ? (
                 <select
                   value={credentials[field.key] ?? ''}
                   onChange={(e) => setCredentials((prev) => ({ ...prev, [field.key]: e.target.value }))}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
                   <option value="">Seleccionar...</option>
                   {field.options?.map((opt) => (
@@ -227,14 +227,14 @@ export default function NewIntegrationPage() {
                   value={credentials[field.key] ?? ''}
                   onChange={(e) => setCredentials((prev) => ({ ...prev, [field.key]: e.target.value }))}
                   placeholder={field.placeholder}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono"
+                  className="w-full border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono"
                 />
               )}
             </div>
           ))}
 
           <div className="flex gap-3 pt-2">
-            <button onClick={() => setStep('type')} className="text-sm text-gray-500 hover:text-gray-700">
+            <button onClick={() => setStep('type')} className="text-sm text-text-muted hover:text-text-secondary">
               ← Volver
             </button>
             <button
@@ -248,7 +248,7 @@ export default function NewIntegrationPage() {
           </div>
 
           {(createPms.isError || createPos.isError) && (
-            <p className="text-sm text-red-600">
+            <p className="text-sm text-danger">
               {(createPms.error ?? createPos.error) instanceof Error
                 ? (createPms.error ?? createPos.error)!.message
                 : 'Error al guardar'}
@@ -261,11 +261,11 @@ export default function NewIntegrationPage() {
       {step === 'test' && (
         <div className="space-y-6 text-center">
           <div className="w-16 h-16 rounded-full bg-blue-100 flex items-center justify-center mx-auto">
-            <Wifi className="h-8 w-8 text-blue-600" />
+            <Wifi className="h-8 w-8 text-info" />
           </div>
           <div>
-            <h2 className="text-base font-medium text-gray-800">Integración creada</h2>
-            <p className="text-sm text-gray-500 mt-1">
+            <h2 className="text-base font-medium text-text-primary">Integración creada</h2>
+            <p className="text-sm text-text-muted mt-1">
               Pulsa &ldquo;Probar conexión&rdquo; para verificar que las credenciales son correctas.
               El test se ejecuta en background (puede tardar 5–10 s).
             </p>
@@ -281,23 +281,23 @@ export default function NewIntegrationPage() {
           )}
 
           {testStatus === 'running' && (
-            <div className="flex items-center justify-center gap-2 text-blue-600 text-sm">
+            <div className="flex items-center justify-center gap-2 text-info text-sm">
               <Loader2 className="h-4 w-4 animate-spin" /> Iniciando test...
             </div>
           )}
 
           {testStatus === 'ok' && (
-            <div className="bg-green-50 border border-green-200 rounded-lg p-4 text-sm text-green-800 text-left">
+            <div className="bg-bg-card border border-success/40 rounded-lg p-4 text-sm text-success text-left">
               <div className="font-medium mb-1">Test encolado correctamente</div>
               <div>{testMsg}</div>
-              <div className="mt-3 text-xs text-green-600">
+              <div className="mt-3 text-xs text-success">
                 Revisa el historial de sync en la página de integraciones para ver el resultado.
               </div>
             </div>
           )}
 
           {testStatus === 'fail' && (
-            <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-sm text-red-800 text-left">
+            <div className="bg-bg-card border border-danger/40 rounded-lg p-4 text-sm text-danger text-left">
               <div className="font-medium mb-1">Error al iniciar test</div>
               <div>{testMsg}</div>
             </div>
@@ -305,7 +305,7 @@ export default function NewIntegrationPage() {
 
           <button
             onClick={() => router.push('/settings/integrations')}
-            className="text-sm text-blue-600 hover:text-blue-800 font-medium"
+            className="text-sm text-info hover:text-info font-medium"
           >
             Ir a Integraciones →
           </button>

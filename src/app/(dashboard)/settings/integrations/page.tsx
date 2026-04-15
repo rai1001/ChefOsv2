@@ -23,7 +23,7 @@ type Tab = 'pms' | 'pos' | 'logs'
 
 function StatusBadge({ status }: { status: string }) {
   const colorClass = INTEGRATION_STATUS_COLORS[status as keyof typeof INTEGRATION_STATUS_COLORS]
-    ?? 'text-gray-500 bg-gray-100'
+    ?? 'text-text-muted bg-bg-hover'
   return (
     <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${colorClass}`}>
       {INTEGRATION_STATUS_LABELS[status as keyof typeof INTEGRATION_STATUS_LABELS] ?? status}
@@ -33,7 +33,7 @@ function StatusBadge({ status }: { status: string }) {
 
 function SyncBadge({ status }: { status: string }) {
   const colorClass = SYNC_LOG_STATUS_COLORS[status as keyof typeof SYNC_LOG_STATUS_COLORS]
-    ?? 'text-gray-500 bg-gray-100'
+    ?? 'text-text-muted bg-bg-hover'
   return (
     <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${colorClass}`}>
       {status === 'running' && <Loader2 className="h-3 w-3 animate-spin mr-1" />}
@@ -63,15 +63,15 @@ function PmsCard({
   }
 
   return (
-    <div className="bg-white border border-gray-200 rounded-xl p-5">
+    <div className="bg-bg-card border border-border rounded-xl p-5">
       <div className="flex items-start justify-between gap-4">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center">
-            <Building2 className="h-5 w-5 text-blue-600" />
+            <Building2 className="h-5 w-5 text-info" />
           </div>
           <div>
-            <div className="font-medium text-gray-900">{integration.name}</div>
-            <div className="text-xs text-gray-500 mt-0.5">
+            <div className="font-medium text-text-primary">{integration.name}</div>
+            <div className="text-xs text-text-muted mt-0.5">
               {PMS_TYPE_LABELS[integration.pms_type] ?? integration.pms_type}
             </div>
           </div>
@@ -80,14 +80,14 @@ function PmsCard({
       </div>
 
       {integration.last_sync_at && (
-        <div className="flex items-center gap-1.5 mt-3 text-xs text-gray-500">
+        <div className="flex items-center gap-1.5 mt-3 text-xs text-text-muted">
           <Clock className="h-3.5 w-3.5" />
           Último sync: {new Date(integration.last_sync_at).toLocaleString('es-ES')}
         </div>
       )}
 
       {integration.last_error && (
-        <div className="mt-3 flex items-start gap-2 bg-red-50 border border-red-200 rounded-lg p-3 text-xs text-red-700">
+        <div className="mt-3 flex items-start gap-2 bg-bg-card border border-danger/40 rounded-lg p-3 text-xs text-danger">
           <AlertTriangle className="h-3.5 w-3.5 mt-0.5 shrink-0" />
           {integration.last_error}
         </div>
@@ -97,7 +97,7 @@ function PmsCard({
         <button
           onClick={() => handleSync('test_connection')}
           disabled={syncing}
-          className="flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-lg border border-gray-300 hover:bg-gray-50 disabled:opacity-50"
+          className="flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-lg border border-border hover:bg-bg-sidebar disabled:opacity-50"
         >
           {syncing ? <Loader2 className="h-3 w-3 animate-spin" /> : <Wifi className="h-3 w-3" />}
           Test
@@ -105,14 +105,14 @@ function PmsCard({
         <button
           onClick={() => handleSync('sync_occupancy')}
           disabled={syncing || !integration.is_active}
-          className="flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-lg border border-gray-300 hover:bg-gray-50 disabled:opacity-50"
+          className="flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-lg border border-border hover:bg-bg-sidebar disabled:opacity-50"
         >
           <RefreshCw className="h-3 w-3" /> Sync ocupación
         </button>
         <button
           onClick={() => handleSync('sync_reservations')}
           disabled={syncing || !integration.is_active}
-          className="flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-lg border border-gray-300 hover:bg-gray-50 disabled:opacity-50"
+          className="flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-lg border border-border hover:bg-bg-sidebar disabled:opacity-50"
         >
           <RefreshCw className="h-3 w-3" /> Sync reservas
         </button>
@@ -120,7 +120,7 @@ function PmsCard({
           <button
             onClick={() => disable.mutate(integration.id)}
             disabled={disable.isPending}
-            className="ml-auto flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-lg text-red-600 border border-red-200 hover:bg-red-50 disabled:opacity-50"
+            className="ml-auto flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-lg text-danger border border-danger/40 hover:bg-bg-card disabled:opacity-50"
           >
             <WifiOff className="h-3 w-3" /> Deshabilitar
           </button>
@@ -151,15 +151,15 @@ function PosCard({
   }
 
   return (
-    <div className="bg-white border border-gray-200 rounded-xl p-5">
+    <div className="bg-bg-card border border-border rounded-xl p-5">
       <div className="flex items-start justify-between gap-4">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-lg bg-emerald-100 flex items-center justify-center">
             <ShoppingBag className="h-5 w-5 text-emerald-600" />
           </div>
           <div>
-            <div className="font-medium text-gray-900">{integration.name}</div>
-            <div className="text-xs text-gray-500 mt-0.5">
+            <div className="font-medium text-text-primary">{integration.name}</div>
+            <div className="text-xs text-text-muted mt-0.5">
               {POS_TYPE_LABELS[integration.pos_type] ?? integration.pos_type}
             </div>
           </div>
@@ -168,14 +168,14 @@ function PosCard({
       </div>
 
       {integration.last_sync_at && (
-        <div className="flex items-center gap-1.5 mt-3 text-xs text-gray-500">
+        <div className="flex items-center gap-1.5 mt-3 text-xs text-text-muted">
           <Clock className="h-3.5 w-3.5" />
           Último sync: {new Date(integration.last_sync_at).toLocaleString('es-ES')}
         </div>
       )}
 
       {integration.last_error && (
-        <div className="mt-3 flex items-start gap-2 bg-red-50 border border-red-200 rounded-lg p-3 text-xs text-red-700">
+        <div className="mt-3 flex items-start gap-2 bg-bg-card border border-danger/40 rounded-lg p-3 text-xs text-danger">
           <AlertTriangle className="h-3.5 w-3.5 mt-0.5 shrink-0" />
           {integration.last_error}
         </div>
@@ -185,7 +185,7 @@ function PosCard({
         <button
           onClick={() => handleSync('test_connection')}
           disabled={syncing}
-          className="flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-lg border border-gray-300 hover:bg-gray-50 disabled:opacity-50"
+          className="flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-lg border border-border hover:bg-bg-sidebar disabled:opacity-50"
         >
           {syncing ? <Loader2 className="h-3 w-3 animate-spin" /> : <Wifi className="h-3 w-3" />}
           Test
@@ -193,7 +193,7 @@ function PosCard({
         <button
           onClick={() => handleSync('sync_sales')}
           disabled={syncing || !integration.is_active}
-          className="flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-lg border border-gray-300 hover:bg-gray-50 disabled:opacity-50"
+          className="flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-lg border border-border hover:bg-bg-sidebar disabled:opacity-50"
         >
           <RefreshCw className="h-3 w-3" /> Sync ventas
         </button>
@@ -201,7 +201,7 @@ function PosCard({
           onClick={() => handleSync('push_kitchen_orders')}
           disabled={syncing || !integration.is_active || !(integration.config as { push_kitchen_orders?: boolean }).push_kitchen_orders}
           title={!(integration.config as { push_kitchen_orders?: boolean }).push_kitchen_orders ? 'Habilitar en config' : ''}
-          className="flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-lg border border-gray-300 hover:bg-gray-50 disabled:opacity-50"
+          className="flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-lg border border-border hover:bg-bg-sidebar disabled:opacity-50"
         >
           <RefreshCw className="h-3 w-3" /> Push comandas
         </button>
@@ -209,7 +209,7 @@ function PosCard({
           <button
             onClick={() => disable.mutate(integration.id)}
             disabled={disable.isPending}
-            className="ml-auto flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-lg text-red-600 border border-red-200 hover:bg-red-50 disabled:opacity-50"
+            className="ml-auto flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-lg text-danger border border-danger/40 hover:bg-bg-card disabled:opacity-50"
           >
             <WifiOff className="h-3 w-3" /> Deshabilitar
           </button>
@@ -225,27 +225,27 @@ function SyncLogRow({ log }: { log: IntegrationSyncLog }) {
     : null
 
   return (
-    <tr className="border-b border-gray-100 hover:bg-gray-50">
-      <td className="py-3 px-4 text-sm text-gray-600 whitespace-nowrap">
+    <tr className="border-b border-border hover:bg-bg-sidebar">
+      <td className="py-3 px-4 text-sm text-text-secondary whitespace-nowrap">
         {new Date(log.started_at).toLocaleString('es-ES')}
       </td>
       <td className="py-3 px-4">
-        <span className="text-xs font-mono bg-gray-100 px-2 py-0.5 rounded text-gray-700">
+        <span className="text-xs font-mono bg-bg-hover px-2 py-0.5 rounded text-text-secondary">
           {log.sync_type}
         </span>
       </td>
       <td className="py-3 px-4">
         <SyncBadge status={log.status} />
       </td>
-      <td className="py-3 px-4 text-sm text-gray-600 text-right">
+      <td className="py-3 px-4 text-sm text-text-secondary text-right">
         {log.status === 'running' ? '—' : `${log.records_synced} / ${log.records_synced + log.records_failed}`}
       </td>
-      <td className="py-3 px-4 text-sm text-gray-500">
+      <td className="py-3 px-4 text-sm text-text-muted">
         {duration !== null ? `${duration}s` : '…'}
       </td>
       <td className="py-3 px-4">
         {log.error_message && (
-          <span className="text-xs text-red-600 truncate max-w-[200px] block" title={log.error_message}>
+          <span className="text-xs text-danger truncate max-w-[200px] block" title={log.error_message}>
             {log.error_message}
           </span>
         )}
@@ -281,8 +281,8 @@ export default function IntegrationsPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Integraciones</h1>
-          <p className="text-sm text-gray-500 mt-1">
+          <h1 className="text-text-primary">Integraciones</h1>
+          <p className="text-sm text-text-muted mt-1">
             Conecta tu PMS y POS para sincronizar ocupación, reservas y ventas
           </p>
         </div>
@@ -301,18 +301,18 @@ export default function IntegrationsPage() {
           { label: 'Activas',          value: activeCount,          icon: <CheckCircle className="h-4 w-4 text-green-500" /> },
           { label: 'Con error',        value: errorCount,           icon: <XCircle className="h-4 w-4 text-red-500" /> },
         ].map((kpi) => (
-          <div key={kpi.label} className="bg-white border border-gray-200 rounded-xl p-4 flex items-center gap-3">
+          <div key={kpi.label} className="bg-bg-card border border-border rounded-xl p-4 flex items-center gap-3">
             {kpi.icon}
             <div>
-              <div className="text-2xl font-bold text-gray-900">{kpi.value}</div>
-              <div className="text-xs text-gray-500">{kpi.label}</div>
+              <div className="text-text-primary">{kpi.value}</div>
+              <div className="text-xs text-text-muted">{kpi.label}</div>
             </div>
           </div>
         ))}
       </div>
 
       {/* Tabs */}
-      <div className="border-b border-gray-200">
+      <div className="border-b border-border">
         <nav className="flex gap-6">
           {([
             ['pms',  `PMS (${pmsCount})`],
@@ -324,8 +324,8 @@ export default function IntegrationsPage() {
               onClick={() => setTab(t)}
               className={`pb-3 text-sm font-medium border-b-2 transition-colors ${
                 tab === t
-                  ? 'border-blue-600 text-blue-700'
-                  : 'border-transparent text-gray-500 hover:text-gray-700'
+                  ? 'border-blue-600 text-info'
+                  : 'border-transparent text-text-muted hover:text-text-secondary'
               }`}
             >
               {label}
@@ -339,13 +339,13 @@ export default function IntegrationsPage() {
         <div className="space-y-4">
           {loading ? (
             <div className="flex items-center justify-center py-12">
-              <Loader2 className="h-6 w-6 animate-spin text-gray-400" />
+              <Loader2 className="h-6 w-6 animate-spin text-text-muted" />
             </div>
           ) : pmsQuery.data?.length === 0 ? (
             <div className="text-center py-16">
-              <Building2 className="h-10 w-10 text-gray-300 mx-auto mb-3" />
-              <p className="text-gray-500 text-sm">No hay PMS configurados</p>
-              <Link href="/settings/integrations/new" className="mt-3 inline-block text-sm text-blue-600 hover:underline">
+              <Building2 className="h-10 w-10 text-text-muted mx-auto mb-3" />
+              <p className="text-text-muted text-sm">No hay PMS configurados</p>
+              <Link href="/settings/integrations/new" className="mt-3 inline-block text-sm text-info hover:underline">
                 Conectar PMS
               </Link>
             </div>
@@ -362,13 +362,13 @@ export default function IntegrationsPage() {
         <div className="space-y-4">
           {loading ? (
             <div className="flex items-center justify-center py-12">
-              <Loader2 className="h-6 w-6 animate-spin text-gray-400" />
+              <Loader2 className="h-6 w-6 animate-spin text-text-muted" />
             </div>
           ) : posQuery.data?.length === 0 ? (
             <div className="text-center py-16">
-              <ShoppingBag className="h-10 w-10 text-gray-300 mx-auto mb-3" />
-              <p className="text-gray-500 text-sm">No hay POS configurados</p>
-              <Link href="/settings/integrations/new" className="mt-3 inline-block text-sm text-blue-600 hover:underline">
+              <ShoppingBag className="h-10 w-10 text-text-muted mx-auto mb-3" />
+              <p className="text-text-muted text-sm">No hay POS configurados</p>
+              <Link href="/settings/integrations/new" className="mt-3 inline-block text-sm text-info hover:underline">
                 Conectar POS
               </Link>
             </div>
@@ -385,24 +385,24 @@ export default function IntegrationsPage() {
         <div>
           {logsQuery.isLoading ? (
             <div className="flex items-center justify-center py-12">
-              <Loader2 className="h-6 w-6 animate-spin text-gray-400" />
+              <Loader2 className="h-6 w-6 animate-spin text-text-muted" />
             </div>
           ) : logsQuery.data?.length === 0 ? (
             <div className="text-center py-16">
-              <Clock className="h-10 w-10 text-gray-300 mx-auto mb-3" />
-              <p className="text-gray-500 text-sm">Aún no hay registros de sincronización</p>
+              <Clock className="h-10 w-10 text-text-muted mx-auto mb-3" />
+              <p className="text-text-muted text-sm">Aún no hay registros de sincronización</p>
             </div>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="border-b border-gray-200 text-left">
-                    <th className="pb-3 px-4 text-xs font-medium text-gray-500">Inicio</th>
-                    <th className="pb-3 px-4 text-xs font-medium text-gray-500">Tipo</th>
-                    <th className="pb-3 px-4 text-xs font-medium text-gray-500">Estado</th>
-                    <th className="pb-3 px-4 text-xs font-medium text-gray-500 text-right">Registros OK/Total</th>
-                    <th className="pb-3 px-4 text-xs font-medium text-gray-500">Duración</th>
-                    <th className="pb-3 px-4 text-xs font-medium text-gray-500">Error</th>
+                  <tr className="border-b border-border text-left">
+                    <th className="pb-3 px-4 text-xs font-medium text-text-muted">Inicio</th>
+                    <th className="pb-3 px-4 text-xs font-medium text-text-muted">Tipo</th>
+                    <th className="pb-3 px-4 text-xs font-medium text-text-muted">Estado</th>
+                    <th className="pb-3 px-4 text-xs font-medium text-text-muted text-right">Registros OK/Total</th>
+                    <th className="pb-3 px-4 text-xs font-medium text-text-muted">Duración</th>
+                    <th className="pb-3 px-4 text-xs font-medium text-text-muted">Error</th>
                   </tr>
                 </thead>
                 <tbody>

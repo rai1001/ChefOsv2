@@ -7,7 +7,7 @@ import {
   RECIPE_CATEGORIES,
   RECIPE_CATEGORY_LABELS,
   RECIPE_STATUS_LABELS,
-  RECIPE_STATUS_COLORS,
+  RECIPE_STATUS_VARIANT,
   RECIPE_DIFFICULTY_LABELS,
   ALLERGEN_LABELS,
   type RecipeCategory,
@@ -31,7 +31,7 @@ export default function RecipesPage() {
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-text-primary">Recetas</h1>
+        <h1 className="text-text-primary" style={{ fontSize: '28px' }}>Recetas</h1>
         <Link
           href="/recipes/new"
           className="flex items-center gap-2 rounded-md bg-accent px-4 py-2 text-sm font-medium text-white hover:bg-accent-hover"
@@ -107,76 +107,74 @@ export default function RecipesPage() {
         ) : (
           <table className="w-full">
             <thead>
-              <tr className="border-b border-border text-left text-xs uppercase tracking-wider text-text-muted">
-                <th className="px-4 py-3">Receta</th>
-                <th className="px-4 py-3">Categoría</th>
-                <th className="px-4 py-3">Dificultad</th>
-                <th className="px-4 py-3">Raciones</th>
-                <th className="px-4 py-3">Coste/ración</th>
-                <th className="px-4 py-3">% Food Cost</th>
-                <th className="px-4 py-3">Estado</th>
+              <tr className="border-b text-left text-text-muted" style={{ borderColor: 'var(--border-strong)', fontFamily: 'var(--font-code)', fontSize: '10px', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+                <th className="px-4 py-3 font-medium">Receta</th>
+                <th className="px-4 py-3 font-medium">Categoría</th>
+                <th className="px-4 py-3 font-medium">Dificultad</th>
+                <th className="px-4 py-3 text-right font-medium">Raciones</th>
+                <th className="px-4 py-3 text-right font-medium">Coste/ración</th>
+                <th className="px-4 py-3 text-right font-medium">% Food Cost</th>
+                <th className="px-4 py-3 font-medium">Estado</th>
               </tr>
             </thead>
             <tbody>
-              {recipes.map((recipe) => (
-                <tr
-                  key={recipe.id}
-                  className="border-b border-border last:border-0 hover:bg-bg-hover"
-                >
-                  <td className="px-4 py-3">
-                    <Link
-                      href={`/recipes/${recipe.id}`}
-                      className="font-medium text-text-primary hover:text-accent"
-                    >
-                      {recipe.name}
-                    </Link>
-                    {recipe.allergens.length > 0 && (
-                      <p className="mt-0.5 text-xs text-warning">
-                        {recipe.allergens.map((a) => ALLERGEN_LABELS[a]).join(', ')}
-                      </p>
-                    )}
-                  </td>
-                  <td className="px-4 py-3 text-sm text-text-secondary">
-                    {RECIPE_CATEGORY_LABELS[recipe.category]}
-                  </td>
-                  <td className="px-4 py-3 text-sm text-text-secondary">
-                    {RECIPE_DIFFICULTY_LABELS[recipe.difficulty]}
-                  </td>
-                  <td className="px-4 py-3 text-sm text-text-secondary">
-                    {recipe.servings}
-                  </td>
-                  <td className="px-4 py-3 text-sm text-text-secondary">
-                    {recipe.cost_per_serving > 0
-                      ? `${recipe.cost_per_serving.toFixed(2)} EUR`
-                      : '—'}
-                  </td>
-                  <td className="px-4 py-3 text-sm">
-                    <span
-                      className={cn(
-                        recipe.food_cost_pct > 35
-                          ? 'text-danger'
-                          : recipe.food_cost_pct > 30
-                            ? 'text-warning'
-                            : 'text-text-secondary'
+              {recipes.map((recipe) => {
+                const variant = RECIPE_STATUS_VARIANT[recipe.status]
+                return (
+                  <tr
+                    key={recipe.id}
+                    className={cn('status-rail border-b border-border last:border-0 hover:bg-bg-hover', variant)}
+                  >
+                    <td className="px-4 py-3">
+                      <Link
+                        href={`/recipes/${recipe.id}`}
+                        className="font-medium text-text-primary hover:text-accent"
+                      >
+                        {recipe.name}
+                      </Link>
+                      {recipe.allergens.length > 0 && (
+                        <p className="mt-0.5 text-xs text-warning">
+                          {recipe.allergens.map((a) => ALLERGEN_LABELS[a]).join(', ')}
+                        </p>
                       )}
-                    >
-                      {recipe.food_cost_pct > 0
-                        ? `${recipe.food_cost_pct.toFixed(1)}%`
+                    </td>
+                    <td className="px-4 py-3 text-sm text-text-secondary">
+                      {RECIPE_CATEGORY_LABELS[recipe.category]}
+                    </td>
+                    <td className="px-4 py-3 text-sm text-text-secondary">
+                      {RECIPE_DIFFICULTY_LABELS[recipe.difficulty]}
+                    </td>
+                    <td className="px-4 py-3 text-sm text-text-secondary font-data text-right">
+                      {recipe.servings}
+                    </td>
+                    <td className="px-4 py-3 text-sm text-text-primary font-data text-right">
+                      {recipe.cost_per_serving > 0
+                        ? `${recipe.cost_per_serving.toFixed(2)} EUR`
                         : '—'}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3">
-                    <span
-                      className={cn(
-                        'text-sm font-medium',
-                        RECIPE_STATUS_COLORS[recipe.status]
-                      )}
-                    >
-                      {RECIPE_STATUS_LABELS[recipe.status]}
-                    </span>
-                  </td>
-                </tr>
-              ))}
+                    </td>
+                    <td className="px-4 py-3 text-sm font-data text-right">
+                      <span
+                        className={cn(
+                          recipe.food_cost_pct > 35
+                            ? 'text-danger'
+                            : recipe.food_cost_pct > 30
+                              ? 'text-warning'
+                              : 'text-text-secondary'
+                        )}
+                      >
+                        {recipe.food_cost_pct > 0
+                          ? `${recipe.food_cost_pct.toFixed(1)}%`
+                          : '—'}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3">
+                      <span className={cn('badge-status', variant)}>
+                        {RECIPE_STATUS_LABELS[recipe.status]}
+                      </span>
+                    </td>
+                  </tr>
+                )
+              })}
             </tbody>
           </table>
         )}

@@ -91,6 +91,14 @@ export const PLAN_STATUS_COLORS: Record<PlanStatus, string> = {
   completed: 'text-success',
 }
 
+/** Left-border / badge-status variant (DESIGN.md §Left-Border Status System) */
+export const PLAN_STATUS_VARIANT: Record<PlanStatus, 'neutral' | 'info' | 'warning' | 'success'> = {
+  draft: 'neutral',
+  active: 'info',
+  in_progress: 'warning',
+  completed: 'success',
+}
+
 export const ITEM_STATUS_LABELS: Record<PlanItemStatus, string> = {
   pending: 'Pendiente',
   in_progress: 'En curso',

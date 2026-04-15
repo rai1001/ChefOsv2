@@ -49,7 +49,7 @@ export default function ProductDetailPage() {
           <ArrowLeft className="h-5 w-5" />
         </Link>
         <div>
-          <h1 className="text-2xl font-bold text-text-primary">{product.name}</h1>
+          <h1 className="text-text-primary">{product.name}</h1>
           <div className="flex items-center gap-2 mt-0.5">
             <span className="text-sm text-text-muted">{product.category?.name ?? 'Sin categoría'}</span>
             <span className="text-text-muted">·</span>

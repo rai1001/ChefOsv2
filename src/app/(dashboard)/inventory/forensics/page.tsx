@@ -54,7 +54,7 @@ export default function ForensicsPage() {
       <div className="flex items-center gap-3">
         <Activity className="h-6 w-6 text-accent" />
         <div>
-          <h1 className="text-xl font-semibold text-text-primary">Forensics de inventario</h1>
+          <h1 className="text-text-primary">Forensics de inventario</h1>
           <p className="text-sm text-text-muted">
             Detecta pérdidas no explicadas y merma sistemática por producto
           </p>

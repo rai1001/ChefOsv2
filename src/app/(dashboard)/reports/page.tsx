@@ -213,7 +213,7 @@ export default function ReportsPage() {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold text-text-primary">Reportes</h1>
+        <h1 className="text-text-primary">Reportes</h1>
         <p className="text-sm text-text-muted">Food cost, costes por evento y varianza presupuestaria</p>
       </div>
 

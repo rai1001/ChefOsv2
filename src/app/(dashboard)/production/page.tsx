@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { useProductionPlans, useProductionSummary, useGeneratePlan } from '@/features/production/hooks/use-production'
 import {
   PLAN_STATUS_LABELS,
-  PLAN_STATUS_COLORS,
+  PLAN_STATUS_VARIANT,
 } from '@/features/production/types'
 import { ClipboardList, Plus, CalendarDays } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -32,7 +32,7 @@ export default function ProductionPage() {
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-text-primary">Produccion</h1>
+        <h1 className="text-text-primary" style={{ fontSize: '28px' }}>Producción</h1>
         <div className="flex items-center gap-3">
           <input
             type="date"
@@ -78,21 +78,21 @@ export default function ProductionPage() {
             <div className="space-y-4">
               {/* Progress */}
               <div className="grid gap-4 md:grid-cols-4">
-                <div className="text-center">
-                  <p className="text-2xl font-bold text-text-primary">{summary.total_items}</p>
-                  <p className="text-xs text-text-muted">Total tareas</p>
+                <div>
+                  <p className="kpi-value">{summary.total_items}</p>
+                  <p className="kpi-label mt-1">Total tareas</p>
                 </div>
-                <div className="text-center">
-                  <p className="text-2xl font-bold text-warning">{summary.pending}</p>
-                  <p className="text-xs text-text-muted">Pendientes</p>
+                <div className="status-rail warning rounded-r-md pl-3">
+                  <p className="kpi-value">{summary.pending}</p>
+                  <p className="kpi-label mt-1">Pendientes</p>
                 </div>
-                <div className="text-center">
-                  <p className="text-2xl font-bold text-info">{summary.in_progress}</p>
-                  <p className="text-xs text-text-muted">En curso</p>
+                <div className="status-rail info rounded-r-md pl-3">
+                  <p className="kpi-value">{summary.in_progress}</p>
+                  <p className="kpi-label mt-1">En curso</p>
                 </div>
-                <div className="text-center">
-                  <p className="text-2xl font-bold text-success">{summary.done}</p>
-                  <p className="text-xs text-text-muted">Completadas</p>
+                <div className="status-rail success rounded-r-md pl-3">
+                  <p className="kpi-value">{summary.done}</p>
+                  <p className="kpi-label mt-1">Completadas</p>
                 </div>
               </div>
 
@@ -181,37 +181,40 @@ export default function ProductionPage() {
         ) : (
           <table className="w-full">
             <thead>
-              <tr className="border-b border-border text-left text-xs uppercase tracking-wider text-text-muted">
-                <th className="px-4 py-3">Fecha</th>
-                <th className="px-4 py-3">Estado</th>
-                <th className="px-4 py-3">Creado</th>
+              <tr className="border-b text-left text-text-muted" style={{ borderColor: 'var(--border-strong)', fontFamily: 'var(--font-code)', fontSize: '10px', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+                <th className="px-4 py-3 font-medium">Fecha</th>
+                <th className="px-4 py-3 font-medium">Estado</th>
+                <th className="px-4 py-3 font-medium">Creado</th>
               </tr>
             </thead>
             <tbody>
-              {plans.map((plan) => (
-                <tr key={plan.id} className="border-b border-border last:border-0 hover:bg-bg-hover">
-                  <td className="px-4 py-3">
-                    <Link
-                      href={`/production/${plan.id}`}
-                      className="font-medium text-text-primary hover:text-accent"
-                    >
-                      {new Date(plan.plan_date).toLocaleDateString('es-ES', {
-                        weekday: 'short',
-                        day: 'numeric',
-                        month: 'short',
-                      })}
-                    </Link>
-                  </td>
-                  <td className="px-4 py-3">
-                    <span className={cn('text-sm font-medium', PLAN_STATUS_COLORS[plan.status])}>
-                      {PLAN_STATUS_LABELS[plan.status]}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3 text-sm text-text-muted">
-                    {new Date(plan.created_at).toLocaleDateString('es-ES')}
-                  </td>
-                </tr>
-              ))}
+              {plans.map((plan) => {
+                const variant = PLAN_STATUS_VARIANT[plan.status]
+                return (
+                  <tr key={plan.id} className={cn('status-rail border-b border-border last:border-0 hover:bg-bg-hover', variant)}>
+                    <td className="px-4 py-3">
+                      <Link
+                        href={`/production/${plan.id}`}
+                        className="font-medium text-text-primary hover:text-accent font-data"
+                      >
+                        {new Date(plan.plan_date).toLocaleDateString('es-ES', {
+                          weekday: 'short',
+                          day: 'numeric',
+                          month: 'short',
+                        })}
+                      </Link>
+                    </td>
+                    <td className="px-4 py-3">
+                      <span className={cn('badge-status', variant)}>
+                        {PLAN_STATUS_LABELS[plan.status]}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 text-sm text-text-muted font-data">
+                      {new Date(plan.created_at).toLocaleDateString('es-ES')}
+                    </td>
+                  </tr>
+                )
+              })}
             </tbody>
           </table>
         )}

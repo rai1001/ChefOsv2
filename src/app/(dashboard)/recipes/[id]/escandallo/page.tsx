@@ -118,7 +118,7 @@ export default function EscandalloPage() {
           </Link>
           <div>
             <div className="flex items-center gap-2">
-              <h1 className="text-2xl font-bold text-text-primary">{escandallo.recipe_name}</h1>
+              <h1 className="text-text-primary">{escandallo.recipe_name}</h1>
               <span className={cn('text-sm font-medium', RECIPE_STATUS_COLORS[escandallo.status as RecipeStatus])}>
                 {escandallo.status}
               </span>

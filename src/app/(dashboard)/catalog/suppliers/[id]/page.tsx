@@ -67,7 +67,7 @@ export default function SupplierDetailPage() {
           <ArrowLeft className="h-5 w-5" />
         </Link>
         <div>
-          <h1 className="text-2xl font-bold text-text-primary">{supplier.name}</h1>
+          <h1 className="text-text-primary">{supplier.name}</h1>
           {supplier.contact_name && (
             <p className="text-sm text-text-muted">{supplier.contact_name}</p>
           )}

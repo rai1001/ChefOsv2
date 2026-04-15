@@ -21,7 +21,7 @@ export default function MiseEnPlacePage() {
       <div className="flex items-center gap-3">
         <ChefHat className="h-6 w-6 text-accent" />
         <div>
-          <h1 className="text-xl font-semibold text-text-primary">Mise en place</h1>
+          <h1 className="text-text-primary">Mise en place</h1>
           <p className="text-sm text-text-muted">Checklists de preparación por partida</p>
         </div>
       </div>

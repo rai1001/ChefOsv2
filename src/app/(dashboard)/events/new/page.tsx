@@ -64,7 +64,7 @@ export default function NewEventPage() {
         >
           <ArrowLeft className="h-5 w-5" />
         </Link>
-        <h1 className="text-2xl font-bold text-text-primary">Nuevo evento</h1>
+        <h1 className="text-text-primary">Nuevo evento</h1>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-6">

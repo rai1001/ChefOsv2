@@ -155,7 +155,7 @@ export default function EscandallosPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-text-primary">Simulador de escandallo</h1>
+          <h1 className="text-text-primary">Simulador de escandallo</h1>
           <p className="mt-0.5 text-sm text-text-secondary">
             Calcula el coste de un plato con precios reales del último albarán, sin crear una receta todavía
           </p>

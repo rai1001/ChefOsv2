@@ -185,6 +185,34 @@ export const URGENCY_COLORS: Record<UrgencyLevel, string> = {
   critical: 'text-danger',
 }
 
+type StatusVariant = 'neutral' | 'warning' | 'success' | 'info' | 'urgent'
+
+/** Left-border / badge-status variant (DESIGN.md §Left-Border Status System) */
+export const PR_STATUS_VARIANT: Record<PrStatus, StatusVariant> = {
+  draft: 'neutral',
+  pending_approval: 'warning',
+  approved: 'success',
+  consolidated: 'info',
+  cancelled: 'urgent',
+}
+
+export const PO_STATUS_VARIANT: Record<PoStatus, StatusVariant> = {
+  draft: 'neutral',
+  pending_approval: 'warning',
+  approved: 'success',
+  sent: 'info',
+  confirmed_by_supplier: 'info',
+  partially_received: 'warning',
+  received: 'success',
+  cancelled: 'urgent',
+}
+
+export const URGENCY_VARIANT: Record<UrgencyLevel, StatusVariant> = {
+  normal: 'neutral',
+  urgent: 'warning',
+  critical: 'urgent',
+}
+
 export const QUALITY_STATUS_LABELS: Record<QualityStatus, string> = {
   accepted: 'Aceptado',
   rejected: 'Rechazado',

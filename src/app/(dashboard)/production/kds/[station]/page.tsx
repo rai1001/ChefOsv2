@@ -82,7 +82,7 @@ export default function KDSPage({
             <ArrowLeft className="h-5 w-5" />
           </Link>
           <div>
-            <h1 className="text-xl font-semibold text-text-primary">
+            <h1 className="text-text-primary">
               KDS — {DEPARTMENT_LABELS[dept] ?? dept}
             </h1>
             <p className="text-xs text-text-muted">

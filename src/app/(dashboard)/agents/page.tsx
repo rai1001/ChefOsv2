@@ -106,7 +106,7 @@ function SuggestionCard({
               <button
                 onClick={() => onApprove(s.id)}
                 disabled={approving || rejecting}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded text-sm bg-green-600/90 hover:bg-green-600 text-white disabled:opacity-50 transition-colors"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded text-sm bg-success/90 hover:bg-success text-white disabled:opacity-50 transition-colors"
               >
                 <CheckCircle className="h-3.5 w-3.5" />
                 {approving ? 'Aplicando…' : 'Aprobar'}
@@ -188,7 +188,7 @@ export default function AgentsPage() {
         <div className="flex items-center gap-3">
           <Bot className="h-6 w-6 text-neutral-300" />
           <div>
-            <h1 className="text-xl font-semibold text-text-primary">Agentes</h1>
+            <h1 className="text-text-primary">Agentes</h1>
             <p className="text-sm text-neutral-400">
               10 agentes analizan tu operación y sugieren acciones. Tú decides.
             </p>

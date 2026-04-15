@@ -22,7 +22,7 @@ export default function MovementsPage() {
         >
           <ArrowLeft className="h-5 w-5" />
         </Link>
-        <h1 className="text-2xl font-bold text-text-primary">Movimientos de stock</h1>
+        <h1 className="text-text-primary">Movimientos de stock</h1>
       </div>
 
       {/* Table */}

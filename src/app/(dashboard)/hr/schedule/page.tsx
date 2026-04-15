@@ -55,9 +55,9 @@ function isodow(year: number, month: number, day: number): number {
 }
 
 function cellColor(status: string): string {
-  if (status === 'confirmado') return 'bg-green-600 text-white'
+  if (status === 'confirmado') return 'bg-success text-white'
   if (status === 'cancelado')  return 'bg-red-800 text-red-200 line-through opacity-60'
-  return 'bg-gray-200 text-gray-700'
+  return 'bg-border text-text-secondary'
 }
 
 // ──────────────────────────────────────────
@@ -162,7 +162,7 @@ function ScheduleGrid({ hotelId }: { hotelId: string }) {
       </div>
 
       {genError && (
-        <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
+        <p className="text-xs text-warning bg-bg-card border border-warning/40 rounded-lg px-3 py-2">
           {genError}
         </p>
       )}
@@ -170,10 +170,10 @@ function ScheduleGrid({ hotelId }: { hotelId: string }) {
       {/* Leyenda */}
       <div className="flex gap-4 text-xs text-text-muted">
         <span className="flex items-center gap-1">
-          <span className="inline-block size-2.5 rounded-sm bg-gray-200" /> Propuesto
+          <span className="inline-block size-2.5 rounded-sm bg-border" /> Propuesto
         </span>
         <span className="flex items-center gap-1">
-          <span className="inline-block size-2.5 rounded-sm bg-green-600" /> Confirmado
+          <span className="inline-block size-2.5 rounded-sm bg-success" /> Confirmado
         </span>
         <span className="flex items-center gap-1">
           <span className="inline-block size-2.5 rounded-sm bg-red-800" /> Cancelado
@@ -305,7 +305,7 @@ function ShiftModal({
         </h2>
 
         {error && (
-          <p className="text-xs text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">{error}</p>
+          <p className="text-xs text-danger bg-bg-card border border-danger/40 rounded-lg px-3 py-2">{error}</p>
         )}
 
         <div className="space-y-3">
@@ -316,7 +316,7 @@ function ShiftModal({
               value={form.name}
               onChange={(e: React.ChangeEvent<HTMLInputElement>) => setForm(f => ({ ...f, name: e.target.value }))}
               placeholder="Ej. Mañana, Tarde, Noche…"
-              className="w-full border border-border rounded-lg px-3 py-2 text-sm bg-bg-input focus:outline-none focus:ring-2 focus:ring-gray-900"
+              className="w-full border border-border rounded-lg px-3 py-2 text-sm bg-bg-input focus:outline-none focus:ring-2 focus:ring-accent"
             />
           </div>
 
@@ -327,7 +327,7 @@ function ShiftModal({
                 type="time"
                 value={form.start_time}
                 onChange={(e: React.ChangeEvent<HTMLInputElement>) => setForm(f => ({ ...f, start_time: e.target.value }))}
-                className="w-full border border-border rounded-lg px-3 py-2 text-sm bg-bg-input focus:outline-none focus:ring-2 focus:ring-gray-900"
+                className="w-full border border-border rounded-lg px-3 py-2 text-sm bg-bg-input focus:outline-none focus:ring-2 focus:ring-accent"
               />
             </div>
             <div>
@@ -336,7 +336,7 @@ function ShiftModal({
                 type="time"
                 value={form.end_time}
                 onChange={(e: React.ChangeEvent<HTMLInputElement>) => setForm(f => ({ ...f, end_time: e.target.value }))}
-                className="w-full border border-border rounded-lg px-3 py-2 text-sm bg-bg-input focus:outline-none focus:ring-2 focus:ring-gray-900"
+                className="w-full border border-border rounded-lg px-3 py-2 text-sm bg-bg-input focus:outline-none focus:ring-2 focus:ring-accent"
               />
             </div>
           </div>
@@ -346,7 +346,7 @@ function ShiftModal({
             <select
               value={form.shift_type}
               onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setForm(f => ({ ...f, shift_type: e.target.value as ShiftType }))}
-              className="w-full border border-border rounded-lg px-3 py-2 text-sm bg-bg-input focus:outline-none focus:ring-2 focus:ring-gray-900"
+              className="w-full border border-border rounded-lg px-3 py-2 text-sm bg-bg-input focus:outline-none focus:ring-2 focus:ring-accent"
             >
               {SHIFT_TYPES.map(t => (
                 <option key={t} value={t}>{SHIFT_TYPE_LABELS[t]}</option>
@@ -363,7 +363,7 @@ function ShiftModal({
           <button
             onClick={() => onSave(form)}
             disabled={loading || !form.name.trim()}
-            className="flex-1 py-2 bg-gray-900 text-white rounded-xl text-sm hover:bg-gray-800 disabled:opacity-50"
+            className="flex-1 py-2 bg-accent text-white rounded-xl text-sm hover:bg-bg-card disabled:opacity-50"
           >
             {loading ? 'Guardando…' : 'Guardar'}
           </button>
@@ -464,7 +464,7 @@ function ShiftsTab({ hotelId }: { hotelId: string }) {
                     {shiftDurationHours(s.start_time, s.end_time)}h
                   </td>
                   <td className="px-4 py-3">
-                    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-700">
+                    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-bg-hover text-text-secondary">
                       {SHIFT_TYPE_LABELS[s.shift_type]}
                     </span>
                   </td>
@@ -473,11 +473,11 @@ function ShiftsTab({ hotelId }: { hotelId: string }) {
                       onClick={() => updateMut.mutate({ id: s.id, active: !s.active })}
                       className={cn(
                         'relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors',
-                        s.active ? 'bg-green-600' : 'bg-gray-300'
+                        s.active ? 'bg-success' : 'bg-border'
                       )}
                     >
                       <span className={cn(
-                        'pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition-transform',
+                        'pointer-events-none inline-block h-4 w-4 transform rounded-full bg-bg-card shadow ring-0 transition-transform',
                         s.active ? 'translate-x-4' : 'translate-x-0'
                       )} />
                     </button>
@@ -560,7 +560,7 @@ function RuleModal({
         <h2 className="text-base font-semibold text-text-primary">Nueva regla de horario</h2>
 
         {error && (
-          <p className="text-xs text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">{error}</p>
+          <p className="text-xs text-danger bg-bg-card border border-danger/40 rounded-lg px-3 py-2">{error}</p>
         )}
 
         <div className="space-y-3">
@@ -569,7 +569,7 @@ function RuleModal({
             <select
               value={form.role}
               onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setForm(f => ({ ...f, role: e.target.value as PersonnelRole }))}
-              className="w-full border border-border rounded-lg px-3 py-2 text-sm bg-bg-input focus:outline-none focus:ring-2 focus:ring-gray-900"
+              className="w-full border border-border rounded-lg px-3 py-2 text-sm bg-bg-input focus:outline-none focus:ring-2 focus:ring-accent"
             >
               {PERSONNEL_ROLES.map(r => (
                 <option key={r} value={r}>{PERSONNEL_ROLE_LABELS[r]}</option>
@@ -588,8 +588,8 @@ function RuleModal({
                   className={cn(
                     'w-8 h-8 rounded text-xs font-medium transition-colors',
                     form.days_of_week.includes(d)
-                      ? 'bg-gray-900 text-white'
-                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                      ? 'bg-accent text-white'
+                      : 'bg-bg-hover text-text-secondary hover:bg-border'
                   )}
                 >
                   {DAY_SHORT_LABELS[d]}
@@ -603,7 +603,7 @@ function RuleModal({
             <select
               value={form.shift_id}
               onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setForm(f => ({ ...f, shift_id: e.target.value }))}
-              className="w-full border border-border rounded-lg px-3 py-2 text-sm bg-bg-input focus:outline-none focus:ring-2 focus:ring-gray-900"
+              className="w-full border border-border rounded-lg px-3 py-2 text-sm bg-bg-input focus:outline-none focus:ring-2 focus:ring-accent"
             >
               <option value="">Seleccionar turno…</option>
               {shifts.filter(s => s.active).map(s => (
@@ -622,7 +622,7 @@ function RuleModal({
                 min={1}
                 value={form.min_persons}
                 onChange={(e: React.ChangeEvent<HTMLInputElement>) => setForm(f => ({ ...f, min_persons: e.target.value }))}
-                className="w-full border border-border rounded-lg px-3 py-2 text-sm bg-bg-input focus:outline-none focus:ring-2 focus:ring-gray-900"
+                className="w-full border border-border rounded-lg px-3 py-2 text-sm bg-bg-input focus:outline-none focus:ring-2 focus:ring-accent"
               />
             </div>
             <div>
@@ -630,7 +630,7 @@ function RuleModal({
               <select
                 value={form.priority}
                 onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setForm(f => ({ ...f, priority: e.target.value as 'normal' | 'alta' }))}
-                className="w-full border border-border rounded-lg px-3 py-2 text-sm bg-bg-input focus:outline-none focus:ring-2 focus:ring-gray-900"
+                className="w-full border border-border rounded-lg px-3 py-2 text-sm bg-bg-input focus:outline-none focus:ring-2 focus:ring-accent"
               >
                 <option value="normal">Normal</option>
                 <option value="alta">Alta</option>
@@ -647,7 +647,7 @@ function RuleModal({
           <button
             onClick={() => onSave(form)}
             disabled={loading || !form.shift_id || form.days_of_week.length === 0}
-            className="flex-1 py-2 bg-gray-900 text-white rounded-xl text-sm hover:bg-gray-800 disabled:opacity-50"
+            className="flex-1 py-2 bg-accent text-white rounded-xl text-sm hover:bg-bg-card disabled:opacity-50"
           >
             {loading ? 'Guardando…' : 'Crear regla'}
           </button>
@@ -743,8 +743,8 @@ function RulesTab({ hotelId }: { hotelId: string }) {
                           className={cn(
                             'text-[10px] w-5 h-5 rounded flex items-center justify-center font-medium',
                             r.days_of_week.includes(d)
-                              ? 'bg-gray-900 text-white'
-                              : 'bg-gray-100 text-gray-400'
+                              ? 'bg-accent text-white'
+                              : 'bg-bg-hover text-text-muted'
                           )}
                         >
                           {DAY_SHORT_LABELS[d]}
@@ -760,8 +760,8 @@ function RulesTab({ hotelId }: { hotelId: string }) {
                     <span className={cn(
                       'inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium',
                       r.priority === 'alta'
-                        ? 'bg-amber-100 text-amber-700'
-                        : 'bg-gray-100 text-gray-500'
+                        ? 'bg-amber-100 text-warning'
+                        : 'bg-bg-hover text-text-muted'
                     )}>
                       {r.priority}
                     </span>
@@ -771,11 +771,11 @@ function RulesTab({ hotelId }: { hotelId: string }) {
                       onClick={() => updateMut.mutate({ id: r.id, active: !r.active })}
                       className={cn(
                         'relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors',
-                        r.active ? 'bg-green-600' : 'bg-gray-300'
+                        r.active ? 'bg-success' : 'bg-border'
                       )}
                     >
                       <span className={cn(
-                        'pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition-transform',
+                        'pointer-events-none inline-block h-4 w-4 transform rounded-full bg-bg-card shadow ring-0 transition-transform',
                         r.active ? 'translate-x-4' : 'translate-x-0'
                       )} />
                     </button>
@@ -784,7 +784,7 @@ function RulesTab({ hotelId }: { hotelId: string }) {
                     <button
                       onClick={() => handleDelete(r)}
                       disabled={deleteMut.isPending}
-                      className="p-1.5 rounded-lg hover:bg-red-50 text-red-400 hover:text-red-600 disabled:opacity-50"
+                      className="p-1.5 rounded-lg hover:bg-bg-card text-red-400 hover:text-danger disabled:opacity-50"
                     >
                       <Trash2 className="h-3.5 w-3.5" />
                     </button>
@@ -825,7 +825,7 @@ export default function SchedulePage() {
       <div className="flex items-center gap-3">
         <Calendar className="h-6 w-6 text-text-muted" />
         <div>
-          <h1 className="text-xl font-semibold text-text-primary">Horarios</h1>
+          <h1 className="text-text-primary">Horarios</h1>
           <p className="text-sm text-text-muted mt-0.5">
             Cuadrante mensual · Turnos · Reglas de generación
           </p>
@@ -848,7 +848,7 @@ export default function SchedulePage() {
                 'px-4 py-2 text-sm transition-colors',
                 i > 0 && 'border-l border-border',
                 tab === t
-                  ? 'bg-gray-900 text-white'
+                  ? 'bg-accent text-white'
                   : 'text-text-secondary hover:bg-bg-hover'
               )}
             >

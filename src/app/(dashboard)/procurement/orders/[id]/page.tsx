@@ -99,7 +99,7 @@ export default function PODetailPage({ params }: { params: Promise<{ id: string 
             <ArrowLeft className="h-5 w-5" />
           </Link>
           <div>
-            <h1 className="text-2xl font-bold text-text-primary">{po.order_number}</h1>
+            <h1 className="text-text-primary">{po.order_number}</h1>
             <p className="text-sm text-text-muted">{po.supplier?.name}</p>
           </div>
         </div>

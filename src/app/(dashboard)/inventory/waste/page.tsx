@@ -68,7 +68,7 @@ export default function WastePage() {
           >
             <ArrowLeft className="h-5 w-5" />
           </Link>
-          <h1 className="text-2xl font-bold text-text-primary">Mermas</h1>
+          <h1 className="text-text-primary">Mermas</h1>
         </div>
         <button
           onClick={() => setShowForm(!showForm)}

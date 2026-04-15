@@ -36,7 +36,7 @@ function Toggle({
     >
       <span
         className={cn(
-          'inline-block h-3.5 w-3.5 rounded-full bg-white shadow-sm transition-transform',
+          'inline-block h-3.5 w-3.5 rounded-full bg-bg-card shadow-sm transition-transform',
           checked ? 'translate-x-4' : 'translate-x-1'
         )}
       />
@@ -97,7 +97,7 @@ export default function NotificationSettingsPage() {
           <ArrowLeft className="h-5 w-5" />
         </Link>
         <div>
-          <h1 className="text-2xl font-bold text-text-primary">Notificaciones</h1>
+          <h1 className="text-text-primary">Notificaciones</h1>
           <p className="text-sm text-text-muted mt-0.5">
             Elige cómo y cuándo quieres recibir notificaciones.
           </p>

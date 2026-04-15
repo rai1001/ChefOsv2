@@ -3,10 +3,6 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { useStockLevels, useStockAlerts } from '@/features/inventory/hooks/use-stock'
-import {
-  ALERT_LEVEL_COLORS,
-  ALERT_LEVEL_BG,
-} from '@/features/inventory/types'
 import type { AlertLevel } from '@/features/inventory/types'
 import { Package, AlertTriangle, ArrowRightLeft, Trash2, TrendingDown } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -16,6 +12,20 @@ const ALERT_ICON: Record<AlertLevel, string> = {
   warning: 'bg-warning',
   low: 'bg-warning',
   critical: 'bg-danger',
+}
+
+const ALERT_VARIANT: Record<AlertLevel, 'neutral' | 'warning' | 'urgent'> = {
+  ok: 'neutral',
+  warning: 'warning',
+  low: 'warning',
+  critical: 'urgent',
+}
+
+const ALERT_LABEL: Record<AlertLevel, string> = {
+  ok: 'OK',
+  warning: 'Aviso',
+  low: 'Bajo',
+  critical: 'Crítico',
 }
 
 export default function InventoryPage() {
@@ -41,7 +51,7 @@ export default function InventoryPage() {
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-text-primary">Inventario</h1>
+        <h1 className="text-text-primary" style={{ fontSize: '28px' }}>Inventario</h1>
         <div className="flex items-center gap-2">
           <Link
             href="/inventory/waste"
@@ -63,40 +73,24 @@ export default function InventoryPage() {
       {/* KPI cards */}
       {stats && (
         <div className="grid gap-4 md:grid-cols-4">
-          <div className="rounded-lg border border-border bg-bg-card p-4">
-            <p className="text-xs text-text-muted uppercase tracking-wider">Productos en stock</p>
-            <p className="mt-1 text-2xl font-bold text-text-primary">{stats.total}</p>
+          <div className="rounded-md border border-border bg-bg-card p-4">
+            <p className="kpi-label">Productos en stock</p>
+            <p className="kpi-value mt-2">{stats.total}</p>
           </div>
-          <div className="rounded-lg border border-border bg-bg-card p-4">
-            <p className="text-xs text-text-muted uppercase tracking-wider">Valor total</p>
-            <p className="mt-1 text-2xl font-bold text-text-primary">
-              {stats.totalValue.toFixed(2)} EUR
-            </p>
+          <div className="rounded-md border border-border bg-bg-card p-4">
+            <p className="kpi-label">Valor total</p>
+            <p className="kpi-value mt-2">{stats.totalValue.toFixed(2)} <span className="text-base text-text-muted">EUR</span></p>
           </div>
-          <div className="rounded-lg border border-success/30 bg-success/5 p-4">
-            <p className="text-xs text-success uppercase tracking-wider">OK</p>
-            <p className="mt-1 text-2xl font-bold text-success">{stats.ok}</p>
+          <div className="status-rail success rounded-r-md bg-bg-card p-4">
+            <p className="kpi-label">OK</p>
+            <p className="kpi-value mt-2">{stats.ok}</p>
           </div>
           <div className={cn(
-            'rounded-lg border p-4',
-            stats.critical > 0
-              ? 'border-danger/30 bg-danger/5'
-              : stats.warning > 0
-                ? 'border-warning/30 bg-warning/5'
-                : 'border-border bg-bg-card'
+            'status-rail rounded-r-md bg-bg-card p-4',
+            stats.critical > 0 ? 'urgent' : stats.warning > 0 ? 'warning' : ''
           )}>
-            <p className={cn(
-              'text-xs uppercase tracking-wider',
-              stats.critical > 0 ? 'text-danger' : stats.warning > 0 ? 'text-warning' : 'text-text-muted'
-            )}>
-              Alertas
-            </p>
-            <p className={cn(
-              'mt-1 text-2xl font-bold',
-              stats.critical > 0 ? 'text-danger' : stats.warning > 0 ? 'text-warning' : 'text-text-primary'
-            )}>
-              {stats.warning + stats.critical}
-            </p>
+            <p className="kpi-label">Alertas</p>
+            <p className="kpi-value mt-2">{stats.warning + stats.critical}</p>
           </div>
         </div>
       )}
@@ -179,75 +173,69 @@ export default function InventoryPage() {
         ) : (
           <table className="w-full">
             <thead>
-              <tr className="border-b border-border text-left text-xs uppercase tracking-wider text-text-muted">
-                <th className="px-4 py-3">Producto</th>
-                <th className="px-4 py-3">Categoria</th>
-                <th className="px-4 py-3 text-right">Stock</th>
-                <th className="px-4 py-3 text-right">Valor</th>
-                <th className="px-4 py-3">Caducidad</th>
-                <th className="px-4 py-3">Lotes</th>
-                <th className="px-4 py-3">Estado</th>
+              <tr className="border-b text-left text-text-muted" style={{ borderColor: 'var(--border-strong)', fontFamily: 'var(--font-code)', fontSize: '10px', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+                <th className="px-4 py-3 font-medium">Producto</th>
+                <th className="px-4 py-3 font-medium">Categoría</th>
+                <th className="px-4 py-3 text-right font-medium">Stock</th>
+                <th className="px-4 py-3 text-right font-medium">Valor</th>
+                <th className="px-4 py-3 font-medium">Caducidad</th>
+                <th className="px-4 py-3 text-right font-medium">Lotes</th>
+                <th className="px-4 py-3 font-medium">Estado</th>
               </tr>
             </thead>
             <tbody>
-              {displayLevels.map((level) => (
-                <tr
-                  key={level.product_id}
-                  className={cn(
-                    'border-b border-border last:border-0',
-                    level.alert_level !== 'ok' ? ALERT_LEVEL_BG[level.alert_level] : 'hover:bg-bg-hover'
-                  )}
-                >
-                  <td className="px-4 py-3">
-                    <Link
-                      href={`/inventory/product/${level.product_id}`}
-                      className="font-medium text-text-primary hover:text-accent"
-                    >
-                      {level.product_name}
-                    </Link>
-                  </td>
-                  <td className="px-4 py-3 text-sm text-text-muted">
-                    {level.category_name ?? '—'}
-                  </td>
-                  <td className="px-4 py-3 text-sm text-text-primary text-right font-medium">
-                    {Number(level.current_stock).toFixed(2)}
-                    {level.unit && <span className="ml-1 text-text-muted">{level.unit}</span>}
-                  </td>
-                  <td className="px-4 py-3 text-sm text-text-secondary text-right">
-                    {level.total_value > 0 ? `${Number(level.total_value).toFixed(2)}` : '—'}
-                  </td>
-                  <td className="px-4 py-3 text-sm">
-                    {level.earliest_expiry ? (
-                      <span className={cn(
-                        new Date(level.earliest_expiry) <= now ? 'text-danger font-medium' :
-                        new Date(level.earliest_expiry) <= threeDaysFromNow ? 'text-warning' :
-                        'text-text-secondary'
-                      )}>
-                        {new Date(level.earliest_expiry).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })}
-                      </span>
-                    ) : (
-                      <span className="text-text-muted">—</span>
+              {displayLevels.map((level) => {
+                const variant = ALERT_VARIANT[level.alert_level]
+                return (
+                  <tr
+                    key={level.product_id}
+                    className={cn(
+                      'status-rail border-b border-border last:border-0 hover:bg-bg-hover',
+                      variant
                     )}
-                  </td>
-                  <td className="px-4 py-3 text-sm text-text-muted">
-                    {level.lot_count}
-                  </td>
-                  <td className="px-4 py-3">
-                    <span className={cn(
-                      'inline-flex items-center gap-1.5 text-sm font-medium',
-                      ALERT_LEVEL_COLORS[level.alert_level]
-                    )}>
-                      <span className={cn(
-                        'h-2 w-2 rounded-full',
-                        ALERT_ICON[level.alert_level] || 'bg-success'
-                      )} />
-                      {level.alert_level === 'ok' ? 'OK' :
-                       level.alert_level === 'critical' ? 'Critico' :
-                       'Bajo'}
-                    </span>
-                  </td>
-                </tr>
-              ))}
+                  >
+                    <td className="px-4 py-3">
+                      <Link
+                        href={`/inventory/product/${level.product_id}`}
+                        className="font-medium text-text-primary hover:text-accent"
+                      >
+                        {level.product_name}
+                      </Link>
+                    </td>
+                    <td className="px-4 py-3 text-sm text-text-muted">
+                      {level.category_name ?? '—'}
+                    </td>
+                    <td className="px-4 py-3 text-sm text-text-primary text-right font-data">
+                      {Number(level.current_stock).toFixed(2)}
+                      {level.unit && <span className="ml-1 text-text-muted">{level.unit}</span>}
+                    </td>
+                    <td className="px-4 py-3 text-sm text-text-secondary text-right font-data">
+                      {level.total_value > 0 ? Number(level.total_value).toFixed(2) : '—'}
+                    </td>
+                    <td className="px-4 py-3 text-sm font-data">
+                      {level.earliest_expiry ? (
+                        <span className={cn(
+                          new Date(level.earliest_expiry) <= now ? 'text-danger font-medium' :
+                          new Date(level.earliest_expiry) <= threeDaysFromNow ? 'text-warning' :
+                          'text-text-secondary'
+                        )}>
+                          {new Date(level.earliest_expiry).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })}
+                        </span>
+                      ) : (
+                        <span className="text-text-muted">—</span>
+                      )}
+                    </td>
+                    <td className="px-4 py-3 text-sm text-text-muted text-right font-data">
+                      {level.lot_count}
+                    </td>
+                    <td className="px-4 py-3">
+                      <span className={cn('badge-status', variant)}>
+                        {ALERT_LABEL[level.alert_level]}
+                      </span>
+                    </td>
+                  </tr>
+                )
+              })}
             </tbody>
           </table>
         )}

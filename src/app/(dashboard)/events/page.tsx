@@ -6,7 +6,7 @@ import { useEvents } from '@/features/commercial/hooks/use-events'
 import {
   EVENT_TYPE_LABELS,
   EVENT_STATUS_LABELS,
-  EVENT_STATUS_COLORS,
+  EVENT_STATUS_VARIANT,
 } from '@/features/commercial/types'
 import { Plus, CalendarDays, List } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -21,7 +21,7 @@ export default function EventsPage() {
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-text-primary">Eventos</h1>
+        <h1 className="text-text-primary">Eventos</h1>
         <div className="flex items-center gap-3">
           {/* View toggle */}
           <div className="flex rounded-md border border-border">
@@ -89,65 +89,66 @@ export default function EventsPage() {
           ) : (
             <table className="w-full">
               <thead>
-                <tr className="border-b border-border text-left text-xs uppercase tracking-wider text-text-muted">
-                  <th className="px-4 py-3">Evento</th>
-                  <th className="px-4 py-3">Fecha</th>
-                  <th className="px-4 py-3">Tipo</th>
-                  <th className="px-4 py-3">Pax</th>
-                  <th className="px-4 py-3">Estado</th>
-                  <th className="px-4 py-3">BEO</th>
+                <tr className="border-b border-border text-left text-text-muted font-code" style={{ fontSize: '10px', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+                  <th className="px-4 py-3 font-medium">Evento</th>
+                  <th className="px-4 py-3 font-medium">Fecha</th>
+                  <th className="px-4 py-3 font-medium">Tipo</th>
+                  <th className="px-4 py-3 font-medium text-right">Pax</th>
+                  <th className="px-4 py-3 font-medium">Estado</th>
+                  <th className="px-4 py-3 font-medium">BEO</th>
                 </tr>
               </thead>
               <tbody>
-                {events.map((event) => (
-                  <tr
-                    key={event.id}
-                    className="border-b border-border last:border-0 hover:bg-bg-hover"
-                  >
-                    <td className="px-4 py-3">
-                      <Link
-                        href={`/events/${event.id}`}
-                        className="font-medium text-text-primary hover:text-accent"
-                      >
-                        {event.name}
-                      </Link>
-                      {event.venue && (
-                        <p className="text-xs text-text-muted">{event.venue}</p>
+                {events.map((event) => {
+                  const variant = EVENT_STATUS_VARIANT[event.status]
+                  return (
+                    <tr
+                      key={event.id}
+                      className={cn(
+                        'status-rail border-b border-border last:border-0 hover:bg-bg-hover',
+                        variant
                       )}
-                    </td>
-                    <td className="px-4 py-3 text-sm text-text-secondary">
-                      {new Date(event.event_date).toLocaleDateString('es-ES', {
-                        weekday: 'short',
-                        day: 'numeric',
-                        month: 'short',
-                      })}
-                      {event.start_time && (
-                        <span className="ml-1 text-text-muted">
-                          {event.start_time.slice(0, 5)}
-                        </span>
-                      )}
-                    </td>
-                    <td className="px-4 py-3 text-sm text-text-secondary">
-                      {EVENT_TYPE_LABELS[event.event_type]}
-                    </td>
-                    <td className="px-4 py-3 text-sm text-text-secondary">
-                      {event.guest_count}
-                    </td>
-                    <td className="px-4 py-3">
-                      <span
-                        className={cn(
-                          'text-sm font-medium',
-                          EVENT_STATUS_COLORS[event.status]
+                    >
+                      <td className="px-4 py-3">
+                        <Link
+                          href={`/events/${event.id}`}
+                          className="font-medium text-text-primary hover:text-accent"
+                        >
+                          {event.name}
+                        </Link>
+                        {event.venue && (
+                          <p className="text-xs text-text-muted">{event.venue}</p>
                         )}
-                      >
-                        {EVENT_STATUS_LABELS[event.status]}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 text-sm text-text-muted">
-                      {event.beo_number}
-                    </td>
-                  </tr>
-                ))}
+                      </td>
+                      <td className="px-4 py-3 text-sm text-text-secondary font-data">
+                        {new Date(event.event_date).toLocaleDateString('es-ES', {
+                          weekday: 'short',
+                          day: 'numeric',
+                          month: 'short',
+                        })}
+                        {event.start_time && (
+                          <span className="ml-1 text-text-muted">
+                            {event.start_time.slice(0, 5)}
+                          </span>
+                        )}
+                      </td>
+                      <td className="px-4 py-3 text-sm text-text-secondary">
+                        {EVENT_TYPE_LABELS[event.event_type]}
+                      </td>
+                      <td className="px-4 py-3 text-sm text-text-secondary font-data text-right">
+                        {event.guest_count}
+                      </td>
+                      <td className="px-4 py-3">
+                        <span className={cn('badge-status', variant)}>
+                          {EVENT_STATUS_LABELS[event.status]}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 text-xs text-text-muted font-code">
+                        {event.beo_number}
+                      </td>
+                    </tr>
+                  )
+                })}
               </tbody>
             </table>
           )}

@@ -56,7 +56,7 @@ export default function StockCountsPage() {
         <div className="flex items-center gap-3">
           <ClipboardCheck className="h-6 w-6 text-accent" />
           <div>
-            <h1 className="text-xl font-semibold text-text-primary">Conteos de inventario</h1>
+            <h1 className="text-text-primary">Conteos de inventario</h1>
             <p className="text-sm text-text-muted">Auditoría y reconciliación de stock</p>
           </div>
         </div>

@@ -386,7 +386,7 @@ export default function DocumentsPage() {
   return (
     <div className="space-y-6 max-w-5xl mx-auto">
       <div>
-        <h1 className="text-2xl font-bold text-text-primary">Documentos</h1>
+        <h1 className="text-text-primary">Documentos</h1>
         <p className="text-sm text-text-muted">
           Genera y descarga documentos operativos en PDF.
           Para BEO y hojas de producción, abre el evento o workflow correspondiente.

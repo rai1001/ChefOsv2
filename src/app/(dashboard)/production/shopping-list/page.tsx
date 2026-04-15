@@ -40,7 +40,7 @@ export default function ShoppingListPage() {
       <div className="flex items-center gap-3">
         <ShoppingCart className="h-6 w-6 text-accent" />
         <div>
-          <h1 className="text-xl font-semibold text-text-primary">Lista de compras</h1>
+          <h1 className="text-text-primary">Lista de compras</h1>
           <p className="text-sm text-text-muted">
             Ingredientes necesarios − stock disponible, por proveedor preferido
           </p>
@@ -90,11 +90,11 @@ export default function ShoppingListPage() {
               {/* Summary */}
               <div className="grid grid-cols-2 gap-3">
                 <div className="rounded-xl border border-border bg-surface p-4">
-                  <div className="text-2xl font-bold text-text-primary">{totalItems}</div>
+                  <div className="text-text-primary">{totalItems}</div>
                   <div className="text-xs text-text-muted mt-1">Productos a pedir</div>
                 </div>
                 <div className="rounded-xl border border-border bg-surface p-4">
-                  <div className="text-2xl font-bold text-text-primary">{totalSuppliers}</div>
+                  <div className="text-text-primary">{totalSuppliers}</div>
                   <div className="text-xs text-text-muted mt-1">Proveedores</div>
                 </div>
               </div>

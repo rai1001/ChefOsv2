@@ -54,7 +54,7 @@ export default function CatalogPage() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-text-primary">Productos</h1>
+        <h1 className="text-text-primary">Productos</h1>
         <button
           onClick={() => setShowForm(!showForm)}
           className="flex items-center gap-2 rounded-md bg-accent px-4 py-2 text-sm font-medium text-white hover:bg-accent-hover"

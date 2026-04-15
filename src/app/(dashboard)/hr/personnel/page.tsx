@@ -72,7 +72,7 @@ function PersonnelModal({
         </h2>
 
         {error && (
-          <p className="text-xs text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
+          <p className="text-xs text-danger bg-bg-card border border-danger/40 rounded-lg px-3 py-2">
             {error}
           </p>
         )}
@@ -85,7 +85,7 @@ function PersonnelModal({
               value={form.name}
               onChange={(e: React.ChangeEvent<HTMLInputElement>) => set('name', e.target.value)}
               placeholder="Nombre completo"
-              className="w-full border border-border rounded-lg px-3 py-2 text-sm bg-bg-input focus:outline-none focus:ring-2 focus:ring-gray-900"
+              className="w-full border border-border rounded-lg px-3 py-2 text-sm bg-bg-input focus:outline-none focus:ring-2 focus:ring-accent"
             />
           </div>
 
@@ -95,7 +95,7 @@ function PersonnelModal({
               <select
                 value={form.role}
                 onChange={(e: React.ChangeEvent<HTMLSelectElement>) => set('role', e.target.value as PersonnelRole)}
-                className="w-full border border-border rounded-lg px-3 py-2 text-sm bg-bg-input focus:outline-none focus:ring-2 focus:ring-gray-900"
+                className="w-full border border-border rounded-lg px-3 py-2 text-sm bg-bg-input focus:outline-none focus:ring-2 focus:ring-accent"
               >
                 {PERSONNEL_ROLES.map(r => (
                   <option key={r} value={r}>{PERSONNEL_ROLE_LABELS[r]}</option>
@@ -108,7 +108,7 @@ function PersonnelModal({
               <select
                 value={form.contract_type}
                 onChange={(e: React.ChangeEvent<HTMLSelectElement>) => set('contract_type', e.target.value as ContractType)}
-                className="w-full border border-border rounded-lg px-3 py-2 text-sm bg-bg-input focus:outline-none focus:ring-2 focus:ring-gray-900"
+                className="w-full border border-border rounded-lg px-3 py-2 text-sm bg-bg-input focus:outline-none focus:ring-2 focus:ring-accent"
               >
                 {CONTRACT_TYPES.map(c => (
                   <option key={c} value={c}>{CONTRACT_TYPE_LABELS[c]}</option>
@@ -127,7 +127,7 @@ function PersonnelModal({
               max={60}
               value={form.weekly_hours}
               onChange={(e: React.ChangeEvent<HTMLInputElement>) => set('weekly_hours', e.target.value)}
-              className="w-28 border border-border rounded-lg px-3 py-2 text-sm bg-bg-input focus:outline-none focus:ring-2 focus:ring-gray-900"
+              className="w-28 border border-border rounded-lg px-3 py-2 text-sm bg-bg-input focus:outline-none focus:ring-2 focus:ring-accent"
             />
           </div>
 
@@ -140,7 +140,7 @@ function PersonnelModal({
               value={form.notes}
               onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => set('notes', e.target.value)}
               placeholder="Disponibilidad, restricciones…"
-              className="w-full border border-border rounded-lg px-3 py-2 text-sm bg-bg-input focus:outline-none focus:ring-2 focus:ring-gray-900 resize-none"
+              className="w-full border border-border rounded-lg px-3 py-2 text-sm bg-bg-input focus:outline-none focus:ring-2 focus:ring-accent resize-none"
             />
           </div>
 
@@ -168,7 +168,7 @@ function PersonnelModal({
           <button
             onClick={() => onSave(form)}
             disabled={loading || !form.name.trim()}
-            className="flex-1 py-2 bg-gray-900 text-white rounded-xl text-sm hover:bg-gray-800 disabled:opacity-50"
+            className="flex-1 py-2 bg-accent text-white rounded-xl text-sm hover:bg-bg-card disabled:opacity-50"
           >
             {loading ? 'Guardando…' : 'Guardar'}
           </button>
@@ -254,7 +254,7 @@ export default function PersonnelPage() {
         <div className="flex items-center gap-3">
           <Users className="h-6 w-6 text-text-muted" />
           <div>
-            <h1 className="text-xl font-semibold text-text-primary">Personal</h1>
+            <h1 className="text-text-primary">Personal</h1>
             <p className="text-sm text-text-muted mt-0.5">
               {active} activo{active !== 1 ? 's' : ''} · {total} total
             </p>
@@ -262,7 +262,7 @@ export default function PersonnelPage() {
         </div>
         <button
           onClick={openNew}
-          className="flex items-center gap-2 bg-gray-900 text-white px-4 py-2 rounded-xl text-sm hover:bg-gray-800"
+          className="flex items-center gap-2 bg-accent text-white px-4 py-2 rounded-xl text-sm hover:bg-bg-card"
         >
           <UserPlus className="h-4 w-4" />
           Nuevo empleado
@@ -275,7 +275,7 @@ export default function PersonnelPage() {
         placeholder="Buscar por nombre o rol…"
         value={filter}
         onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFilter(e.target.value)}
-        className="w-full max-w-sm border border-border rounded-lg px-3 py-2 text-sm bg-bg-input focus:outline-none focus:ring-2 focus:ring-gray-900"
+        className="w-full max-w-sm border border-border rounded-lg px-3 py-2 text-sm bg-bg-input focus:outline-none focus:ring-2 focus:ring-accent"
       />
 
       {/* Tabla */}
@@ -320,8 +320,8 @@ export default function PersonnelPage() {
                     <span className={cn(
                       'inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium',
                       p.active
-                        ? 'bg-green-100 text-green-700'
-                        : 'bg-gray-100 text-gray-500'
+                        ? 'bg-green-100 text-success'
+                        : 'bg-bg-hover text-text-muted'
                     )}>
                       {p.active ? 'Activo' : 'Inactivo'}
                     </span>

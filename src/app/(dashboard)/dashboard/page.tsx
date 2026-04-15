@@ -4,7 +4,6 @@ import Link from 'next/link'
 import { useActiveHotel } from '@/features/identity/hooks/use-active-hotel'
 import { useDashboard } from '@/features/reporting/hooks/use-dashboard'
 import { useActiveAlerts } from '@/features/reporting/hooks/use-alerts'
-import { ALERT_SEVERITY_COLORS } from '@/features/reporting/types'
 import {
   CalendarDays,
   ShoppingCart,
@@ -19,6 +18,114 @@ import {
   Bell,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
+
+function shiftLabel(now: Date): string {
+  const h = now.getHours()
+  if (h < 6) return 'Cena / madrugada'
+  if (h < 11) return 'Desayuno'
+  if (h < 16) return 'Comida'
+  if (h < 22) return 'Cena'
+  return 'Cierre'
+}
+
+function CommandBand({
+  hotel,
+  d,
+}: {
+  hotel: { hotel_name: string; hotel_id: string }
+  d: NonNullable<ReturnType<typeof useDashboard>['data']>
+}) {
+  const now = new Date()
+  const shift = shiftLabel(now)
+  const firstEventToday = d.events.today[0]
+
+  // Siguiente acción (prioridad: stock crítico > caducidades > solicitudes > pedidos)
+  let action: { title: string; href: string; meta?: string; variant: 'urgent' | 'warning' | 'info' } | null = null
+  if (d.inventory.low_stock_count > 0) {
+    action = {
+      title: `Revisar ${d.inventory.low_stock_count} producto${d.inventory.low_stock_count !== 1 ? 's' : ''} con stock bajo`,
+      href: '/inventory',
+      meta: 'Stock por debajo del mínimo',
+      variant: 'urgent',
+    }
+  } else if (d.inventory.expiring_7d > 0) {
+    action = {
+      title: `${d.inventory.expiring_7d} lote${d.inventory.expiring_7d !== 1 ? 's' : ''} caduca${d.inventory.expiring_7d === 1 ? '' : 'n'} en 7 días`,
+      href: '/inventory',
+      meta: 'Priorizar consumo',
+      variant: 'warning',
+    }
+  } else if (d.procurement.pending_requests > 0) {
+    action = {
+      title: `Aprobar ${d.procurement.pending_requests} solicitud${d.procurement.pending_requests !== 1 ? 'es' : ''} de compra`,
+      href: '/procurement',
+      variant: 'info',
+    }
+  } else if (d.procurement.pending_orders > 0) {
+    action = {
+      title: `Confirmar ${d.procurement.pending_orders} pedido${d.procurement.pending_orders !== 1 ? 's' : ''} pendiente${d.procurement.pending_orders !== 1 ? 's' : ''}`,
+      href: '/procurement',
+      variant: 'info',
+    }
+  }
+
+  return (
+    <div className="grid gap-4 md:grid-cols-3">
+      <div className="status-rail info rounded-r-md bg-bg-card p-4">
+        <p className="kpi-label">Turno activo</p>
+        <p className="mt-2" style={{ fontFamily: 'var(--font-display)', fontSize: '17px', fontWeight: 600, color: 'var(--color-text-primary)' }}>
+          {shift} · {now.toLocaleDateString('es-ES', { weekday: 'short', day: 'numeric', month: 'short' })}
+        </p>
+        <p className="mt-1 text-xs text-text-secondary">{hotel.hotel_name}</p>
+      </div>
+
+      <div className={cn('status-rail rounded-r-md bg-bg-card p-4', firstEventToday ? 'warning' : '')}>
+        <p className="kpi-label">Servicio activo</p>
+        {firstEventToday ? (
+          <Link href={`/events/${firstEventToday.id}`} className="block">
+            <p className="mt-2" style={{ fontFamily: 'var(--font-display)', fontSize: '17px', fontWeight: 600, color: 'var(--color-text-primary)' }}>
+              {firstEventToday.name} <span className="text-text-secondary">({firstEventToday.guest_count}p)</span>
+            </p>
+            <p className="mt-1 text-xs text-text-secondary">
+              {firstEventToday.start_time ? firstEventToday.start_time.slice(0, 5) : '—'} · Estado: <span className="text-text-primary">{firstEventToday.status}</span>
+            </p>
+          </Link>
+        ) : (
+          <>
+            <p className="mt-2" style={{ fontFamily: 'var(--font-display)', fontSize: '17px', fontWeight: 600, color: 'var(--color-text-muted)' }}>
+              Sin servicio hoy
+            </p>
+            <p className="mt-1 text-xs text-text-muted">Día tranquilo — planifica mañana</p>
+          </>
+        )}
+      </div>
+
+      <div className={cn('status-rail rounded-r-md bg-bg-card p-4', action ? action.variant : 'success')}>
+        <p className="kpi-label">Siguiente acción</p>
+        {action ? (
+          <>
+            <p className="mt-2" style={{ fontFamily: 'var(--font-display)', fontSize: '17px', fontWeight: 600, color: 'var(--color-text-primary)' }}>
+              {action.title}
+            </p>
+            <div className="mt-3 flex items-center gap-3">
+              <Link href={action.href} className="rounded-md bg-accent px-3 py-1.5 text-xs font-medium">
+                Resolver ahora
+              </Link>
+              {action.meta && <span className="text-xs text-text-muted">{action.meta}</span>}
+            </div>
+          </>
+        ) : (
+          <>
+            <p className="mt-2" style={{ fontFamily: 'var(--font-display)', fontSize: '17px', fontWeight: 600, color: 'var(--color-text-primary)' }}>
+              Todo bajo control
+            </p>
+            <p className="mt-1 text-xs text-text-secondary">0 urgencias · 0 avisos · 0 pendientes</p>
+          </>
+        )}
+      </div>
+    </div>
+  )
+}
 
 function KpiCard({
   label,
@@ -41,11 +148,11 @@ function KpiCard({
       href && 'hover:border-accent/30 cursor-pointer'
     )}>
       <div className="flex items-center justify-between">
-        <p className="text-xs text-text-muted uppercase tracking-wider">{label}</p>
+        <p className="kpi-label">{label}</p>
         <Icon className={cn('h-4 w-4', color ?? 'text-text-muted')} />
       </div>
-      <p className="mt-2 text-2xl font-bold text-text-primary">{value}</p>
-      {sub && <p className="mt-0.5 text-xs text-text-muted">{sub}</p>}
+      <p className="kpi-value mt-2">{value}</p>
+      {sub && <p className="mt-1 text-xs text-text-muted">{sub}</p>}
     </div>
   )
   if (href) return <Link href={href}>{content}</Link>
@@ -66,7 +173,7 @@ export default function DashboardPage() {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold text-text-primary">Dashboard</h1>
+        <h1 className="text-text-primary" style={{ fontSize: '28px' }}>Dashboard</h1>
         <p className="text-sm text-text-secondary">{hotel.hotel_name}</p>
       </div>
 
@@ -81,6 +188,9 @@ export default function DashboardPage() {
         </div>
       ) : (
         <>
+          {/* Banda de mando — DESIGN.md §Layout */}
+          <CommandBand hotel={hotel} d={d} />
+
           {/* Alertas activas (si hay) */}
           {(criticalAlerts.length > 0 || warningAlerts.length > 0) && (
             <Link
@@ -232,11 +342,11 @@ export default function DashboardPage() {
                       </p>
                     </div>
                     <span className={cn(
-                      'text-xs font-medium rounded-full px-2 py-0.5',
-                      ev.status === 'confirmed' ? 'bg-success/10 text-success' :
-                      ev.status === 'in_preparation' ? 'bg-info/10 text-info' :
-                      ev.status === 'in_operation' ? 'bg-accent/10 text-accent' :
-                      'bg-bg-hover text-text-muted'
+                      'badge-status',
+                      ev.status === 'confirmed' ? 'success' :
+                      ev.status === 'in_preparation' ? 'info' :
+                      ev.status === 'in_operation' ? 'warning' :
+                      'neutral'
                     )}>
                       {ev.status}
                     </span>

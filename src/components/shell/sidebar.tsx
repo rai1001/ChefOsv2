@@ -21,7 +21,7 @@ export function Sidebar({ profile }: SidebarProps) {
     <aside
       className={cn(
         'flex h-screen flex-col border-r border-border bg-bg-sidebar transition-all duration-200',
-        collapsed ? 'w-16' : 'w-56'
+        collapsed ? 'w-14' : 'w-[200px]'
       )}
     >
       {/* Logo */}

@@ -3,13 +3,18 @@
 import { useActiveAlerts, useDismissAlert, useGenerateDailySnapshot } from '@/features/reporting/hooks/use-alerts'
 import {
   ALERT_SEVERITY_COLORS,
-  ALERT_SEVERITY_BG,
   ALERT_TYPE_LABELS,
 } from '@/features/reporting/types'
-import type { Alert } from '@/features/reporting/types'
+import type { Alert, AlertSeverity } from '@/features/reporting/types'
 import { AlertTriangle, Bell, RefreshCw, X, Package, Clock, TrendingUp, Trash2 } from 'lucide-react'
 import Link from 'next/link'
 import { cn } from '@/lib/utils'
+
+const SEVERITY_VARIANT: Record<AlertSeverity, 'urgent' | 'warning' | 'info'> = {
+  critical: 'urgent',
+  warning: 'warning',
+  info: 'info',
+}
 
 const ALERT_ICONS: Record<string, React.ElementType> = {
   low_stock: Package,
@@ -32,17 +37,18 @@ function AlertCard({ alert, onDismiss }: { alert: Alert; onDismiss: (id: string)
     ? ENTITY_LINKS[alert.related_entity_type]?.(alert.related_entity_id)
     : null
 
+  const variant = SEVERITY_VARIANT[alert.severity]
   return (
     <div className={cn(
-      'flex items-start gap-4 rounded-lg border p-4',
-      ALERT_SEVERITY_BG[alert.severity]
+      'status-rail flex items-start gap-4 rounded-r-md bg-bg-card p-4',
+      variant
     )}>
       <Icon className={cn('h-5 w-5 mt-0.5 shrink-0', ALERT_SEVERITY_COLORS[alert.severity])} />
 
       <div className="flex-1 min-w-0">
         <div className="flex items-start justify-between gap-2">
           <div>
-            <p className={cn('text-sm font-medium', ALERT_SEVERITY_COLORS[alert.severity])}>
+            <p className="text-sm font-medium text-text-primary">
               {alert.title}
             </p>
             <p className="text-xs text-text-muted mt-0.5">
@@ -104,7 +110,7 @@ export default function AlertsPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-text-primary">Alertas</h1>
+          <h1 className="text-text-primary">Alertas</h1>
           <p className="text-sm text-text-muted">
             {alerts.length === 0 ? 'Sin alertas activas' : `${alerts.length} alerta${alerts.length !== 1 ? 's' : ''} activa${alerts.length !== 1 ? 's' : ''}`}
           </p>

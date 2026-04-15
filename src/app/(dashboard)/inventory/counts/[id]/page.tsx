@@ -99,7 +99,7 @@ export default function StockCountDetailPage({
         </Link>
         <div className="flex-1">
           <div className="flex items-center gap-3">
-            <h1 className="text-xl font-semibold text-text-primary">
+            <h1 className="text-text-primary">
               {count.label ?? COUNT_TYPE_LABELS[count.count_type]}
             </h1>
             <span className={cn('text-sm font-medium', COUNT_STATUS_COLORS[count.status])}>
@@ -122,7 +122,7 @@ export default function StockCountDetailPage({
       {/* Stats */}
       <div className="grid grid-cols-3 gap-3">
         <div className="rounded-xl border border-border bg-surface p-4">
-          <div className="text-2xl font-bold text-text-primary">{lines?.length ?? 0}</div>
+          <div className="text-text-primary">{lines?.length ?? 0}</div>
           <div className="text-xs text-text-muted mt-1">Total líneas</div>
         </div>
         <div className="rounded-xl border border-border bg-surface p-4">

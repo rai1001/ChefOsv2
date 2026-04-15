@@ -76,7 +76,7 @@ export default function PlanDetailPage({ params }: { params: Promise<{ id: strin
             <ArrowLeft className="h-5 w-5" />
           </Link>
           <div>
-            <h1 className="text-2xl font-bold text-text-primary">
+            <h1 className="text-text-primary">
               Plan {new Date(plan.plan_date).toLocaleDateString('es-ES', {
                 weekday: 'long',
                 day: 'numeric',

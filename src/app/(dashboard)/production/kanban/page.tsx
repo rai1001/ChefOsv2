@@ -36,7 +36,7 @@ export default function KanbanPage() {
       <div className="flex items-center justify-between gap-4">
         <div className="flex items-center gap-3">
           <Columns className="h-6 w-6 text-accent" />
-          <h1 className="text-xl font-semibold text-text-primary">Kanban de tareas</h1>
+          <h1 className="text-text-primary">Kanban de tareas</h1>
         </div>
 
         <select

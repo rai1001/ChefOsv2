@@ -1,54 +1,152 @@
 @import "tailwindcss";
 
 @theme {
-  /* ChefOS dark palette */
-  --color-bg-primary: #0a0a0f;
-  --color-bg-card: #141420;
-  --color-bg-sidebar: #0d0d15;
-  --color-bg-input: #1a1a2e;
-  --color-bg-hover: #1e1e35;
+  /* ChefOS — Industrial Control Surface (DESIGN.md) */
 
-  --color-text-primary: #e8e8ed;
-  --color-text-secondary: #8888a0;
-  --color-text-muted: #55556a;
+  /* Superficies */
+  --color-bg-primary: #1a1a1a;   /* --bg */
+  --color-bg-card: #242424;      /* --surface */
+  --color-bg-sidebar: #1e1e1e;   /* --surface-2 */
+  --color-bg-input: #1e1e1e;     /* --surface-2 */
+  --color-bg-hover: #2a2a2a;     /* --surface-3 */
 
-  --color-accent: #6366f1;
-  --color-accent-hover: #818cf8;
-  --color-success: #22c55e;
-  --color-warning: #f59e0b;
-  --color-danger: #ef4444;
-  --color-info: #3b82f6;
+  /* Texto */
+  --color-text-primary: #d4d4d4;
+  --color-text-secondary: #a0a0a0;
+  --color-text-muted: #6a6a6a;
 
-  --color-border: #2a2a40;
-  --color-border-focus: #6366f1;
+  /* Accent — EXCLUSIVO CTA primario y nav activo */
+  --color-accent: #e8e4dc;       /* Tungsten White */
+  --color-accent-hover: #d8d4cc;
+
+  /* Estado funcional */
+  --color-success: #5a7a5a;
+  --color-warning: #b87333;      /* cobre, no amber */
+  --color-danger: #c0392b;       /* urgent */
+  --color-info: #4a6070;
+
+  /* Bordes */
+  --color-border: #2e2e2e;
+  --color-border-focus: #e8e4dc;
+
+  /* Fuentes (DESIGN.md §Typography) */
+  --font-sans: 'DM Sans', system-ui, -apple-system, sans-serif;
+  --font-display: 'Syne', system-ui, sans-serif;
+  --font-data: 'DM Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+  --font-code: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
 
   /* Radius */
-  --radius-sm: 0.375rem;
-  --radius-md: 0.5rem;
-  --radius-lg: 0.75rem;
+  --radius-sm: 0.25rem;   /* 4px — tablas e inputs */
+  --radius-md: 0.5rem;    /* 8px — cards y botones */
+  --radius-lg: 0.625rem;  /* 10px — modales y panels grandes */
+}
 
-  /* Font sizes */
-  --font-size-xs: 0.75rem;
-  --font-size-sm: 0.875rem;
-  --font-size-base: 1rem;
-  --font-size-lg: 1.125rem;
-  --font-size-xl: 1.25rem;
-  --font-size-2xl: 1.5rem;
+:root {
+  /* Helpers no-utility (custom CSS, no generan clases Tailwind) */
+  --border-strong: #3a3a3a;
+  --accent-fg: #1a1a1a;
+  --accent-ring: #e8e4dc;
+
+  --urgent-bg: rgba(192, 57, 43, 0.12);
+  --urgent-border: rgba(192, 57, 43, 0.25);
+  --warning-bg: rgba(184, 115, 51, 0.12);
+  --warning-border: rgba(184, 115, 51, 0.25);
+  --success-bg: rgba(90, 122, 90, 0.12);
+  --success-border: rgba(90, 122, 90, 0.25);
+  --info-bg: rgba(74, 96, 112, 0.12);
+  --info-border: rgba(74, 96, 112, 0.25);
 }
 
 body {
   background-color: var(--color-bg-primary);
   color: var(--color-text-primary);
-  font-family: system-ui, -apple-system, sans-serif;
+  font-family: var(--font-sans);
+  font-size: 17.6px; /* 110% de 16px — Israel */
+  line-height: 1.5;
 }
 
-/* Focus visible for accessibility (WCAG AA) */
+/* Títulos en Syne (DESIGN.md §Typography) */
+h1, h2, h3, h4 {
+  font-family: var(--font-display);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+h1 { font-weight: 700; font-size: 28px; line-height: 1.15; }
+h2 { font-size: 22px; line-height: 1.2; }
+h3 { font-size: 17px; }
+
+/* Código y monos: tabular nums + JetBrains para inline code */
+code, kbd, samp {
+  font-family: var(--font-code);
+  font-size: 0.85em;
+}
+[class*="font-data"],
+[class*="font-code"],
+[class*="font-mono"] {
+  font-variant-numeric: tabular-nums;
+}
+
+/* CTA primario — fuerza contraste cuando bg-accent + text-white coinciden
+   (regresión de Fase 1: ~43 botones usaban text-white sobre cream) */
+.bg-accent,
+.hover\:bg-accent:hover {
+  color: var(--accent-fg);
+}
+
 *:focus-visible {
-  outline: 2px solid var(--color-accent);
+  outline: 2px solid var(--color-border-focus);
   outline-offset: 2px;
 }
 
-/* Min touch target for tablet/cocina (48x48px) */
+/* Sistema left-border 3px de estado (DESIGN.md §Left-Border Status System) */
+.status-rail {
+  border-left: 3px solid var(--color-border);
+  border-radius: 0 var(--radius-md) var(--radius-md) 0;
+}
+.status-rail.urgent  { border-left-color: var(--color-danger); }
+.status-rail.warning { border-left-color: var(--color-warning); }
+.status-rail.success { border-left-color: var(--color-success); }
+.status-rail.info    { border-left-color: var(--color-info); }
+
+/* Badges de estado (DESIGN.md §Component Patterns — Badges) */
+.badge-status {
+  font-family: var(--font-code);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 2px 8px;
+  border-radius: 4px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  border: 1px solid;
+}
+.badge-status.urgent  { color: #e88070; background: var(--urgent-bg);  border-color: var(--urgent-border); }
+.badge-status.warning { color: #d4a574; background: var(--warning-bg); border-color: var(--warning-border); }
+.badge-status.success { color: #8baf8b; background: var(--success-bg); border-color: var(--success-border); }
+.badge-status.info    { color: #8ba6b8; background: var(--info-bg);    border-color: var(--info-border); }
+.badge-status.neutral { color: var(--color-text-secondary); background: var(--color-bg-card); border-color: var(--color-border); }
+
+/* KPI dominante (DESIGN.md §Typography — escala) */
+.kpi-value {
+  font-family: var(--font-data);
+  font-size: 32px;
+  font-weight: 500;
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+  color: var(--color-text-primary);
+}
+.kpi-label {
+  font-family: var(--font-code);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+}
+
+/* Touch target mínimo para tablet/cocina */
 .touch-target {
   min-width: 48px;
   min-height: 48px;

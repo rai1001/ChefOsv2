@@ -93,7 +93,7 @@ export default function WorkflowDetailPage({
         </Link>
         <div className="flex-1">
           <div className="flex items-center gap-3 flex-wrap">
-            <h1 className="text-xl font-semibold text-text-primary">{detail.name}</h1>
+            <h1 className="text-text-primary">{detail.name}</h1>
             <span className={cn('text-sm font-medium', WORKFLOW_STATUS_COLORS[detail.status])}>
               {WORKFLOW_STATUS_LABELS[detail.status]}
             </span>

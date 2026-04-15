@@ -126,6 +126,18 @@ export const EVENT_STATUS_COLORS: Record<EventStatus, string> = {
   archived: 'text-text-muted',
 }
 
+/** Variante de left-border / badge-status (DESIGN.md §Left-Border Status System) */
+export const EVENT_STATUS_VARIANT: Record<EventStatus, 'neutral' | 'warning' | 'success' | 'info' | 'urgent'> = {
+  draft: 'neutral',
+  pending_confirmation: 'warning',
+  confirmed: 'success',
+  in_preparation: 'info',
+  in_operation: 'warning',
+  completed: 'success',
+  cancelled: 'urgent',
+  archived: 'neutral',
+}
+
 // ─── BEO types ────────────────────────────────────────────────────────────────
 
 export interface BeoRecipe {

@@ -157,7 +157,7 @@ export default function AgentsConfigPage() {
           <ChevronLeft className="h-4 w-4 text-neutral-400" />
         </a>
         <div>
-          <h1 className="text-xl font-semibold text-text-primary">Configuración de Agentes</h1>
+          <h1 className="text-text-primary">Configuración de Agentes</h1>
           <p className="text-sm text-neutral-400">
             Activa/desactiva agentes y ajusta sus umbrales por hotel.
           </p>

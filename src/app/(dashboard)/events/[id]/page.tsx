@@ -312,7 +312,7 @@ export default function EventDetailPage({ params }: { params: Promise<{ id: stri
             <ArrowLeft className="h-5 w-5" />
           </Link>
           <div>
-            <h1 className="text-2xl font-bold text-text-primary">{event.name}</h1>
+            <h1 className="text-text-primary">{event.name}</h1>
             <p className="text-sm text-text-muted">{event.beo_number}</p>
           </div>
         </div>

@@ -198,7 +198,7 @@ export default function RecipeEditorPage() {
             <ArrowLeft className="h-5 w-5" />
           </Link>
           <div>
-            <h1 className="text-2xl font-bold text-text-primary">{recipe.name}</h1>
+            <h1 className="text-text-primary">{recipe.name}</h1>
             <div className="flex items-center gap-2 mt-0.5">
               <span className="text-sm text-text-muted">
                 {RECIPE_CATEGORY_LABELS[recipe.category]}

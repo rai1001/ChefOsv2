@@ -271,6 +271,15 @@ export const RECIPE_STATUS_COLORS: Record<RecipeStatus, string> = {
   archived: 'text-text-muted',
 }
 
+/** Left-border / badge-status variant (DESIGN.md §Left-Border Status System) */
+export const RECIPE_STATUS_VARIANT: Record<RecipeStatus, 'neutral' | 'warning' | 'success' | 'urgent'> = {
+  draft: 'neutral',
+  review_pending: 'warning',
+  approved: 'success',
+  deprecated: 'urgent',
+  archived: 'neutral',
+}
+
 export const RECIPE_DIFFICULTY_LABELS: Record<RecipeDifficulty, string> = {
   easy: 'Fácil',
   medium: 'Media',
