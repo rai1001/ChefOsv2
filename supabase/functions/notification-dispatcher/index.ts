@@ -8,7 +8,17 @@
 //      - Headers: Authorization: Bearer <service_role_key>
 //   2. Secrets → Añadir RESEND_API_KEY
 //
-// El dispatcher comprueba las notification_preferences del usuario antes de enviar.
+// Seguridad (Codex audit 2026-04-15):
+//   - Verifica Bearer == SUPABASE_SERVICE_ROLE_KEY (idéntico a automation-worker)
+//     → sin esto, cualquiera con la URL pública podía forjar notificaciones y
+//       usar el dispatcher como relé de phishing con el remitente ChefOS.
+//   - safeUrl solo acepta rutas relativas (/...). URLs https externas se rechazan.
+//     → elimina phishing via action_url controlado por atacante.
+//   - El contenido del email se RECONSTRUYE leyendo la notificación real de DB
+//     por id. El payload del webhook se usa ÚNICAMENTE para obtener ese id.
+//     → si alguien fuerza la verificación Bearer (p. ej. leak del key), el
+//       atacante no puede inyectar title/body/action_url arbitrarios: solo
+//       puede disparar emails para notificaciones que existen realmente.
 
 import { serve } from 'https://deno.land/std@0.177.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
@@ -26,14 +36,16 @@ function escapeHtml(s: string): string {
 }
 
 /**
- * Valida que una URL sea segura para incluir en un enlace.
- * Solo se aceptan rutas relativas (/...) y URLs https absolutas.
- * Rechaza javascript:, data: y cualquier otra cosa.
+ * Valida que una URL sea segura para incluir en un enlace del email.
+ * SOLO se aceptan rutas relativas (/...). URLs absolutas (https://, http://,
+ * javascript:, data:, etc.) se rechazan siempre — previene phishing.
+ * El link renderizado apunta a APP_BASE_URL + ruta.
  */
-function safeUrl(url: string | null): string | null {
+function safeUrl(url: string | null, baseUrl: string): string | null {
   if (!url) return null
-  if (url.startsWith('/') || url.startsWith('https://')) return url
-  return null
+  if (!url.startsWith('/')) return null
+  if (url.startsWith('//')) return null // rechazar protocol-relative
+  return `${baseUrl.replace(/\/$/, '')}${url}`
 }
 
 interface WebhookPayload {
@@ -66,6 +78,18 @@ serve(async (req: Request) => {
     return new Response('Method Not Allowed', { status: 405 })
   }
 
+  // ── AUTH: exigir service_role bearer (patrón de automation-worker) ─────────
+  const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+  if (!serviceRoleKey) {
+    console.error('[notification-dispatcher] SUPABASE_SERVICE_ROLE_KEY no configurado')
+    return new Response('Server misconfigured', { status: 500 })
+  }
+  const authHeader = req.headers.get('Authorization')
+  const expectedToken = `Bearer ${serviceRoleKey}`
+  if (!authHeader || authHeader !== expectedToken) {
+    return new Response('Unauthorized', { status: 401 })
+  }
+
   const resendApiKey = Deno.env.get('RESEND_API_KEY')
   if (!resendApiKey) {
     console.warn('[notification-dispatcher] RESEND_API_KEY no configurada — email desactivado')
@@ -74,7 +98,7 @@ serve(async (req: Request) => {
 
   const supabase = createClient(
     Deno.env.get('SUPABASE_URL') ?? '',
-    Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
+    serviceRoleKey,
   )
 
   let payload: WebhookPayload
@@ -88,9 +112,26 @@ serve(async (req: Request) => {
     return Response.json({ skipped: true, reason: 'irrelevant_event' })
   }
 
-  const notif = payload.record
+  const notifId = payload.record?.id
+  if (!notifId || typeof notifId !== 'string') {
+    return new Response('Invalid payload: missing record.id', { status: 400 })
+  }
 
-  // Comprobar preferencia de email del usuario
+  // ── RECONSTRUIR desde DB: no confiar en payload para contenido sensible ───
+  // El payload solo se usa para obtener el id; title/body/action_url/severity
+  // se leen de la fila real en la tabla notifications.
+  const { data: notif, error: notifErr } = await supabase
+    .from('notifications')
+    .select('id, hotel_id, user_id, notification_type, severity, title, body, action_url')
+    .eq('id', notifId)
+    .maybeSingle()
+
+  if (notifErr || !notif) {
+    console.error('[notification-dispatcher] Notificación no encontrada:', notifId, notifErr?.message)
+    return Response.json({ skipped: true, reason: 'notification_not_found' })
+  }
+
+  // Comprobar preferencia de email del usuario (desde DB, no del payload)
   const { data: pref } = await supabase
     .from('notification_preferences')
     .select('email')
@@ -99,7 +140,6 @@ serve(async (req: Request) => {
     .eq('notification_type', notif.notification_type)
     .maybeSingle()
 
-  // Default: email=false si no hay preferencia explícita
   const emailEnabled = pref?.email === true
   if (!emailEnabled) {
     return Response.json({ skipped: true, reason: 'email_disabled' })
@@ -119,16 +159,17 @@ serve(async (req: Request) => {
     .eq('id', notif.hotel_id)
     .single()
 
+  const appBaseUrl = Deno.env.get('APP_BASE_URL') ?? 'https://chefos.app'
   const toEmail = userData.user.email
   const icon = SEVERITY_LABELS[notif.severity] ?? 'ℹ️'
   const hotelName = hotel?.name ?? 'ChefOS'
 
-  // Escapar todo contenido de usuario antes de interpolarlo en HTML
-  const safeTitle    = escapeHtml(notif.title)
-  const safeBody     = notif.body ? escapeHtml(notif.body) : null
-  const safeHotel    = escapeHtml(hotelName)
-  const safeIcon     = escapeHtml(icon)
-  const safeActionUrl = safeUrl(notif.action_url)
+  // Escapar todo contenido antes de interpolarlo en HTML
+  const safeTitle     = escapeHtml(notif.title)
+  const safeBody      = notif.body ? escapeHtml(notif.body) : null
+  const safeHotel     = escapeHtml(hotelName)
+  const safeIcon      = escapeHtml(icon)
+  const safeActionUrl = safeUrl(notif.action_url, appBaseUrl)
 
   // Enviar email via Resend
   const emailBody = {
