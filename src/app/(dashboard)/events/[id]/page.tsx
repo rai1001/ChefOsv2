@@ -23,7 +23,6 @@ import {
   Users,
   MapPin,
   Clock,
-  FileDown,
   RefreshCw,
   Calculator,
   ChevronDown,
@@ -34,13 +33,11 @@ import {
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
-// PDF components — only loaded client-side
-const PDFDownloadLink = dynamic(
-  () => import('@react-pdf/renderer').then((m) => m.PDFDownloadLink),
-  { ssr: false, loading: () => null }
-)
-const BeoDocument = dynamic(
-  () => import('@/features/commercial/components/beo-document').then((m) => m.BeoDocument),
+// BEO PDF button — wrapper completo (PDFDownloadLink + BeoDocument) cargado client-side.
+// dynamic() sobre el botón entero, NUNCA sobre @react-pdf/renderer ni el documento por separado
+// (eso rompe Turbopack SSR: "ModuleId not found for ident: @react-pdf/renderer").
+const BeoBtn = dynamic(
+  () => import('@/features/documents/components/pdf-buttons').then((m) => m.BeoBtn),
   { ssr: false, loading: () => null }
 )
 
@@ -262,27 +259,6 @@ function AutomateBlock({ eventId }: { eventId: string }) {
   )
 }
 
-// ─── BEO PDF button ───────────────────────────────────────────────────────────
-
-function BeoPdfButton({ beo }: { beo: BeoData }) {
-  const filename = `BEO_${beo.beo_number ?? beo.id.slice(0, 8)}.pdf`
-
-  return (
-    <PDFDownloadLink
-      document={<BeoDocument beo={beo} />}
-      fileName={filename}
-      className="flex items-center gap-2 rounded-md border border-border px-4 py-2 text-sm font-medium text-text-primary hover:bg-bg-hover"
-    >
-      {({ loading }) => (
-        <>
-          <FileDown className="h-4 w-4" />
-          {loading ? 'Preparando PDF…' : 'Descargar BEO (PDF)'}
-        </>
-      )}
-    </PDFDownloadLink>
-  )
-}
-
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function EventDetailPage({ params }: { params: Promise<{ id: string }> }) {
@@ -435,7 +411,7 @@ export default function EventDetailPage({ params }: { params: Promise<{ id: stri
           </button>
         ))}
 
-        {beo && <BeoPdfButton beo={beo} />}
+        {beo && <BeoBtn beo={beo} />}
 
         {canCancel && (
           <button

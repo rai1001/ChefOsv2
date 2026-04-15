@@ -12,6 +12,8 @@ import { KitchenBriefingDocument } from './kitchen-briefing-document'
 import { WasteReportDocument } from './waste-report-document'
 import { FoodCostDocument } from './food-cost-document'
 import { APPCCBlankDocument } from './appcc-blank-document'
+import { BeoDocument } from '@/features/commercial/components/beo-document'
+import type { BeoData } from '@/features/commercial/types'
 import { FileText, FileDown } from 'lucide-react'
 
 import type { TechSheetData } from '../types'
@@ -177,6 +179,26 @@ export function APPCCBlankBtn({ data }: { data: APPCCBlankData }) {
         <>
           <FileText className="h-4 w-4" />
           {loading ? 'Preparando PDF…' : 'Descargar plantilla'}
+        </>
+      )}
+    </PDFDownloadLink>
+  )
+}
+
+// ─── BEO (Banquet Event Order) ────────────────────────────────────────────────
+
+export function BeoBtn({ beo }: { beo: BeoData }) {
+  const filename = `BEO_${beo.beo_number ?? beo.id.slice(0, 8)}.pdf`
+  return (
+    <PDFDownloadLink
+      document={<BeoDocument beo={beo} />}
+      fileName={filename}
+      className="flex items-center gap-2 rounded-md border border-border px-4 py-2 text-sm font-medium text-text-primary hover:bg-bg-hover"
+    >
+      {({ loading }) => (
+        <>
+          <FileDown className="h-4 w-4" />
+          {loading ? 'Preparando PDF…' : 'Descargar BEO (PDF)'}
         </>
       )}
     </PDFDownloadLink>
