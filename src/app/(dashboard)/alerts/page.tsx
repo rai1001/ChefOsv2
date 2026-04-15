@@ -139,7 +139,7 @@ export default function AlertsPage() {
           <Bell className="mx-auto h-10 w-10 text-text-muted" />
           <p className="mt-3 text-text-secondary">Sin alertas activas</p>
           <p className="mt-1 text-xs text-text-muted">
-            Pulsa "Generar snapshot" para revisar el estado actual y detectar alertas.
+            Pulsa &ldquo;Generar snapshot&rdquo; para revisar el estado actual y detectar alertas.
           </p>
         </div>
       )}

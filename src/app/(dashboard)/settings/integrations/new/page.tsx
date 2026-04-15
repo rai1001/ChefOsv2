@@ -266,7 +266,7 @@ export default function NewIntegrationPage() {
           <div>
             <h2 className="text-base font-medium text-gray-800">Integración creada</h2>
             <p className="text-sm text-gray-500 mt-1">
-              Pulsa "Probar conexión" para verificar que las credenciales son correctas.
+              Pulsa &ldquo;Probar conexión&rdquo; para verificar que las credenciales son correctas.
               El test se ejecuta en background (puede tardar 5–10 s).
             </p>
           </div>

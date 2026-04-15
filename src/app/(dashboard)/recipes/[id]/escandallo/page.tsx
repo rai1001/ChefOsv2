@@ -174,7 +174,7 @@ export default function EscandalloPage() {
               {changedCount} ingrediente{changedCount !== 1 ? 's' : ''} con precio actualizado en albaranes
             </p>
             <p className="mt-0.5 text-xs text-text-muted">
-              El escandallo muestra los nuevos precios en la columna "Albarán". Aplica los cambios para recalcular márgenes.
+              El escandallo muestra los nuevos precios en la columna &ldquo;Albarán&rdquo;. Aplica los cambios para recalcular márgenes.
             </p>
           </div>
         </div>
@@ -423,7 +423,7 @@ export default function EscandalloPage() {
       {ings.some((i) => !i.product_id) && (
         <p className="flex items-center gap-2 text-xs text-text-muted">
           <Unlink className="h-3.5 w-3.5 shrink-0" />
-          Los ingredientes "sin vincular" no tienen producto del catálogo asignado — sus precios no se sincronizan automáticamente.
+          Los ingredientes &ldquo;sin vincular&rdquo; no tienen producto del catálogo asignado — sus precios no se sincronizan automáticamente.
         </p>
       )}
     </div>

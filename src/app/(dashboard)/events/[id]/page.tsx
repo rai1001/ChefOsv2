@@ -112,7 +112,7 @@ function CostBlock({ eventId, beo }: { eventId: string; beo: BeoData | undefined
 
       {beo?.theoretical_cost == null && (
         <p className="text-xs text-text-muted text-center">
-          Pulsa "Recalcular" para estimar el food cost con los menús asignados.
+          Pulsa &ldquo;Recalcular&rdquo; para estimar el food cost con los menús asignados.
         </p>
       )}
     </div>
@@ -156,7 +156,7 @@ function OperationalImpactBlock({ eventId, beo }: { eventId: string; beo: BeoDat
         <>
           {!hasImpact && (
             <p className="text-xs text-text-muted text-center py-4">
-              Sin datos. Pulsa "Regenerar" para calcular las necesidades de ingredientes desde los menús del evento.
+              Sin datos. Pulsa &ldquo;Regenerar&rdquo; para calcular las necesidades de ingredientes desde los menús del evento.
             </p>
           )}
 

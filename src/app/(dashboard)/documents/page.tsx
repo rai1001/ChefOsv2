@@ -405,8 +405,8 @@ export default function DocumentsPage() {
 
       <div className="rounded-lg border border-border bg-bg-card p-4 text-sm text-text-muted space-y-1">
         <p className="font-medium text-text-secondary">Documentos contextuales</p>
-        <p>BEO → página de detalle del evento (botón "Descargar BEO")</p>
-        <p>Hoja de producción → página del workflow (botón "Descargar PDF")</p>
+        <p>BEO → página de detalle del evento (botón &ldquo;Descargar BEO&rdquo;)</p>
+        <p>Hoja de producción → página del workflow (botón &ldquo;Descargar PDF&rdquo;)</p>
         <p>Lista de compras → también disponible en la página de Compras con PDF integrado</p>
       </div>
     </div>

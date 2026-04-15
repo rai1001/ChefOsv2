@@ -189,25 +189,25 @@ export function TechSheetDocument({ data }: Props) {
           </View>
           {recipe.prep_time_min != null && (
             <View style={styles.infoBox}>
-              <Text style={styles.infoValue}>{recipe.prep_time_min}'</Text>
+              <Text style={styles.infoValue}>{recipe.prep_time_min}{"'"}</Text>
               <Text style={styles.infoLabel}>Prep.</Text>
             </View>
           )}
           {recipe.cook_time_min != null && (
             <View style={styles.infoBox}>
-              <Text style={styles.infoValue}>{recipe.cook_time_min}'</Text>
+              <Text style={styles.infoValue}>{recipe.cook_time_min}{"'"}</Text>
               <Text style={styles.infoLabel}>Cocción</Text>
             </View>
           )}
           {recipe.rest_time_min != null && (
             <View style={styles.infoBox}>
-              <Text style={styles.infoValue}>{recipe.rest_time_min}'</Text>
+              <Text style={styles.infoValue}>{recipe.rest_time_min}{"'"}</Text>
               <Text style={styles.infoLabel}>Reposo</Text>
             </View>
           )}
           {totalTime > 0 && (
             <View style={styles.infoBox}>
-              <Text style={styles.infoValue}>{totalTime}'</Text>
+              <Text style={styles.infoValue}>{totalTime}{"'"}</Text>
               <Text style={styles.infoLabel}>Total</Text>
             </View>
           )}

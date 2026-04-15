@@ -547,7 +547,7 @@ export default function EscandallosPage() {
                   </button>
                   {dishName && (
                     <p className="text-xs text-text-muted">
-                      Se creará como borrador en categoría "Carnes" — puedes cambiarla en el editor.
+                      Se creará como borrador en categoría &ldquo;Carnes&rdquo; — puedes cambiarla en el editor.
                     </p>
                   )}
                 </div>
