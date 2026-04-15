@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { Bot, ToggleLeft, ToggleRight, Save, ChevronLeft } from 'lucide-react'
 import { useActiveHotel } from '@/features/identity/hooks/use-active-hotel'
 import { useAgentConfigs, useUpsertAgentConfig } from '@/features/agents/hooks/use-agents'
@@ -35,12 +35,15 @@ function AgentRow({
       : {}
   )
   const [dirty, setDirty] = useState(false)
+  const [prevConfig, setPrevConfig] = useState(config)
 
-  useEffect(() => {
+  // Reset local state when parent pushes new config (React 19 idiom — adjust state during render)
+  if (prevConfig !== config) {
+    setPrevConfig(config)
     setIsActive(config.is_active)
     setLocalConfig(Object.keys(defaults).length > 0 ? { ...defaults, ...config.config } : {})
     setDirty(false)
-  }, [config])
+  }
 
   const handleToggle = () => {
     const next = !isActive
