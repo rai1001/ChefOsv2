@@ -22,6 +22,7 @@
 import { createClient } from '@supabase/supabase-js'
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
+import { execSync } from 'node:child_process'
 
 // ─── Cargar .env.local manualmente (Node no lo lee por defecto) ──────────────
 
@@ -96,6 +97,7 @@ async function cleanup() {
     'kitchen_orders', 'mise_en_place_items', 'mise_en_place_lists',
     'workflow_tasks', 'workflows', 'production_plans',
     'stock_count_lines', 'stock_counts', 'stock_reservations',
+    'waste_records',
     'stock_movements', 'stock_lots', 'storage_locations',
     'goods_receipt_lines', 'goods_receipts',
     'purchase_order_lines', 'purchase_orders',
@@ -117,13 +119,21 @@ async function cleanup() {
     }
   }
 
-  // Borrar usuarios de test por email (los ids cambian entre corridas)
-  const { data: list } = await supabase.auth.admin.listUsers({ perPage: 200 })
-  const testEmails = new Set(USERS.map((u) => u.email))
-  for (const user of list?.users ?? []) {
-    if (user.email && testEmails.has(user.email)) {
-      await supabase.auth.admin.deleteUser(user.id).catch(() => {})
-    }
+  // Borrar usuarios de test por email vía SQL directo. La API admin.listUsers
+  // / admin.deleteUser a veces deja usuarios huérfanos con emails duplicados
+  // porque no ve todos los usuarios cuando el proyecto tiene >N cuentas.
+  // SQL cascade en auth.users es determinista y borra identities + sessions.
+  try {
+    const sql = `delete from auth.users where email like 'test-%@chefos.test';`
+    execSync(`npx supabase db query --linked`, {
+      input: sql,
+      encoding: 'utf8',
+      stdio: ['pipe', 'pipe', 'pipe'],
+    })
+    console.log(`   (cleanup: usuarios test-*@chefos.test borrados vía SQL)`)
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err)
+    console.warn('   (cleanup fallback falló:', msg.slice(0, 80), ')')
   }
 }
 
@@ -302,6 +312,51 @@ async function createDomainData() {
   })
   if (evErr) throw new Error(`event: ${evErr.message}`)
   console.log(`   ✓ 1 evento draft`)
+
+  // Integraciones PMS/POS — necesarias para tests RLS/seguridad (Fase C).
+  // Credenciales DUMMY: son valores de test, no tokens reales.
+  const { error: pmsErr } = await supabase.from('pms_integrations').insert({
+    id: 'a0000000-0000-0000-0000-000000000001',
+    hotel_id: HOTEL_ID,
+    pms_type: 'mews',
+    name: 'Mews Test (seed)',
+    status: 'active',
+    credentials: { api_token: 'SEED_DUMMY_TOKEN', property_id: 'SEED_PROP', environment: 'demo' },
+    config: { sync_interval_minutes: 60, sync_occupancy: true, sync_reservations: true },
+    is_active: true,
+    created_by: admin.id,
+  })
+  if (pmsErr) throw new Error(`pms_integration: ${pmsErr.message}`)
+
+  // POS con push_kitchen_orders DESHABILITADO — test de whitelist + config activa
+  const { error: pos1Err } = await supabase.from('pos_integrations').insert({
+    id: 'a0000000-0000-0000-0000-000000000002',
+    hotel_id: HOTEL_ID,
+    pos_type: 'lightspeed',
+    name: 'Lightspeed Test (seed, push disabled)',
+    status: 'active',
+    credentials: { client_id: 'SEED_DUMMY', client_secret: 'SEED_DUMMY', account_id: 'SEED_ACC' },
+    config: { sync_interval_minutes: 30, sync_sales: true, push_kitchen_orders: false },
+    is_active: true,
+    created_by: admin.id,
+  })
+  if (pos1Err) throw new Error(`pos_integration (disabled): ${pos1Err.message}`)
+
+  // POS con push_kitchen_orders HABILITADO — test del happy path
+  const { error: pos2Err } = await supabase.from('pos_integrations').insert({
+    id: 'a0000000-0000-0000-0000-000000000003',
+    hotel_id: HOTEL_ID,
+    pos_type: 'simphony',
+    name: 'Simphony Test (seed, push enabled)',
+    status: 'active',
+    credentials: { server_url: 'https://seed.test', employee_id: 'SEED', password: 'SEED' },
+    config: { sync_interval_minutes: 30, sync_sales: true, push_kitchen_orders: true },
+    is_active: true,
+    created_by: admin.id,
+  })
+  if (pos2Err) throw new Error(`pos_integration (enabled): ${pos2Err.message}`)
+
+  console.log(`   ✓ 1 PMS + 2 POS integrations (para tests RLS/seguridad)`)
 }
 
 // ─── Main ───────────────────────────────────────────────────────────────────
