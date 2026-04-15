@@ -82,7 +82,7 @@ export default function TemperaturesPage() {
         </div>
         <button
           onClick={() => setShowForm(!showForm)}
-          className="flex items-center gap-2 bg-accent text-white px-4 py-2 rounded-xl text-sm hover:bg-bg-card transition-colors"
+          className="flex items-center gap-2 bg-accent text-white px-4 py-2 rounded-md text-sm hover:bg-accent-hover transition-colors"
         >
           <Plus className="h-4 w-4" />
           Registrar temperatura
@@ -91,15 +91,15 @@ export default function TemperaturesPage() {
 
       {/* KPIs */}
       <div className="grid grid-cols-3 gap-4">
-        <div className="bg-bg-card border border-border rounded-xl p-4 text-center">
+        <div className="bg-bg-card border border-border rounded-md p-4 text-center">
           <div className="text-text-primary">{logs.length}</div>
           <div className="text-xs text-text-muted mt-1">Registros (24h)</div>
         </div>
-        <div className="bg-bg-card border border-border rounded-xl p-4 text-center">
+        <div className="bg-bg-card border border-border rounded-md p-4 text-center">
           <div className="text-2xl font-bold text-success">{logs.filter(l => l.is_within_range === true).length}</div>
           <div className="text-xs text-text-muted mt-1">En rango</div>
         </div>
-        <div className="bg-bg-card border border-border rounded-xl p-4 text-center">
+        <div className="bg-bg-card border border-border rounded-md p-4 text-center">
           <div className={`text-2xl font-bold ${outOfRange > 0 ? 'text-danger' : 'text-text-muted'}`}>{outOfRange}</div>
           <div className="text-xs text-text-muted mt-1">Fuera de rango</div>
         </div>
@@ -107,7 +107,7 @@ export default function TemperaturesPage() {
 
       {/* Quick log form */}
       {showForm && (
-        <form onSubmit={handleSubmit} className="bg-bg-card border border-border rounded-xl p-5 space-y-4">
+        <form onSubmit={handleSubmit} className="bg-bg-card border border-border rounded-md p-5 space-y-4">
           <h2 className="text-sm font-semibold text-text-primary">Nueva lectura de temperatura</h2>
           <div className="grid grid-cols-2 gap-4">
             <div className="col-span-2">
@@ -172,13 +172,13 @@ export default function TemperaturesPage() {
             </div>
           </div>
           <div className="flex gap-3">
-            <button type="button" onClick={() => setShowForm(false)} className="flex-1 py-2 border border-border rounded-xl text-sm hover:bg-bg-sidebar">
+            <button type="button" onClick={() => setShowForm(false)} className="flex-1 py-2 border border-border rounded-md text-sm hover:bg-bg-sidebar">
               Cancelar
             </button>
             <button
               type="submit"
               disabled={logTemp.isPending}
-              className="flex-1 py-2 bg-accent text-white rounded-xl text-sm hover:bg-bg-card disabled:opacity-50"
+              className="flex-1 py-2 bg-accent text-white rounded-md text-sm hover:bg-accent-hover disabled:opacity-50"
             >
               {logTemp.isPending ? 'Guardando…' : 'Registrar'}
             </button>
@@ -214,7 +214,7 @@ export default function TemperaturesPage() {
           <p className="text-sm">Sin registros en las últimas 24 horas</p>
         </div>
       ) : (
-        <div className="bg-bg-card border border-border rounded-xl overflow-hidden">
+        <div className="bg-bg-card border border-border rounded-md overflow-hidden">
           <table className="w-full text-sm">
             <thead className="bg-bg-sidebar border-b border-border">
               <tr>
@@ -227,7 +227,13 @@ export default function TemperaturesPage() {
             </thead>
             <tbody className="divide-y divide-border">
               {logs.map(log => (
-                <tr key={log.id} className={`${log.is_within_range === false ? 'bg-bg-card' : ''}`}>
+                <tr
+                  key={log.id}
+                  className={`status-rail ${
+                    log.is_within_range === false ? 'urgent' :
+                    log.is_within_range === true ? 'success' : ''
+                  }`}
+                >
                   <td className="px-4 py-3 text-text-muted tabular-nums">
                     {new Date(log.logged_at).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}
                   </td>

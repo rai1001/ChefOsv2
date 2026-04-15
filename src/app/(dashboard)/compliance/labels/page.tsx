@@ -76,7 +76,7 @@ export default function LabelsPage() {
         </div>
         <button
           onClick={() => setShowForm(!showForm)}
-          className="flex items-center gap-2 bg-accent text-white px-4 py-2 rounded-xl text-sm hover:bg-bg-card transition-colors"
+          className="flex items-center gap-2 bg-accent text-white px-4 py-2 rounded-md text-sm hover:bg-accent-hover transition-colors"
         >
           <Plus className="h-4 w-4" />
           Nueva etiqueta
@@ -85,7 +85,7 @@ export default function LabelsPage() {
 
       {/* Last barcode generated */}
       {lastBarcode && (
-        <div className="bg-bg-card border border-info/40 rounded-xl p-4 flex items-center justify-between">
+        <div className="bg-bg-card border border-info/40 rounded-md p-4 flex items-center justify-between">
           <div>
             <div className="text-xs font-medium text-info mb-1">Etiqueta generada</div>
             <div className="font-mono text-sm font-bold text-blue-900">{lastBarcode}</div>
@@ -96,7 +96,7 @@ export default function LabelsPage() {
 
       {/* Alert expiring soon */}
       {expiringSoon > 0 && (
-        <div className="flex items-center gap-2 bg-bg-card border border-danger/40 rounded-xl px-4 py-3 text-sm text-danger">
+        <div className="flex items-center gap-2 bg-bg-card border border-danger/40 rounded-md px-4 py-3 text-sm text-danger">
           <AlertTriangle className="h-4 w-4" />
           <strong>{expiringSoon}</strong> etiqueta{expiringSoon > 1 ? 's' : ''} caducan en menos de 24h
         </div>
@@ -104,7 +104,7 @@ export default function LabelsPage() {
 
       {/* Create form */}
       {showForm && (
-        <form onSubmit={handleCreate} className="bg-bg-card border border-border rounded-xl p-5 space-y-4">
+        <form onSubmit={handleCreate} className="bg-bg-card border border-border rounded-md p-5 space-y-4">
           <h2 className="text-sm font-semibold text-text-primary">Nueva etiqueta</h2>
 
           {/* Type */}
@@ -216,13 +216,13 @@ export default function LabelsPage() {
           </div>
 
           <div className="flex gap-3 pt-1">
-            <button type="button" onClick={() => setShowForm(false)} className="flex-1 py-2 border border-border rounded-xl text-sm hover:bg-bg-sidebar">
+            <button type="button" onClick={() => setShowForm(false)} className="flex-1 py-2 border border-border rounded-md text-sm hover:bg-bg-sidebar">
               Cancelar
             </button>
             <button
               type="submit"
               disabled={createLabel.isPending}
-              className="flex-1 py-2 bg-accent text-white rounded-xl text-sm hover:bg-bg-card disabled:opacity-50"
+              className="flex-1 py-2 bg-accent text-white rounded-md text-sm hover:bg-accent-hover disabled:opacity-50"
             >
               {createLabel.isPending ? 'Generando…' : 'Crear etiqueta'}
             </button>
@@ -239,7 +239,7 @@ export default function LabelsPage() {
           <p className="text-sm">Sin etiquetas creadas esta semana</p>
         </div>
       ) : (
-        <div className="bg-bg-card border border-border rounded-xl overflow-hidden">
+        <div className="bg-bg-card border border-border rounded-md overflow-hidden">
           <table className="w-full text-sm">
             <thead className="bg-bg-sidebar border-b border-border">
               <tr>

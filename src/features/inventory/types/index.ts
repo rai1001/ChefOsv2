@@ -306,6 +306,14 @@ export const COUNT_STATUS_COLORS: Record<CountStatus, string> = {
   closed: 'text-success',
 }
 
+/** Left-border / badge-status variant (DESIGN.md §Left-Border Status System) */
+export const COUNT_STATUS_VARIANT: Record<CountStatus, 'warning' | 'info' | 'neutral' | 'success'> = {
+  open: 'warning',
+  in_progress: 'info',
+  review: 'neutral',
+  closed: 'success',
+}
+
 export const COUNT_TYPE_LABELS: Record<CountType, string> = {
   full: 'Completo',
   partial: 'Parcial',

@@ -209,19 +209,19 @@ export default function WastePage() {
         ) : (
           <table className="w-full">
             <thead>
-              <tr className="border-b border-border text-left text-xs uppercase tracking-wider text-text-muted">
-                <th className="px-4 py-3">Fecha</th>
-                <th className="px-4 py-3">Producto</th>
-                <th className="px-4 py-3 text-right">Cantidad</th>
-                <th className="px-4 py-3">Tipo</th>
-                <th className="px-4 py-3">Departamento</th>
-                <th className="px-4 py-3">Motivo</th>
+              <tr className="border-b text-left text-text-muted" style={{ borderColor: 'var(--border-strong)', fontFamily: 'var(--font-code)', fontSize: '10px', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+                <th className="px-4 py-3 font-medium">Fecha</th>
+                <th className="px-4 py-3 font-medium">Producto</th>
+                <th className="px-4 py-3 text-right font-medium">Cantidad</th>
+                <th className="px-4 py-3 font-medium">Tipo</th>
+                <th className="px-4 py-3 font-medium">Departamento</th>
+                <th className="px-4 py-3 font-medium">Motivo</th>
               </tr>
             </thead>
             <tbody>
               {records.map((rec) => (
-                <tr key={rec.id} className="border-b border-border last:border-0 hover:bg-bg-hover">
-                  <td className="px-4 py-3 text-sm text-text-secondary">
+                <tr key={rec.id} className="status-rail urgent border-b border-border last:border-0 hover:bg-bg-hover">
+                  <td className="px-4 py-3 text-sm text-text-secondary font-data">
                     {new Date(rec.created_at).toLocaleDateString('es-ES', {
                       day: 'numeric',
                       month: 'short',
@@ -232,11 +232,13 @@ export default function WastePage() {
                   <td className="px-4 py-3 text-sm text-text-primary font-medium">
                     {rec.product?.name ?? '—'}
                   </td>
-                  <td className="px-4 py-3 text-sm text-danger text-right font-medium">
+                  <td className="px-4 py-3 text-sm text-danger text-right font-data">
                     -{Number(rec.quantity).toFixed(2)}
                   </td>
-                  <td className="px-4 py-3 text-sm text-text-secondary">
-                    {WASTE_TYPE_LABELS[rec.waste_type]}
+                  <td className="px-4 py-3">
+                    <span className="badge-status urgent">
+                      {WASTE_TYPE_LABELS[rec.waste_type]}
+                    </span>
                   </td>
                   <td className="px-4 py-3 text-sm text-text-muted">
                     {rec.department ?? '—'}

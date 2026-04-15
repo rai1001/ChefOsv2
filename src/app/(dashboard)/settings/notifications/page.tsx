@@ -31,7 +31,7 @@ function Toggle({
       disabled={disabled}
       className={cn(
         'relative inline-flex h-5 w-9 items-center rounded-full transition-colors disabled:opacity-40',
-        checked ? 'bg-accent' : 'bg-bg-muted'
+        checked ? 'bg-accent' : 'bg-bg-sidebar'
       )}
     >
       <span
@@ -110,7 +110,7 @@ export default function NotificationSettingsPage() {
           <span className="font-medium text-text-primary">Email:</span>{' '}
           Requiere que un administrador configure la clave RESEND_API_KEY en los secrets del
           proyecto Supabase y active el webhook de la tabla{' '}
-          <code className="text-xs bg-bg-muted px-1 py-0.5 rounded">notifications</code>.
+          <code className="text-xs bg-bg-sidebar px-1 py-0.5 rounded">notifications</code>.
         </p>
       </div>
 
@@ -119,13 +119,13 @@ export default function NotificationSettingsPage() {
         {isLoading ? (
           <div className="space-y-2 p-4">
             {Array.from({ length: 8 }).map((_, i) => (
-              <div key={i} className="h-8 animate-pulse rounded bg-bg-muted" />
+              <div key={i} className="h-8 animate-pulse rounded bg-bg-sidebar" />
             ))}
           </div>
         ) : (
           <table className="w-full">
             <thead>
-              <tr className="border-b border-border bg-bg-muted/30">
+              <tr className="border-b border-border bg-bg-sidebar/30">
                 <th className="px-4 py-2.5 text-left text-xs font-medium text-text-muted uppercase tracking-wider">
                   Tipo
                 </th>

@@ -62,7 +62,7 @@ export default function WorkflowDetailPage({
         <div className="h-8 w-64 rounded bg-surface animate-pulse" />
         <div className="grid grid-cols-2 gap-4">
           {[1, 2, 3, 4].map((i) => (
-            <div key={i} className="h-40 rounded-xl bg-surface animate-pulse" />
+            <div key={i} className="h-40 rounded-md bg-surface animate-pulse" />
           ))}
         </div>
       </div>
@@ -113,7 +113,7 @@ export default function WorkflowDetailPage({
       </div>
 
       {/* Progress */}
-      <div className="rounded-xl border border-border bg-surface p-4 space-y-2">
+      <div className="rounded-md border border-border bg-surface p-4 space-y-2">
         <div className="flex items-center justify-between text-sm">
           <span className="text-text-secondary">
             {detail.tasks_done} / {detail.tasks_total} tareas completadas
@@ -122,7 +122,7 @@ export default function WorkflowDetailPage({
             {pct}%
           </span>
         </div>
-        <div className="h-2 rounded-full bg-surface-alt overflow-hidden">
+        <div className="h-2 rounded-full bg-bg-sidebar overflow-hidden">
           <div
             className="h-full rounded-full bg-accent transition-all duration-300"
             style={{ width: `${pct}%` }}
@@ -159,7 +159,7 @@ export default function WorkflowDetailPage({
 
       {/* Mise en place summary */}
       {detail.mise_en_place.length > 0 && (
-        <div className="rounded-xl border border-border bg-surface p-4 space-y-3">
+        <div className="rounded-md border border-border bg-surface p-4 space-y-3">
           <h2 className="text-sm font-semibold text-text-primary">Mise en place</h2>
           <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
             {detail.mise_en_place.map((mep) => {
@@ -168,7 +168,7 @@ export default function WorkflowDetailPage({
                 <Link
                   key={mep.list_id}
                   href="/production/mise-en-place"
-                  className="rounded-lg border border-border bg-surface-alt p-3 hover:border-accent/40 transition-colors"
+                  className="rounded-lg border border-border bg-bg-sidebar p-3 hover:border-accent/40 transition-colors"
                 >
                   <div className="text-xs font-medium text-text-primary truncate">
                     {DEPARTMENT_LABELS[mep.department]}
@@ -192,7 +192,7 @@ export default function WorkflowDetailPage({
       {/* Modal bloqueo */}
       {blockingTask && (
         <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
-          <div className="rounded-xl border border-border bg-background p-5 w-full max-w-md space-y-4">
+          <div className="rounded-md border border-border bg-bg-input p-5 w-full max-w-md space-y-4">
             <h2 className="text-sm font-semibold text-text-primary">Motivo del bloqueo</h2>
             <textarea
               autoFocus
@@ -200,7 +200,7 @@ export default function WorkflowDetailPage({
               onChange={(e) => setBlockReason(e.target.value)}
               placeholder="Describe qué impide continuar..."
               rows={3}
-              className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-text-primary placeholder:text-text-muted resize-none focus:outline-none focus:ring-2 focus:ring-accent/40"
+              className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-text-primary placeholder:text-text-muted resize-none focus:outline-none focus:ring-2 focus:ring-accent"
             />
             <div className="flex gap-2 justify-end">
               <button
@@ -245,8 +245,8 @@ function DeptSection({
   const done = tasks.filter((t) => t.status === 'done').length
 
   return (
-    <div className="rounded-xl border border-border bg-surface overflow-hidden">
-      <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-surface-alt">
+    <div className="rounded-md border border-border bg-surface overflow-hidden">
+      <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-bg-sidebar">
         <span className="text-sm font-semibold text-text-primary">
           {DEPARTMENT_LABELS[department]}
         </span>

@@ -9,7 +9,7 @@ import {
 } from '@/features/inventory/hooks/use-stock-counts'
 import {
   COUNT_STATUS_LABELS,
-  COUNT_STATUS_COLORS,
+  COUNT_STATUS_VARIANT,
   COUNT_TYPE_LABELS,
   type CountType,
 } from '@/features/inventory/types'
@@ -71,7 +71,7 @@ export default function StockCountsPage() {
 
       {/* Formulario nuevo conteo */}
       {showNewForm && (
-        <div className="rounded-xl border border-border bg-surface p-5 space-y-4">
+        <div className="rounded-md border border-border bg-bg-card p-5 space-y-4">
           <h2 className="text-sm font-semibold text-text-primary">Configurar conteo</h2>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -83,7 +83,7 @@ export default function StockCountsPage() {
               <select
                 value={newType}
                 onChange={(e) => setNewType(e.target.value as CountType)}
-                className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-accent/40"
+                className="w-full rounded-lg border border-border bg-bg-input px-3 py-2 text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-accent"
               >
                 {(['full', 'partial', 'blind'] as CountType[]).map((t) => (
                   <option key={t} value={t}>
@@ -103,7 +103,7 @@ export default function StockCountsPage() {
                 value={newLabel}
                 onChange={(e) => setNewLabel(e.target.value)}
                 placeholder="ej. Cierre semana 15"
-                className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-accent/40"
+                className="w-full rounded-lg border border-border bg-bg-input px-3 py-2 text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-accent"
               />
             </div>
 
@@ -118,7 +118,7 @@ export default function StockCountsPage() {
                   'flex items-center gap-2 w-full rounded-lg border px-3 py-2 text-sm transition-colors',
                   isBlind
                     ? 'border-accent bg-accent/10 text-accent'
-                    : 'border-border bg-background text-text-secondary hover:border-accent/50'
+                    : 'border-border bg-bg-input text-text-secondary hover:border-accent/50'
                 )}
               >
                 {isBlind ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
@@ -148,7 +148,7 @@ export default function StockCountsPage() {
       {isLoading ? (
         <div className="space-y-3">
           {[1, 2, 3].map((i) => (
-            <div key={i} className="h-16 rounded-xl bg-surface animate-pulse" />
+            <div key={i} className="h-16 rounded-md bg-bg-card animate-pulse" />
           ))}
         </div>
       ) : (
@@ -202,10 +202,11 @@ function CountRow({ count }: { count: import('@/features/inventory/types').Stock
     closed: <CheckCircle className="h-4 w-4 text-success" />,
   }[count.status]
 
+  const variant = COUNT_STATUS_VARIANT[count.status]
   return (
     <Link
       href={`/inventory/counts/${count.id}`}
-      className="flex items-center gap-4 rounded-xl border border-border bg-surface px-4 py-3 hover:border-accent/40 transition-colors"
+      className={cn('status-rail flex items-center gap-4 rounded-r-md bg-bg-card px-4 py-3 hover:bg-bg-hover transition-colors', variant)}
     >
       <div className="flex-shrink-0">{statusIcon}</div>
 
@@ -215,11 +216,9 @@ function CountRow({ count }: { count: import('@/features/inventory/types').Stock
             {count.label ?? COUNT_TYPE_LABELS[count.count_type]}
           </span>
           {count.is_blind && (
-            <span className="text-xs px-1.5 py-0.5 rounded bg-surface-alt text-text-muted border border-border">
-              Ciego
-            </span>
+            <span className="badge-status neutral">Ciego</span>
           )}
-          <span className={cn('text-xs font-medium', COUNT_STATUS_COLORS[count.status])}>
+          <span className={cn('badge-status', variant)}>
             {COUNT_STATUS_LABELS[count.status]}
           </span>
         </div>

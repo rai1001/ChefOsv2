@@ -6,9 +6,10 @@ import { useActiveHotel } from '@/features/identity/hooks/use-active-hotel';
 import { useAppccRecords, useCreateAppccRecord, useSeedAppccDefaults } from '@/features/compliance/hooks/use-appcc';
 import {
   APPCC_CATEGORIES, APPCC_CATEGORY_LABELS,
-  APPCC_RECORD_STATUSES, APPCC_STATUS_LABELS, APPCC_STATUS_COLORS,
+  APPCC_RECORD_STATUSES, APPCC_STATUS_LABELS, APPCC_STATUS_VARIANT,
   type AppccCategory, type AppccRecordStatus, type AppccRecord,
 } from '@/features/compliance/types';
+import { cn } from '@/lib/utils';
 
 const STATUS_ICONS: Record<AppccRecordStatus, React.ReactNode> = {
   ok:        <CheckCircle2 className="h-4 w-4 text-success" />,
@@ -135,7 +136,7 @@ export default function AppccPage() {
           { label: 'Desviaciones', value: deviations, color: 'text-warning' },
           { label: 'Críticos',   value: critical,  color: 'text-danger' },
         ].map(kpi => (
-          <div key={kpi.label} className="bg-bg-card border border-border rounded-xl p-4 text-center">
+          <div key={kpi.label} className="bg-bg-card border border-border rounded-md p-4 text-center">
             <div className={`text-2xl font-bold ${kpi.color}`}>{kpi.value}</div>
             <div className="text-xs text-text-muted mt-1">{kpi.label}</div>
           </div>
@@ -149,7 +150,7 @@ export default function AppccPage() {
           <p className="text-sm">No hay plantillas APPCC. Carga las plantillas por defecto.</p>
         </div>
       ) : (
-        <div className="bg-bg-card border border-border rounded-xl overflow-hidden">
+        <div className="bg-bg-card border border-border rounded-md overflow-hidden">
           <table className="w-full text-sm">
             <thead className="bg-bg-sidebar border-b border-border">
               <tr>
@@ -161,18 +162,20 @@ export default function AppccPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
-              {records.map(record => (
-                <tr key={record.template_id} className="hover:bg-bg-hover transition-colors">
+              {records.map(record => {
+                const variant = record.status ? APPCC_STATUS_VARIANT[record.status] : 'neutral'
+                return (
+                <tr key={record.template_id} className={cn('status-rail hover:bg-bg-hover transition-colors', record.record_id ? variant : '')}>
                   <td className="px-4 py-3">
                     <div className="font-medium text-text-primary">{record.template_name}</div>
                     <div className="text-xs text-text-muted mt-0.5">{APPCC_CATEGORY_LABELS[record.category]}</div>
                   </td>
                   <td className="px-4 py-3 text-text-secondary hidden md:table-cell max-w-xs">
-                    <span className="font-mono text-xs bg-bg-hover px-2 py-0.5 rounded">{record.critical_limit}</span>
+                    <span className="font-code text-xs text-text-muted">{record.critical_limit}</span>
                   </td>
                   <td className="px-4 py-3">
                     {record.record_id ? (
-                      <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-medium ${APPCC_STATUS_COLORS[record.status!]}`}>
+                      <span className={cn('badge-status inline-flex items-center gap-1.5', variant)}>
                         {STATUS_ICONS[record.status!]}
                         {APPCC_STATUS_LABELS[record.status!]}
                       </span>
@@ -192,7 +195,8 @@ export default function AppccPage() {
                     </button>
                   </td>
                 </tr>
-              ))}
+                )
+              })}
             </tbody>
           </table>
         </div>
@@ -201,7 +205,7 @@ export default function AppccPage() {
       {/* Edit modal */}
       {editingRecord && (
         <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
-          <div className="bg-bg-card rounded-2xl shadow-xl w-full max-w-lg p-6 space-y-4">
+          <div className="bg-bg-card rounded-lg shadow-xl w-full max-w-lg p-6 space-y-4">
             <div>
               <h2 className="text-base font-semibold text-text-primary">{editingRecord.template_name}</h2>
               <p className="text-sm text-text-muted mt-0.5">{editingRecord.control_point}</p>
@@ -262,14 +266,14 @@ export default function AppccPage() {
             <div className="flex gap-3 pt-2">
               <button
                 onClick={() => setEditingRecord(null)}
-                className="flex-1 py-2 border border-border rounded-xl text-sm hover:bg-bg-hover"
+                className="flex-1 py-2 border border-border rounded-md text-sm hover:bg-bg-hover"
               >
                 Cancelar
               </button>
               <button
                 onClick={handleSave}
                 disabled={createRecord.isPending}
-                className="flex-1 py-2 bg-accent text-white rounded-xl text-sm hover:bg-accent-hover disabled:opacity-50"
+                className="flex-1 py-2 bg-accent text-white rounded-md text-sm hover:bg-accent-hover disabled:opacity-50"
               >
                 {createRecord.isPending ? 'Guardando…' : 'Guardar'}
               </button>

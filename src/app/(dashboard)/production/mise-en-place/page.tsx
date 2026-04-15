@@ -44,7 +44,7 @@ export default function MiseEnPlacePage() {
               setSelectedWorkflow(e.target.value)
               setExpandedList(null)
             }}
-            className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-accent/40"
+            className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-accent"
           >
             <option value="">Selecciona un workflow...</option>
             {activeWorkflows.map((w) => (
@@ -59,7 +59,7 @@ export default function MiseEnPlacePage() {
       {/* Listas MeP */}
       {selectedWorkflow && loadingLists && (
         <div className="space-y-2">
-          {[1, 2, 3].map((i) => <div key={i} className="h-14 rounded-xl bg-surface animate-pulse" />)}
+          {[1, 2, 3].map((i) => <div key={i} className="h-14 rounded-md bg-surface animate-pulse" />)}
         </div>
       )}
 
@@ -114,10 +114,10 @@ function MepListCard({
   const totalCount = items?.length ?? 0
 
   return (
-    <div className="rounded-xl border border-border bg-surface overflow-hidden">
+    <div className="rounded-md border border-border bg-surface overflow-hidden">
       <button
         onClick={onToggle}
-        className="w-full flex items-center justify-between px-4 py-3 hover:bg-surface-alt transition-colors"
+        className="w-full flex items-center justify-between px-4 py-3 hover:bg-bg-sidebar transition-colors"
       >
         <div className="flex items-center gap-3">
           {isExpanded
@@ -146,7 +146,7 @@ function MepListCard({
           {isLoading ? (
             <div className="p-4 space-y-2">
               {[1, 2, 3].map((i) => (
-                <div key={i} className="h-8 rounded bg-surface-alt animate-pulse" />
+                <div key={i} className="h-8 rounded bg-bg-sidebar animate-pulse" />
               ))}
             </div>
           ) : items?.length === 0 ? (
@@ -179,7 +179,7 @@ function MepItemRow({
     <button
       onClick={onToggle}
       className={cn(
-        'w-full flex items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-surface-alt',
+        'w-full flex items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-bg-sidebar',
         item.is_done && 'bg-success/5'
       )}
     >

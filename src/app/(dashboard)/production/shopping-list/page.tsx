@@ -57,7 +57,7 @@ export default function ShoppingListPage() {
             type="date"
             value={date}
             onChange={(e) => setDate(e.target.value)}
-            className="rounded-lg border border-border bg-surface px-3 py-2 text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-accent/40"
+            className="rounded-lg border border-border bg-surface px-3 py-2 text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-accent"
           />
         </div>
         <button
@@ -89,11 +89,11 @@ export default function ShoppingListPage() {
             <>
               {/* Summary */}
               <div className="grid grid-cols-2 gap-3">
-                <div className="rounded-xl border border-border bg-surface p-4">
+                <div className="rounded-md border border-border bg-surface p-4">
                   <div className="text-text-primary">{totalItems}</div>
                   <div className="text-xs text-text-muted mt-1">Productos a pedir</div>
                 </div>
-                <div className="rounded-xl border border-border bg-surface p-4">
+                <div className="rounded-md border border-border bg-surface p-4">
                   <div className="text-text-primary">{totalSuppliers}</div>
                   <div className="text-xs text-text-muted mt-1">Proveedores</div>
                 </div>
@@ -102,9 +102,9 @@ export default function ShoppingListPage() {
               {/* Por proveedor */}
               <div className="space-y-4">
                 {groups.map((group, idx) => (
-                  <div key={group.supplier_id ?? idx} className="rounded-xl border border-border bg-surface overflow-hidden">
+                  <div key={group.supplier_id ?? idx} className="rounded-md border border-border bg-surface overflow-hidden">
                     {/* Supplier header */}
-                    <div className="flex items-center gap-3 px-4 py-3 bg-surface-alt border-b border-border">
+                    <div className="flex items-center gap-3 px-4 py-3 bg-bg-sidebar border-b border-border">
                       <Warehouse className="h-4 w-4 text-text-muted flex-shrink-0" />
                       <span className="text-sm font-semibold text-text-primary">
                         {group.supplier_name ?? 'Sin proveedor asignado'}

@@ -56,7 +56,7 @@ function isodow(year: number, month: number, day: number): number {
 
 function cellColor(status: string): string {
   if (status === 'confirmado') return 'bg-success text-white'
-  if (status === 'cancelado')  return 'bg-red-800 text-red-200 line-through opacity-60'
+  if (status === 'cancelado')  return 'bg-danger/80 text-text-primary line-through opacity-60'
   return 'bg-border text-text-secondary'
 }
 
@@ -154,7 +154,7 @@ function ScheduleGrid({ hotelId }: { hotelId: string }) {
         <button
           onClick={handleGenerate}
           disabled={generateMut.isPending}
-          className="flex items-center gap-2 border border-border rounded-xl px-3 py-2 text-sm hover:bg-bg-hover disabled:opacity-50"
+          className="flex items-center gap-2 border border-border rounded-md px-3 py-2 text-sm hover:bg-bg-hover disabled:opacity-50"
         >
           <Wand2 className="h-4 w-4" />
           {generateMut.isPending ? 'Generando…' : 'Generar mes'}
@@ -176,7 +176,7 @@ function ScheduleGrid({ hotelId }: { hotelId: string }) {
           <span className="inline-block size-2.5 rounded-sm bg-success" /> Confirmado
         </span>
         <span className="flex items-center gap-1">
-          <span className="inline-block size-2.5 rounded-sm bg-red-800" /> Cancelado
+          <span className="inline-block size-2.5 rounded-sm bg-danger/80" /> Cancelado
         </span>
         <span>· Clic en celda para cambiar estado</span>
       </div>
@@ -186,7 +186,7 @@ function ScheduleGrid({ hotelId }: { hotelId: string }) {
           Añade personal activo antes de generar el cuadrante.
         </div>
       ) : (
-        <div className="overflow-x-auto rounded-xl border border-border">
+        <div className="overflow-x-auto rounded-md border border-border">
           <table className="w-full text-xs border-collapse">
             <thead>
               <tr className="bg-bg-hover">
@@ -299,7 +299,7 @@ function ShiftModal({
 
   return (
     <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-      <div className="bg-bg-card border border-border rounded-2xl shadow-xl w-full max-w-sm p-6 space-y-4">
+      <div className="bg-bg-card border border-border rounded-lg shadow-xl w-full max-w-sm p-6 space-y-4">
         <h2 className="text-base font-semibold text-text-primary">
           {isEdit ? 'Editar turno' : 'Nuevo turno'}
         </h2>
@@ -357,13 +357,13 @@ function ShiftModal({
 
         <div className="flex gap-3 pt-1">
           <button onClick={onClose} disabled={loading}
-            className="flex-1 py-2 border border-border rounded-xl text-sm hover:bg-bg-hover disabled:opacity-50">
+            className="flex-1 py-2 border border-border rounded-md text-sm hover:bg-bg-hover disabled:opacity-50">
             Cancelar
           </button>
           <button
             onClick={() => onSave(form)}
             disabled={loading || !form.name.trim()}
-            className="flex-1 py-2 bg-accent text-white rounded-xl text-sm hover:bg-bg-card disabled:opacity-50"
+            className="flex-1 py-2 bg-accent text-white rounded-md text-sm hover:bg-accent-hover disabled:opacity-50"
           >
             {loading ? 'Guardando…' : 'Guardar'}
           </button>
@@ -424,7 +424,7 @@ function ShiftsTab({ hotelId }: { hotelId: string }) {
       <div className="flex justify-end">
         <button
           onClick={openNew}
-          className="flex items-center gap-2 border border-border rounded-xl px-3 py-2 text-sm hover:bg-bg-hover"
+          className="flex items-center gap-2 border border-border rounded-md px-3 py-2 text-sm hover:bg-bg-hover"
         >
           <Plus className="h-4 w-4" /> Nuevo turno
         </button>
@@ -441,7 +441,7 @@ function ShiftsTab({ hotelId }: { hotelId: string }) {
           Sin turnos definidos. Crea al menos un turno para poder generar horarios.
         </div>
       ) : (
-        <div className="rounded-xl border border-border bg-bg-card overflow-hidden">
+        <div className="rounded-md border border-border bg-bg-card overflow-hidden">
           <table className="w-full text-sm">
             <thead className="bg-bg-hover border-b border-border">
               <tr>
@@ -556,7 +556,7 @@ function RuleModal({
 
   return (
     <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-      <div className="bg-bg-card border border-border rounded-2xl shadow-xl w-full max-w-sm p-6 space-y-4">
+      <div className="bg-bg-card border border-border rounded-lg shadow-xl w-full max-w-sm p-6 space-y-4">
         <h2 className="text-base font-semibold text-text-primary">Nueva regla de horario</h2>
 
         {error && (
@@ -641,13 +641,13 @@ function RuleModal({
 
         <div className="flex gap-3 pt-1">
           <button onClick={onClose} disabled={loading}
-            className="flex-1 py-2 border border-border rounded-xl text-sm hover:bg-bg-hover disabled:opacity-50">
+            className="flex-1 py-2 border border-border rounded-md text-sm hover:bg-bg-hover disabled:opacity-50">
             Cancelar
           </button>
           <button
             onClick={() => onSave(form)}
             disabled={loading || !form.shift_id || form.days_of_week.length === 0}
-            className="flex-1 py-2 bg-accent text-white rounded-xl text-sm hover:bg-bg-card disabled:opacity-50"
+            className="flex-1 py-2 bg-accent text-white rounded-md text-sm hover:bg-accent-hover disabled:opacity-50"
           >
             {loading ? 'Guardando…' : 'Crear regla'}
           </button>
@@ -705,7 +705,7 @@ function RulesTab({ hotelId }: { hotelId: string }) {
       <div className="flex justify-end">
         <button
           onClick={() => { setSaveError(''); setDialogOpen(true) }}
-          className="flex items-center gap-2 border border-border rounded-xl px-3 py-2 text-sm hover:bg-bg-hover"
+          className="flex items-center gap-2 border border-border rounded-md px-3 py-2 text-sm hover:bg-bg-hover"
         >
           <Plus className="h-4 w-4" /> Nueva regla
         </button>
@@ -716,7 +716,7 @@ function RulesTab({ hotelId }: { hotelId: string }) {
           Sin reglas. Define reglas para que el sistema pueda generar el cuadrante automáticamente.
         </div>
       ) : (
-        <div className="rounded-xl border border-border bg-bg-card overflow-hidden">
+        <div className="rounded-md border border-border bg-bg-card overflow-hidden">
           <table className="w-full text-sm">
             <thead className="bg-bg-hover border-b border-border">
               <tr>
@@ -784,7 +784,7 @@ function RulesTab({ hotelId }: { hotelId: string }) {
                     <button
                       onClick={() => handleDelete(r)}
                       disabled={deleteMut.isPending}
-                      className="p-1.5 rounded-lg hover:bg-bg-card text-red-400 hover:text-danger disabled:opacity-50"
+                      className="p-1.5 rounded-lg hover:bg-bg-hover text-danger/80 hover:text-danger disabled:opacity-50"
                     >
                       <Trash2 className="h-3.5 w-3.5" />
                     </button>

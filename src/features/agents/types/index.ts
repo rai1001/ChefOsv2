@@ -105,6 +105,15 @@ export const SUGGESTION_STATUS_COLORS: Record<SuggestionStatus, string> = {
   expired:  'bg-neutral-500/15 text-neutral-400 border border-neutral-500/30',
 }
 
+/** Left-border / badge-status variant (DESIGN.md §Left-Border Status System) */
+export const SUGGESTION_STATUS_VARIANT: Record<SuggestionStatus, 'neutral' | 'warning' | 'info' | 'success' | 'urgent'> = {
+  pending:  'warning',
+  approved: 'info',
+  rejected: 'urgent',
+  applied:  'success',
+  expired:  'neutral',
+}
+
 export const ACTION_LABELS: Record<SuggestionAction, string> = {
   enqueue_job:        'Encolar tarea',
   sync_recipe_costs:  'Sincronizar costes',

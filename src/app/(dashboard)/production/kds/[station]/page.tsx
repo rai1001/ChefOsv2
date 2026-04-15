@@ -102,7 +102,7 @@ export default function KDSPage({
       {isLoading ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
           {[1, 2, 3].map((i) => (
-            <div key={i} className="h-48 rounded-xl bg-surface animate-pulse" />
+            <div key={i} className="h-48 rounded-md bg-surface animate-pulse" />
           ))}
         </div>
       ) : activeOrders.length === 0 ? (
@@ -136,7 +136,7 @@ export default function KDSPage({
       {/* Modal nueva comanda */}
       {showNewOrder && (
         <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
-          <div className="rounded-xl border border-border bg-background p-5 w-full max-w-sm space-y-4">
+          <div className="rounded-md border border-border bg-bg-input p-5 w-full max-w-sm space-y-4">
             <h2 className="text-sm font-semibold text-text-primary">
               Nueva comanda — {DEPARTMENT_LABELS[dept] ?? dept}
             </h2>
@@ -189,13 +189,13 @@ function OrderCard({
 
   return (
     <div className={cn(
-      'rounded-xl border bg-surface overflow-hidden flex flex-col',
+      'rounded-md border bg-surface overflow-hidden flex flex-col',
       allReady ? 'border-success/40' : 'border-border'
     )}>
       {/* Order header */}
       <div className={cn(
         'flex items-center justify-between px-3 py-2',
-        allReady ? 'bg-success/10' : 'bg-surface-alt'
+        allReady ? 'bg-success/10' : 'bg-bg-sidebar'
       )}>
         <div className="flex items-center gap-2">
           <span className="text-lg font-bold text-text-primary">
@@ -225,7 +225,7 @@ function OrderCard({
               disabled={item.status === 'ready' || item.status === 'skipped'}
               className={cn(
                 'w-full flex items-center gap-3 px-3 py-2.5 text-left transition-colors',
-                item.status === 'ready' ? 'bg-success/5' : 'hover:bg-surface-alt',
+                item.status === 'ready' ? 'bg-success/5' : 'hover:bg-bg-sidebar',
                 item.status === 'in_progress' && 'bg-warning/5'
               )}
             >
@@ -267,7 +267,7 @@ function OrderCard({
                 if (e.key === 'Enter') onConfirmAddItem()
                 if (e.key === 'Escape') onCancelAddItem()
               }}
-              className="w-full rounded-lg border border-border bg-background px-2 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-accent/40"
+              className="w-full rounded-lg border border-border bg-bg-input px-2 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-accent"
             />
             <div className="flex items-center gap-2">
               <input
@@ -275,7 +275,7 @@ function OrderCard({
                 min="1"
                 value={newItemServings}
                 onChange={(e) => onNewItemServingsChange(parseInt(e.target.value) || 1)}
-                className="w-16 rounded-lg border border-border bg-background px-2 py-1.5 text-xs text-center focus:outline-none"
+                className="w-16 rounded-lg border border-border bg-bg-input px-2 py-1.5 text-xs text-center focus:outline-none"
               />
               <span className="text-xs text-text-muted">raciones</span>
               <div className="flex gap-1 ml-auto">
@@ -295,7 +295,7 @@ function OrderCard({
         ) : (
           <button
             onClick={onAddItem}
-            className="w-full flex items-center gap-2 px-3 py-2 text-xs text-text-muted hover:text-accent hover:bg-surface-alt transition-colors"
+            className="w-full flex items-center gap-2 px-3 py-2 text-xs text-text-muted hover:text-accent hover:bg-bg-sidebar transition-colors"
           >
             <Plus className="h-3 w-3" />
             Añadir plato

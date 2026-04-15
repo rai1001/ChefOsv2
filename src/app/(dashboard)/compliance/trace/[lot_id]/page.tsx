@@ -9,7 +9,7 @@ import { LABEL_TYPE_LABELS } from '@/features/compliance/types';
 
 function SectionCard({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div className="bg-bg-card border border-border rounded-xl overflow-hidden">
+    <div className="bg-bg-card border border-border rounded-md overflow-hidden">
       <div className="px-4 py-3 bg-bg-sidebar border-b border-border">
         <h3 className="text-sm font-semibold text-text-secondary">{title}</h3>
       </div>
@@ -75,11 +75,11 @@ export default function TraceLotPage({ params }: { params: Promise<{ lot_id: str
           value={searchInput}
           onChange={e => setSearchInput(e.target.value)}
           placeholder="ID de lote o código de etiqueta…"
-          className="flex-1 border border-border rounded-xl px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-accent"
+          className="flex-1 border border-border rounded-md px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-accent"
         />
         <button
           type="submit"
-          className="flex items-center gap-2 bg-accent text-white px-4 py-2 rounded-xl text-sm hover:bg-bg-card"
+          className="flex items-center gap-2 bg-accent text-white px-4 py-2 rounded-md text-sm hover:bg-accent-hover"
         >
           <Search className="h-4 w-4" />
           Trazar
@@ -90,14 +90,14 @@ export default function TraceLotPage({ params }: { params: Promise<{ lot_id: str
       {isLoading && (
         <div className="space-y-4">
           {Array.from({ length: 4 }).map((_, i) => (
-            <div key={i} className="h-32 bg-bg-hover rounded-xl animate-pulse" />
+            <div key={i} className="h-32 bg-bg-hover rounded-md animate-pulse" />
           ))}
         </div>
       )}
 
       {/* Error */}
       {error && (
-        <div className="flex items-center gap-3 bg-bg-card border border-danger/40 rounded-xl p-4 text-danger text-sm">
+        <div className="flex items-center gap-3 bg-bg-card border border-danger/40 rounded-md p-4 text-danger text-sm">
           <AlertTriangle className="h-5 w-5 flex-shrink-0" />
           No se encontró el lote. Verifica el ID e inténtalo de nuevo.
         </div>
@@ -107,7 +107,7 @@ export default function TraceLotPage({ params }: { params: Promise<{ lot_id: str
       {chain && (
         <div className="space-y-4">
           {/* Lot summary */}
-          <div className="bg-accent text-white rounded-xl p-5">
+          <div className="bg-accent text-white rounded-md p-5">
             <div className="flex items-start justify-between">
               <div>
                 <div className="flex items-center gap-2 mb-1">

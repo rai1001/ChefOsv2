@@ -9,7 +9,7 @@ import {
 import {
   JOB_TYPE_LABELS,
   JOB_STATUS_LABELS,
-  JOB_STATUS_COLORS,
+  JOB_STATUS_VARIANT,
   LOG_LEVEL_COLORS,
 } from '@/features/automation/types'
 import type { AutomationJob } from '@/features/automation/types'
@@ -67,19 +67,15 @@ function JobRow({ job }: { job: AutomationJob }) {
   const [expanded, setExpanded] = useState(false)
   const cancel = useCancelJob()
 
+  const variant = JOB_STATUS_VARIANT[job.status]
   return (
     <>
-      <tr className="border-b border-border/50 hover:bg-bg-hover/30 transition-colors">
+      <tr className={cn('status-rail border-b border-border/50 hover:bg-bg-hover/30 transition-colors', variant)}>
         <td className="py-2.5 px-3 text-sm text-text-primary">
           {JOB_TYPE_LABELS[job.job_type]}
         </td>
         <td className="py-2.5 px-3">
-          <span
-            className={cn(
-              'rounded px-2 py-0.5 text-xs font-medium',
-              JOB_STATUS_COLORS[job.status]
-            )}
-          >
+          <span className={cn('badge-status', variant)}>
             {JOB_STATUS_LABELS[job.status]}
           </span>
         </td>
@@ -139,7 +135,7 @@ function JobRow({ job }: { job: AutomationJob }) {
         <tr className="border-b border-border/50">
           <td
             colSpan={6}
-            className="bg-bg-muted/40 rounded-b"
+            className="bg-bg-sidebar/40 rounded-b"
           >
             <JobLogsPanel job={job} />
           </td>
@@ -179,19 +175,17 @@ export default function AutomationPage() {
 
       {/* KPI bar */}
       <div className="grid grid-cols-3 gap-3">
-        <div className="rounded-lg border border-border bg-bg-card p-3 text-center">
-          <p className="text-2xl font-bold text-warning">{pending}</p>
-          <p className="text-xs text-text-muted mt-0.5">Pendientes</p>
+        <div className="status-rail warning rounded-r-md bg-bg-card p-3">
+          <p className="kpi-value">{pending}</p>
+          <p className="kpi-label mt-1">Pendientes</p>
         </div>
-        <div className="rounded-lg border border-border bg-bg-card p-3 text-center">
-          <p className="text-2xl font-bold text-info">{running}</p>
-          <p className="text-xs text-text-muted mt-0.5">En ejecución</p>
+        <div className="status-rail info rounded-r-md bg-bg-card p-3">
+          <p className="kpi-value">{running}</p>
+          <p className="kpi-label mt-1">En ejecución</p>
         </div>
-        <div className="rounded-lg border border-border bg-bg-card p-3 text-center">
-          <p className={cn('text-2xl font-bold', failed > 0 ? 'text-danger' : 'text-text-primary')}>
-            {failed}
-          </p>
-          <p className="text-xs text-text-muted mt-0.5">Fallidos</p>
+        <div className={cn('status-rail rounded-r-md bg-bg-card p-3', failed > 0 ? 'urgent' : '')}>
+          <p className="kpi-value">{failed}</p>
+          <p className="kpi-label mt-1">Fallidos</p>
         </div>
       </div>
 
@@ -200,7 +194,7 @@ export default function AutomationPage() {
         {isLoading ? (
           <div className="space-y-2 p-4">
             {Array.from({ length: 5 }).map((_, i) => (
-              <div key={i} className="h-8 animate-pulse rounded bg-bg-muted" />
+              <div key={i} className="h-8 animate-pulse rounded bg-bg-sidebar" />
             ))}
           </div>
         ) : !jobs || jobs.length === 0 ? (
@@ -213,7 +207,7 @@ export default function AutomationPage() {
         ) : (
           <table className="w-full">
             <thead>
-              <tr className="border-b border-border bg-bg-muted/30">
+              <tr className="border-b border-border bg-bg-sidebar/30">
                 <th className="px-3 py-2 text-left text-xs font-medium text-text-muted uppercase tracking-wider">
                   Tipo
                 </th>

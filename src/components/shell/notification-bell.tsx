@@ -115,7 +115,7 @@ export function NotificationBell({ hotelId }: { hotelId: string }) {
             {isLoading ? (
               <div className="space-y-1 p-2">
                 {Array.from({ length: 3 }).map((_, i) => (
-                  <div key={i} className="h-10 animate-pulse rounded bg-bg-muted" />
+                  <div key={i} className="h-10 animate-pulse rounded bg-bg-sidebar" />
                 ))}
               </div>
             ) : notifications.length === 0 ? (
@@ -132,7 +132,7 @@ export function NotificationBell({ hotelId }: { hotelId: string }) {
                         onClick={() => handleNotificationClick(n.id)}
                         className={cn(
                           'flex items-start gap-2.5 px-3 py-2.5 text-left w-full hover:bg-bg-hover transition-colors',
-                          !n.is_read && 'bg-bg-muted/50'
+                          !n.is_read && 'bg-bg-sidebar/50'
                         )}
                       >
                         <NotifDot severity={n.severity} read={n.is_read} />
@@ -143,7 +143,7 @@ export function NotificationBell({ hotelId }: { hotelId: string }) {
                         onClick={() => handleNotificationClick(n.id)}
                         className={cn(
                           'flex items-start gap-2.5 px-3 py-2.5 text-left w-full hover:bg-bg-hover transition-colors',
-                          !n.is_read && 'bg-bg-muted/50'
+                          !n.is_read && 'bg-bg-sidebar/50'
                         )}
                       >
                         <NotifDot severity={n.severity} read={n.is_read} />
@@ -191,7 +191,7 @@ function NotifDot({ severity, read }: { severity: string; read: boolean }) {
         className={cn(
           'relative inline-flex h-2 w-2 rounded-full',
           read
-            ? 'bg-bg-muted'
+            ? 'bg-bg-sidebar'
             : (NOTIFICATION_SEVERITY_DOT[severity as keyof typeof NOTIFICATION_SEVERITY_DOT] ?? 'bg-info')
         )}
       />

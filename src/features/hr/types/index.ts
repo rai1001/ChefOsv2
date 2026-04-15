@@ -126,6 +126,13 @@ export const SCHEDULE_STATUS_LABELS: Record<ScheduleStatus, string> = {
   cancelado:  'Cancelado',
 }
 
+/** Left-border / badge-status variant (DESIGN.md §Left-Border Status System) */
+export const SCHEDULE_STATUS_VARIANT: Record<ScheduleStatus, 'warning' | 'success' | 'urgent'> = {
+  propuesto:  'warning',
+  confirmado: 'success',
+  cancelado:  'urgent',
+}
+
 // 1=Lun … 7=Dom
 export const DAY_SHORT_LABELS: Record<number, string> = {
   1: 'L',

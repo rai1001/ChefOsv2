@@ -66,7 +66,7 @@ function PersonnelModal({
 
   return (
     <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-      <div className="bg-bg-card border border-border rounded-2xl shadow-xl w-full max-w-md p-6 space-y-4">
+      <div className="bg-bg-card border border-border rounded-lg shadow-xl w-full max-w-md p-6 space-y-4">
         <h2 className="text-base font-semibold text-text-primary">
           {isEdit ? 'Editar empleado' : 'Nuevo empleado'}
         </h2>
@@ -161,14 +161,14 @@ function PersonnelModal({
           <button
             onClick={onClose}
             disabled={loading}
-            className="flex-1 py-2 border border-border rounded-xl text-sm hover:bg-bg-hover disabled:opacity-50"
+            className="flex-1 py-2 border border-border rounded-md text-sm hover:bg-bg-hover disabled:opacity-50"
           >
             Cancelar
           </button>
           <button
             onClick={() => onSave(form)}
             disabled={loading || !form.name.trim()}
-            className="flex-1 py-2 bg-accent text-white rounded-xl text-sm hover:bg-bg-card disabled:opacity-50"
+            className="flex-1 py-2 bg-accent text-white rounded-md text-sm hover:bg-accent-hover disabled:opacity-50"
           >
             {loading ? 'Guardando…' : 'Guardar'}
           </button>
@@ -262,7 +262,7 @@ export default function PersonnelPage() {
         </div>
         <button
           onClick={openNew}
-          className="flex items-center gap-2 bg-accent text-white px-4 py-2 rounded-xl text-sm hover:bg-bg-card"
+          className="flex items-center gap-2 bg-accent text-white px-4 py-2 rounded-md text-sm hover:bg-accent-hover"
         >
           <UserPlus className="h-4 w-4" />
           Nuevo empleado
@@ -295,7 +295,7 @@ export default function PersonnelPage() {
           </p>
         </div>
       ) : (
-        <div className="rounded-xl border border-border bg-bg-card overflow-hidden">
+        <div className="rounded-md border border-border bg-bg-card overflow-hidden">
           <table className="w-full text-sm">
             <thead className="bg-bg-hover border-b border-border">
               <tr>

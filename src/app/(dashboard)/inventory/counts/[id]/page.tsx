@@ -69,7 +69,7 @@ export default function StockCountDetailPage({
         <div className="h-8 w-48 rounded bg-surface animate-pulse mb-4" />
         <div className="space-y-2">
           {[1, 2, 3, 4, 5].map((i) => (
-            <div key={i} className="h-12 rounded-xl bg-surface animate-pulse" />
+            <div key={i} className="h-12 rounded-md bg-surface animate-pulse" />
           ))}
         </div>
       </div>
@@ -121,15 +121,15 @@ export default function StockCountDetailPage({
 
       {/* Stats */}
       <div className="grid grid-cols-3 gap-3">
-        <div className="rounded-xl border border-border bg-surface p-4">
+        <div className="rounded-md border border-border bg-surface p-4">
           <div className="text-text-primary">{lines?.length ?? 0}</div>
           <div className="text-xs text-text-muted mt-1">Total líneas</div>
         </div>
-        <div className="rounded-xl border border-border bg-surface p-4">
+        <div className="rounded-md border border-border bg-surface p-4">
           <div className="text-2xl font-bold text-success">{submittedLines.length}</div>
           <div className="text-xs text-text-muted mt-1">Contadas</div>
         </div>
-        <div className="rounded-xl border border-border bg-surface p-4">
+        <div className="rounded-md border border-border bg-surface p-4">
           <div className={cn('text-2xl font-bold', linesWithVariance.length > 0 ? 'text-warning' : 'text-text-primary')}>
             {linesWithVariance.length}
           </div>
@@ -139,7 +139,7 @@ export default function StockCountDetailPage({
 
       {/* Acciones de revisión */}
       {isEditable && pendingLines.length === 0 && submittedLines.length > 0 && (
-        <div className="rounded-xl border border-success/30 bg-success/5 p-4 flex items-center justify-between gap-4">
+        <div className="rounded-md border border-success/30 bg-success/5 p-4 flex items-center justify-between gap-4">
           <div className="flex items-center gap-2 text-sm text-text-primary">
             <Check className="h-4 w-4 text-success" />
             Todas las líneas contadas. ¿Aplicar ajustes de inventario?
@@ -219,7 +219,7 @@ export default function StockCountDetailPage({
       {loadingLines && (
         <div className="space-y-1">
           {[1, 2, 3].map((i) => (
-            <div key={i} className="h-12 rounded-xl bg-surface animate-pulse" />
+            <div key={i} className="h-12 rounded-md bg-surface animate-pulse" />
           ))}
         </div>
       )}
@@ -256,7 +256,7 @@ function LineRow({
   return (
     <div
       className={cn(
-        'flex items-center gap-3 rounded-xl border px-4 py-3 transition-colors',
+        'flex items-center gap-3 rounded-md border px-4 py-3 transition-colors',
         hasVariance
           ? 'border-warning/30 bg-warning/5'
           : line.counted_qty !== null
@@ -304,7 +304,7 @@ function LineRow({
                 if (e.key === 'Enter') onSubmit()
                 if (e.key === 'Escape') onCancel()
               }}
-              className="w-20 rounded-lg border border-accent bg-background px-2 py-1 text-xs text-right focus:outline-none focus:ring-2 focus:ring-accent/40"
+              className="w-20 rounded-lg border border-accent bg-bg-input px-2 py-1 text-xs text-right focus:outline-none focus:ring-2 focus:ring-accent"
             />
             <button
               onClick={onSubmit}

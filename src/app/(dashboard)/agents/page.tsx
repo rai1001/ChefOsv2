@@ -14,11 +14,12 @@ import {
 import {
   AGENT_LABELS,
   SUGGESTION_STATUS_LABELS,
-  SUGGESTION_STATUS_COLORS,
+  SUGGESTION_STATUS_VARIANT,
   ACTION_LABELS,
   type AgentSuggestion,
   type SuggestionStatus,
 } from '@/features/agents/types'
+import { cn } from '@/lib/utils'
 
 const STATUS_TABS: { value: SuggestionStatus; label: string }[] = [
   { value: 'pending',  label: 'Pendientes' },
@@ -39,7 +40,7 @@ function relativeTime(iso: string) {
 
 function ActionBadge({ action }: { action: AgentSuggestion['action'] }) {
   return (
-    <span className="text-xs px-1.5 py-0.5 rounded bg-neutral-700 text-neutral-300">
+    <span className="badge-status neutral">
       {ACTION_LABELS[action]}
     </span>
   )
@@ -60,38 +61,39 @@ function SuggestionCard({
 }) {
   const [rejectMode, setRejectMode] = useState(false)
   const [note, setNote] = useState('')
+  const variant = SUGGESTION_STATUS_VARIANT[s.status]
 
   return (
-    <div className="bg-bg-card border border-border rounded-lg p-4 flex flex-col gap-3">
+    <div className={cn('status-rail bg-bg-card rounded-r-md p-4 flex flex-col gap-3', variant)}>
       {/* Header */}
       <div className="flex items-start justify-between gap-3">
         <div className="flex items-center gap-2 min-w-0">
-          <Bot className="h-4 w-4 text-neutral-400 shrink-0" />
+          <Bot className="h-4 w-4 text-text-muted shrink-0" />
           <div className="min-w-0">
             <p className="text-sm font-medium text-text-primary truncate">{s.title}</p>
-            <p className="text-xs text-neutral-500">
+            <p className="text-xs text-text-muted">
               {AGENT_LABELS[s.agent_type]} · {relativeTime(s.created_at)}
             </p>
           </div>
         </div>
-        <span className={`text-xs px-2 py-0.5 rounded-full shrink-0 ${SUGGESTION_STATUS_COLORS[s.status]}`}>
+        <span className={cn('badge-status shrink-0', variant)}>
           {SUGGESTION_STATUS_LABELS[s.status]}
         </span>
       </div>
 
       {/* Descripción */}
-      <p className="text-sm text-neutral-300">{s.description}</p>
+      <p className="text-sm text-text-secondary">{s.description}</p>
 
       {/* Acción + contexto */}
       <div className="flex items-center gap-2 flex-wrap">
         <ActionBadge action={s.action} />
         {s.context_type && s.context_id && (
-          <span className="text-xs text-neutral-500">
+          <span className="text-xs text-text-muted">
             contexto: {s.context_type}
           </span>
         )}
         {s.expires_at && s.status === 'pending' && (
-          <span className="text-xs text-neutral-500 flex items-center gap-1">
+          <span className="text-xs text-text-muted flex items-center gap-1">
             <Clock className="h-3 w-3" />
             expira {relativeTime(s.expires_at)}
           </span>
@@ -114,7 +116,7 @@ function SuggestionCard({
               <button
                 onClick={() => setRejectMode(true)}
                 disabled={approving || rejecting}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded text-sm bg-neutral-700 hover:bg-neutral-600 text-neutral-200 disabled:opacity-50 transition-colors"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded text-sm bg-bg-hover hover:bg-bg-hover text-text-primary disabled:opacity-50 transition-colors"
               >
                 <XCircle className="h-3.5 w-3.5" />
                 Rechazar
@@ -127,19 +129,19 @@ function SuggestionCard({
                 onChange={e => setNote(e.target.value)}
                 placeholder="Motivo del rechazo (opcional)"
                 rows={2}
-                className="w-full px-3 py-2 rounded bg-bg-subtle border border-border text-sm text-text-primary placeholder:text-neutral-500 resize-none focus:outline-none focus:border-neutral-500"
+                className="w-full px-3 py-2 rounded bg-bg-input border border-border text-sm text-text-primary placeholder:text-text-muted resize-none focus:outline-none focus:border-accent"
               />
               <div className="flex gap-2">
                 <button
                   onClick={() => { onReject(s.id, note || undefined); setRejectMode(false) }}
                   disabled={rejecting}
-                  className="px-3 py-1.5 rounded text-sm bg-red-600/80 hover:bg-red-600 text-white disabled:opacity-50 transition-colors"
+                  className="px-3 py-1.5 rounded text-sm bg-danger/80 hover:bg-danger text-white disabled:opacity-50 transition-colors"
                 >
                   {rejecting ? 'Rechazando…' : 'Confirmar rechazo'}
                 </button>
                 <button
                   onClick={() => setRejectMode(false)}
-                  className="px-3 py-1.5 rounded text-sm bg-neutral-700 hover:bg-neutral-600 text-neutral-200 transition-colors"
+                  className="px-3 py-1.5 rounded text-sm bg-bg-hover hover:bg-bg-hover text-text-primary transition-colors"
                 >
                   Cancelar
                 </button>
@@ -151,7 +153,7 @@ function SuggestionCard({
 
       {/* Nota de rechazo */}
       {s.status === 'rejected' && s.review_note && (
-        <p className="text-xs text-neutral-500 italic">Motivo: {s.review_note}</p>
+        <p className="text-xs text-text-muted italic">Motivo: {s.review_note}</p>
       )}
     </div>
   )
@@ -186,17 +188,17 @@ export default function AgentsPage() {
       {/* Cabecera */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <Bot className="h-6 w-6 text-neutral-300" />
+          <Bot className="h-6 w-6 text-text-primary" />
           <div>
             <h1 className="text-text-primary">Agentes</h1>
-            <p className="text-sm text-neutral-400">
+            <p className="text-sm text-text-secondary">
               10 agentes analizan tu operación y sugieren acciones. Tú decides.
             </p>
           </div>
         </div>
         <button
           onClick={() => refetch()}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded text-sm bg-neutral-700 hover:bg-neutral-600 text-neutral-200 transition-colors"
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded text-sm bg-bg-hover hover:bg-bg-hover text-text-primary transition-colors"
         >
           <RefreshCw className="h-3.5 w-3.5" />
           Actualizar
@@ -206,23 +208,23 @@ export default function AgentsPage() {
       {/* KPI bar */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {[
-          { label: 'Pendientes', value: suggestions.filter(s => s.status === 'pending').length,  color: 'text-yellow-400' },
-          { label: 'Aplicadas',  value: suggestions.filter(s => s.status === 'applied').length,  color: 'text-green-400' },
-          { label: 'Rechazadas', value: suggestions.filter(s => s.status === 'rejected').length, color: 'text-red-400' },
-          { label: 'Expiradas',  value: suggestions.filter(s => s.status === 'expired').length,  color: 'text-neutral-400' },
+          { label: 'Pendientes', value: suggestions.filter(s => s.status === 'pending').length,  color: 'text-warning' },
+          { label: 'Aplicadas',  value: suggestions.filter(s => s.status === 'applied').length,  color: 'text-success' },
+          { label: 'Rechazadas', value: suggestions.filter(s => s.status === 'rejected').length, color: 'text-danger' },
+          { label: 'Expiradas',  value: suggestions.filter(s => s.status === 'expired').length,  color: 'text-text-secondary' },
         ].map(kpi => (
           <div key={kpi.label} className="bg-bg-card border border-border rounded-lg p-3 text-center">
             <p className={`text-2xl font-bold ${kpi.color}`}>{kpi.value}</p>
-            <p className="text-xs text-neutral-500 mt-0.5">{kpi.label}</p>
+            <p className="text-xs text-text-muted mt-0.5">{kpi.label}</p>
           </div>
         ))}
       </div>
 
       {/* Banner informativo si hay pendientes */}
       {activeTab === 'pending' && pending.length > 0 && (
-        <div className="flex items-start gap-3 p-3 rounded-lg bg-yellow-500/10 border border-yellow-500/20">
-          <AlertTriangle className="h-4 w-4 text-yellow-400 mt-0.5 shrink-0" />
-          <p className="text-sm text-yellow-300">
+        <div className="flex items-start gap-3 p-3 rounded-lg bg-warning/10 border border-warning/30">
+          <AlertTriangle className="h-4 w-4 text-warning mt-0.5 shrink-0" />
+          <p className="text-sm text-warning">
             Tienes <strong>{pending.length}</strong> sugerencia{pending.length > 1 ? 's' : ''} pendiente{pending.length > 1 ? 's' : ''} de revisión.
             Los agentes nunca actúan solos — tú siempre confirmas.
           </p>
@@ -238,7 +240,7 @@ export default function AgentsPage() {
             className={`px-4 py-2 text-sm transition-colors ${
               activeTab === tab.value
                 ? 'border-b-2 border-text-primary text-text-primary'
-                : 'text-neutral-500 hover:text-neutral-300'
+                : 'text-text-muted hover:text-text-primary'
             }`}
           >
             {tab.label}
@@ -255,8 +257,8 @@ export default function AgentsPage() {
         </div>
       ) : suggestions.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-16 text-center">
-          <Info className="h-10 w-10 text-neutral-600 mb-3" />
-          <p className="text-neutral-400 text-sm">
+          <Info className="h-10 w-10 text-text-muted mb-3" />
+          <p className="text-text-secondary text-sm">
             {activeTab === 'pending'
               ? 'No hay sugerencias pendientes. Los agentes están monitorizando tu operación.'
               : `No hay sugerencias ${SUGGESTION_STATUS_LABELS[activeTab].toLowerCase()}.`}
@@ -281,7 +283,7 @@ export default function AgentsPage() {
       <div className="flex items-center justify-end pt-2">
         <a
           href="/agents/config"
-          className="flex items-center gap-1 text-sm text-neutral-500 hover:text-neutral-300 transition-colors"
+          className="flex items-center gap-1 text-sm text-text-muted hover:text-text-primary transition-colors"
         >
           <Zap className="h-3.5 w-3.5" />
           Configurar agentes

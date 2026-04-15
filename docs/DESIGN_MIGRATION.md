@@ -3,7 +3,7 @@
 > Plan ejecutable y tracker vivo del rollout del design system **Industrial Control Surface** ([DESIGN.md](../DESIGN.md)) sobre toda la app.
 > Referencia visual: [`/design-system`](../src/app/design-system/page.tsx).
 
-Última actualización: **2026-04-15** · Sesión 15 · Fase activa: **F3 cerrada → F4 TODO**
+Última actualización: **2026-04-15** · Sesión 15 · Fase activa: **F4 cerrada → F5 (polish) TODO**
 
 ---
 
@@ -118,16 +118,35 @@ Migrar cada tabla a:
 
 🟡 = página ya en dark-mode con tokens DS, pero aún sin `status-rail`/`badge-status` aplicado a filas de tabla. Funciona y es coherente visualmente, sólo pierde la señal de estado por left-border. F4 lo cierra.
 
-### F4 — Detalle + formularios ⏳ TODO
+### F4 — Status-rail en pantallas 🟡 + radios globales ✅ DONE (Sesión 15)
 
-Páginas de detalle `/events/[id]`, `/recipes/[id]`, `/procurement/orders/[id]`, etc. Aplicar:
+**Nuevos mappings `*_STATUS_VARIANT`:**
+- `COUNT_STATUS_VARIANT` (inventory)
+- `SUGGESTION_STATUS_VARIANT` (agents)
+- `INTEGRATION_STATUS_VARIANT` (integrations) + `SYNC_VARIANT` local
+- `JOB_STATUS_VARIANT` (automation)
+- `SCHEDULE_STATUS_VARIANT` (hr)
+- `APPCC_STATUS_VARIANT` (compliance)
 
-- Header con `h1` Syne 28px + meta en `.font-code`.
-- Secciones internas con `h2` Syne 22px.
-- Formularios: inputs con `bg-bg-input`, borde `--border`, focus ring `--color-border-focus`.
-- Labels con `.kpi-label` (13px, 500) — o nueva clase `.form-label` si 13px resulta poco.
-- Botones: `.bg-accent` primario, borde-only secundario, ghost, destructivo con `urgent-bg`.
-- Reescribir el botón "Eliminar" destructivo — actualmente `bg-danger text-white`.
+**Pantallas con `status-rail`+`badge-status` aplicado:**
+- `inventory/counts` → CountRow ahora usa rail por `count.status`.
+- `inventory/waste` → filas urgent (todas — es merma) + badge por `waste_type`.
+- `agents` → SuggestionCard con rail por `suggestion.status`; ActionBadge ahora `badge-status neutral`; purgado `neutral-*`/`yellow-*`/`green-*`/`red-*` a tokens.
+- `settings/integrations` → PmsCard/PosCard ahora son cards con rail por `integration.status`; StatusBadge y SyncBadge migrados a `badge-status`; purgado `bg-blue-*`/`bg-emerald-*` a tokens.
+- `automation` → JobRow con rail por `job.status`; KPIs con `status-rail` por severidad; badge-status en tabla.
+- `compliance/appcc` → filas con rail por `record.status`; badge-status inline en estado.
+- `compliance/temperatures` → filas con rail `success`/`urgent` según `is_within_range`.
+- `hr/schedule` → `bg-red-800` residual → `bg-danger/80`.
+
+**Radios globales:** sed sobre todo `src/app` + `src/components`:
+- `rounded-2xl` → `rounded-lg` (10px modales/panels)
+- `rounded-xl` → `rounded-md` (8px cards/botones)
+- `focus:ring-accent/40` y `/90` → `focus:ring-accent`
+
+**Tokens inexistentes eliminados:**
+- `bg-background` → `bg-bg-input`
+- `bg-surface-alt` → `bg-bg-sidebar`
+- `bg-bg-muted` → `bg-bg-sidebar`
 
 ### F5 — Polish ⏳ TODO
 

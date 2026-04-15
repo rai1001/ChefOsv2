@@ -63,7 +63,7 @@ export default function ForensicsPage() {
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {/* Selector de producto */}
-        <div className="md:col-span-2 rounded-xl border border-border bg-surface p-4 space-y-3">
+        <div className="md:col-span-2 rounded-md border border-border bg-surface p-4 space-y-3">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-text-muted" />
             <input
@@ -71,7 +71,7 @@ export default function ForensicsPage() {
               placeholder="Buscar producto..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full pl-9 pr-4 py-2 rounded-lg border border-border bg-background text-sm text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-accent/40"
+              className="w-full pl-9 pr-4 py-2 rounded-lg border border-border bg-bg-input text-sm text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-accent"
             />
           </div>
 
@@ -87,7 +87,7 @@ export default function ForensicsPage() {
                     'w-full text-left px-3 py-2 rounded-lg text-sm transition-colors',
                     selectedProduct === l.product_id
                       ? 'bg-accent/10 text-accent font-medium'
-                      : 'text-text-primary hover:bg-surface-alt'
+                      : 'text-text-primary hover:bg-bg-sidebar'
                   )}
                 >
                   <span className="font-medium">{l.product_name}</span>
@@ -99,7 +99,7 @@ export default function ForensicsPage() {
         </div>
 
         {/* Periodo */}
-        <div className="rounded-xl border border-border bg-surface p-4 space-y-3">
+        <div className="rounded-md border border-border bg-surface p-4 space-y-3">
           <h2 className="text-xs font-semibold text-text-muted uppercase tracking-wide">Periodo</h2>
           <div className="space-y-2">
             {PERIOD_OPTIONS.map((opt) => (
@@ -110,7 +110,7 @@ export default function ForensicsPage() {
                   'w-full text-left px-3 py-2 rounded-lg text-sm transition-colors',
                   months === opt.value
                     ? 'bg-accent/10 text-accent font-medium'
-                    : 'text-text-primary hover:bg-surface-alt'
+                    : 'text-text-primary hover:bg-bg-sidebar'
                 )}
               >
                 {opt.label}
@@ -130,10 +130,10 @@ export default function ForensicsPage() {
 
       {selectedProduct && isLoading && (
         <div className="space-y-3">
-          <div className="h-24 rounded-xl bg-surface animate-pulse" />
+          <div className="h-24 rounded-md bg-surface animate-pulse" />
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             {[1, 2, 3, 4].map((i) => (
-              <div key={i} className="h-20 rounded-xl bg-surface animate-pulse" />
+              <div key={i} className="h-20 rounded-md bg-surface animate-pulse" />
             ))}
           </div>
         </div>
@@ -144,7 +144,7 @@ export default function ForensicsPage() {
           {/* Alerta principal */}
           <div
             className={cn(
-              'rounded-xl border p-4 flex items-start gap-3',
+              'rounded-md border p-4 flex items-start gap-3',
               alertBg[forensics.alert]
             )}
           >
@@ -214,7 +214,7 @@ export default function ForensicsPage() {
 
           {/* Interpretación */}
           {forensics.unexplained_loss_rate_pct >= 8 && (
-            <div className="rounded-xl border border-danger/30 bg-danger/5 p-4">
+            <div className="rounded-md border border-danger/30 bg-danger/5 p-4">
               <div className="text-sm font-semibold text-danger mb-1">
                 Pérdida no explicada significativa
               </div>
@@ -248,7 +248,7 @@ function MetricCard({
   return (
     <div
       className={cn(
-        'rounded-xl border bg-surface p-4',
+        'rounded-md border bg-surface p-4',
         highlight ? 'border-danger/30' : 'border-border'
       )}
     >

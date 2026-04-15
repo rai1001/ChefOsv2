@@ -36,6 +36,14 @@ export const INTEGRATION_STATUS_COLORS: Record<IntegrationStatus, string> = {
   disabled: 'text-gray-400 bg-gray-100',
 }
 
+/** Left-border / badge-status variant (DESIGN.md §Left-Border Status System) */
+export const INTEGRATION_STATUS_VARIANT: Record<IntegrationStatus, 'neutral' | 'success' | 'urgent'> = {
+  draft:    'neutral',
+  active:   'success',
+  error:    'urgent',
+  disabled: 'neutral',
+}
+
 export const SYNC_LOG_STATUS_LABELS: Record<SyncLogStatus, string> = {
   running: 'En curso',
   success: 'OK',

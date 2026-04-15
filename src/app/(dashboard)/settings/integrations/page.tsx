@@ -14,30 +14,34 @@ import {
 } from '@/features/integrations/hooks/use-integrations'
 import {
   PMS_TYPE_LABELS, POS_TYPE_LABELS,
-  INTEGRATION_STATUS_LABELS, INTEGRATION_STATUS_COLORS,
-  SYNC_LOG_STATUS_LABELS, SYNC_LOG_STATUS_COLORS,
-  type PmsIntegration, type PosIntegration, type IntegrationSyncLog,
+  INTEGRATION_STATUS_LABELS, INTEGRATION_STATUS_VARIANT,
+  SYNC_LOG_STATUS_LABELS,
+  type PmsIntegration, type PosIntegration, type IntegrationSyncLog, type IntegrationStatus, type SyncLogStatus,
 } from '@/features/integrations/types'
+import { cn } from '@/lib/utils'
+
+const SYNC_VARIANT: Record<SyncLogStatus, 'info' | 'success' | 'warning' | 'urgent'> = {
+  running: 'info',
+  success: 'success',
+  partial: 'warning',
+  failed:  'urgent',
+}
 
 type Tab = 'pms' | 'pos' | 'logs'
 
-function StatusBadge({ status }: { status: string }) {
-  const colorClass = INTEGRATION_STATUS_COLORS[status as keyof typeof INTEGRATION_STATUS_COLORS]
-    ?? 'text-text-muted bg-bg-hover'
+function StatusBadge({ status }: { status: IntegrationStatus }) {
   return (
-    <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${colorClass}`}>
-      {INTEGRATION_STATUS_LABELS[status as keyof typeof INTEGRATION_STATUS_LABELS] ?? status}
+    <span className={cn('badge-status', INTEGRATION_STATUS_VARIANT[status] ?? 'neutral')}>
+      {INTEGRATION_STATUS_LABELS[status] ?? status}
     </span>
   )
 }
 
-function SyncBadge({ status }: { status: string }) {
-  const colorClass = SYNC_LOG_STATUS_COLORS[status as keyof typeof SYNC_LOG_STATUS_COLORS]
-    ?? 'text-text-muted bg-bg-hover'
+function SyncBadge({ status }: { status: SyncLogStatus }) {
   return (
-    <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${colorClass}`}>
+    <span className={cn('badge-status', SYNC_VARIANT[status] ?? 'neutral')}>
       {status === 'running' && <Loader2 className="h-3 w-3 animate-spin mr-1" />}
-      {SYNC_LOG_STATUS_LABELS[status as keyof typeof SYNC_LOG_STATUS_LABELS] ?? status}
+      {SYNC_LOG_STATUS_LABELS[status] ?? status}
     </span>
   )
 }
@@ -63,10 +67,10 @@ function PmsCard({
   }
 
   return (
-    <div className="bg-bg-card border border-border rounded-xl p-5">
+    <div className={cn('status-rail bg-bg-card rounded-r-md p-5', INTEGRATION_STATUS_VARIANT[integration.status as IntegrationStatus] ?? 'neutral')}>
       <div className="flex items-start justify-between gap-4">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center">
+          <div className="w-10 h-10 rounded-lg bg-info/15 flex items-center justify-center">
             <Building2 className="h-5 w-5 text-info" />
           </div>
           <div>
@@ -120,7 +124,7 @@ function PmsCard({
           <button
             onClick={() => disable.mutate(integration.id)}
             disabled={disable.isPending}
-            className="ml-auto flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-lg text-danger border border-danger/40 hover:bg-bg-card disabled:opacity-50"
+            className="ml-auto flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-lg text-danger border border-danger/40 hover:bg-bg-hover disabled:opacity-50"
           >
             <WifiOff className="h-3 w-3" /> Deshabilitar
           </button>
@@ -151,11 +155,11 @@ function PosCard({
   }
 
   return (
-    <div className="bg-bg-card border border-border rounded-xl p-5">
+    <div className={cn('status-rail bg-bg-card rounded-r-md p-5', INTEGRATION_STATUS_VARIANT[integration.status as IntegrationStatus] ?? 'neutral')}>
       <div className="flex items-start justify-between gap-4">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-lg bg-emerald-100 flex items-center justify-center">
-            <ShoppingBag className="h-5 w-5 text-emerald-600" />
+          <div className="w-10 h-10 rounded-lg bg-success/15 flex items-center justify-center">
+            <ShoppingBag className="h-5 w-5 text-success" />
           </div>
           <div>
             <div className="font-medium text-text-primary">{integration.name}</div>
@@ -209,7 +213,7 @@ function PosCard({
           <button
             onClick={() => disable.mutate(integration.id)}
             disabled={disable.isPending}
-            className="ml-auto flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-lg text-danger border border-danger/40 hover:bg-bg-card disabled:opacity-50"
+            className="ml-auto flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-lg text-danger border border-danger/40 hover:bg-bg-hover disabled:opacity-50"
           >
             <WifiOff className="h-3 w-3" /> Deshabilitar
           </button>
@@ -288,7 +292,7 @@ export default function IntegrationsPage() {
         </div>
         <Link
           href="/settings/integrations/new"
-          className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700"
+          className="flex items-center gap-2 bg-accent text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-accent-hover"
         >
           <Plus className="h-4 w-4" /> Nueva integración
         </Link>
@@ -297,11 +301,11 @@ export default function IntegrationsPage() {
       {/* KPI Bar */}
       <div className="grid grid-cols-3 gap-4">
         {[
-          { label: 'Total conectadas', value: pmsCount + posCount, icon: <Wifi className="h-4 w-4 text-blue-500" /> },
-          { label: 'Activas',          value: activeCount,          icon: <CheckCircle className="h-4 w-4 text-green-500" /> },
-          { label: 'Con error',        value: errorCount,           icon: <XCircle className="h-4 w-4 text-red-500" /> },
+          { label: 'Total conectadas', value: pmsCount + posCount, icon: <Wifi className="h-4 w-4 text-info" /> },
+          { label: 'Activas',          value: activeCount,          icon: <CheckCircle className="h-4 w-4 text-success" /> },
+          { label: 'Con error',        value: errorCount,           icon: <XCircle className="h-4 w-4 text-danger" /> },
         ].map((kpi) => (
-          <div key={kpi.label} className="bg-bg-card border border-border rounded-xl p-4 flex items-center gap-3">
+          <div key={kpi.label} className="bg-bg-card border border-border rounded-md p-4 flex items-center gap-3">
             {kpi.icon}
             <div>
               <div className="text-text-primary">{kpi.value}</div>
@@ -324,7 +328,7 @@ export default function IntegrationsPage() {
               onClick={() => setTab(t)}
               className={`pb-3 text-sm font-medium border-b-2 transition-colors ${
                 tab === t
-                  ? 'border-blue-600 text-info'
+                  ? 'border-accent text-info'
                   : 'border-transparent text-text-muted hover:text-text-secondary'
               }`}
             >

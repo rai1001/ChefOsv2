@@ -27,11 +27,20 @@ export const APPCC_STATUS_LABELS: Record<AppccRecordStatus, string> = {
 };
 
 export const APPCC_STATUS_COLORS: Record<AppccRecordStatus, string> = {
-  ok:        'text-green-600 bg-green-50',
-  deviation: 'text-yellow-600 bg-yellow-50',
-  corrected: 'text-blue-600 bg-blue-50',
-  critical:  'text-red-600 bg-red-50',
-  na:        'text-gray-500 bg-gray-50',
+  ok:        'text-success bg-bg-card',
+  deviation: 'text-warning bg-bg-card',
+  corrected: 'text-info bg-bg-card',
+  critical:  'text-danger bg-bg-card',
+  na:        'text-text-muted bg-bg-card',
+};
+
+/** Left-border / badge-status variant (DESIGN.md §Left-Border Status System) */
+export const APPCC_STATUS_VARIANT: Record<AppccRecordStatus, 'success' | 'warning' | 'info' | 'urgent' | 'neutral'> = {
+  ok:        'success',
+  deviation: 'warning',
+  corrected: 'info',
+  critical:  'urgent',
+  na:        'neutral',
 };
 
 export const LABEL_TYPES = ['preparacion','producto','sobras','congelado','descongelado','pasteurizado','regenerado'] as const;

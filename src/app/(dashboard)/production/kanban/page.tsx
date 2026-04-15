@@ -42,7 +42,7 @@ export default function KanbanPage() {
         <select
           value={selectedWorkflow}
           onChange={(e) => setSelectedWorkflow(e.target.value)}
-          className="rounded-lg border border-border bg-surface px-3 py-2 text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-accent/40"
+          className="rounded-lg border border-border bg-surface px-3 py-2 text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-accent"
         >
           <option value="">Seleccionar workflow...</option>
           {activeWorkflows.map((w) => (
@@ -64,7 +64,7 @@ export default function KanbanPage() {
               <div key={col} className="flex flex-col gap-2">
                 {/* Column header */}
                 <div className={cn(
-                  'flex items-center justify-between px-3 py-2 rounded-xl',
+                  'flex items-center justify-between px-3 py-2 rounded-md',
                   col === 'blocked' ? 'bg-danger/10' :
                   col === 'done' ? 'bg-success/10' :
                   col === 'in_progress' ? 'bg-warning/10' : 'bg-surface'
@@ -106,7 +106,7 @@ function KanbanCard({
 }) {
   return (
     <div className={cn(
-      'rounded-xl border p-3 space-y-2',
+      'rounded-md border p-3 space-y-2',
       TASK_STATUS_BG[task.status],
       task.status === 'blocked' ? 'border-danger/30' :
       task.status === 'done' ? 'border-success/20' : 'border-border'

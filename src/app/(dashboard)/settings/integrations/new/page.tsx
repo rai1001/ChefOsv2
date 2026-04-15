@@ -139,7 +139,7 @@ export default function NewIntegrationPage() {
             <button
               key={cat}
               onClick={() => { setCategory(cat); setStep('type') }}
-              className="w-full text-left p-4 rounded-xl border-2 border-border hover:border-blue-400 hover:bg-bg-card transition-colors"
+              className="w-full text-left p-4 rounded-md border-2 border-border hover:border-blue-400 hover:bg-bg-hover transition-colors"
             >
               <div className="font-medium text-text-primary">
                 {cat === 'pms' ? 'PMS — Property Management System' : 'POS — Point of Sale'}
@@ -168,7 +168,7 @@ export default function NewIntegrationPage() {
                 else setPosType(type as PosType)
                 setStep('credentials')
               }}
-              className="w-full text-left p-4 rounded-xl border-2 border-border hover:border-blue-400 hover:bg-bg-card transition-colors"
+              className="w-full text-left p-4 rounded-md border-2 border-border hover:border-blue-400 hover:bg-bg-hover transition-colors"
             >
               <div className="font-medium text-text-primary">{label}</div>
               <div className="text-sm text-text-muted mt-0.5">

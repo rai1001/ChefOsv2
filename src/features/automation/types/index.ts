@@ -49,6 +49,15 @@ export const JOB_STATUS_COLORS: Record<JobStatus, string> = {
   cancelled: 'bg-bg-muted text-text-muted',
 }
 
+/** Left-border / badge-status variant (DESIGN.md §Left-Border Status System) */
+export const JOB_STATUS_VARIANT: Record<JobStatus, 'warning' | 'info' | 'success' | 'urgent' | 'neutral'> = {
+  pending: 'warning',
+  running: 'info',
+  completed: 'success',
+  failed: 'urgent',
+  cancelled: 'neutral',
+}
+
 export const LOG_LEVEL_COLORS: Record<LogLevel, string> = {
   info: 'text-text-secondary',
   warning: 'text-warning',
