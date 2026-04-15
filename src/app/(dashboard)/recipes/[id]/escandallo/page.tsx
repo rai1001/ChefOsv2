@@ -1,7 +1,7 @@
 'use client'
 
-import { useState } from 'react'
-import { useParams, useRouter } from 'next/navigation'
+import { useEffect, useState } from 'react'
+import { useParams } from 'next/navigation'
 import Link from 'next/link'
 import {
   useEscandalloLive,
@@ -45,12 +45,20 @@ function DeltaBadge({ pct }: { pct: number | null }) {
 
 export default function EscandalloPage() {
   const params = useParams()
-  const router = useRouter()
   const recipeId = params.id as string
 
   const { data: escandallo, isLoading, dataUpdatedAt, refetch, isRefetching } = useEscandalloLive(recipeId)
   const sync = useSyncEscandalloPrices()
   const [syncResult, setSyncResult] = useState<{ changes_count: number } | null>(null)
+  const [updatedAgo, setUpdatedAgo] = useState<number | null>(null)
+
+  useEffect(() => {
+    if (!dataUpdatedAt) return
+    const id = setInterval(() => {
+      setUpdatedAgo(Math.round((Date.now() - dataUpdatedAt) / 1000))
+    }, 1000)
+    return () => clearInterval(id)
+  }, [dataUpdatedAt])
 
   function handleSync() {
     sync.mutate(recipeId, {
@@ -95,10 +103,6 @@ export default function EscandalloPage() {
   const costDelta = projectedTotal - currentTotal
   const pvpSugerido = projectedCostPerServing > 0
     ? projectedCostPerServing / (TARGET_FC_PCT / 100)
-    : null
-
-  const updatedAgo = dataUpdatedAt
-    ? Math.round((Date.now() - dataUpdatedAt) / 1000)
     : null
 
   return (
