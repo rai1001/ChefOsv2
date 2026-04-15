@@ -473,6 +473,70 @@ Supabase Dashboard → Database → Replication → Source tables → añadir `n
 
 ---
 
+---
+
+## Sesión 12 — Completada (2026-04-15)
+
+### Etapa 3.4 — M15 Agentes Autónomos ✅
+
+**Patrón:** ASISTIDO, NO AUTÓNOMO — agentes analizan, sugieren; usuario confirma antes de ejecutar.
+
+**Migración creada y aplicada:** `supabase/migrations/00027_m15_agents.sql`
+
+**Enums nuevos:**
+- `agent_type` (10 valores: price_watcher, waste_analyzer, stock_optimizer, recipe_cost_alert, compliance_reminder, event_planner, shopping_optimizer, kds_coordinator, post_event, forecast_prep)
+- `suggestion_status` (pending/approved/rejected/applied/expired)
+- `suggestion_action` (enqueue_job/sync_recipe_costs/create_notification/none)
+- `job_type` extendido con `run_agent`
+
+**Tablas nuevas:**
+- `agent_configs` — configuración por hotel+agente (umbrales, is_active); unique(hotel_id, agent_type)
+- `agent_suggestions` — sugerencias generadas; deduplicación 12h; expires_at; revisión con nota
+
+**Helper interno:**
+- `public._create_agent_suggestion` — SECURITY DEFINER, deduplicada (no crea duplicados en 12h para mismo hotel+agent+title+context)
+
+**RPCs — Grupo A (automejora):**
+- `run_price_watcher_agent(hotel_id)` — variación precio >threshold% en 7d vs avg 30d → sync_recipe_costs
+- `run_waste_analyzer_agent(hotel_id)` — mermas >threshold€ por producto en 7d → none (informativo)
+- `run_stock_optimizer_agent(hotel_id)` — stock < reservas en lookahead_days → enqueue_job generate_shopping_list
+- `run_recipe_cost_alert_agent(hotel_id)` — recetas aprobadas con FC% > target → none (informativo)
+- `run_compliance_reminder_agent(hotel_id)` — APPCC templates sin registro hoy → create_notification
+- `run_all_automejora_agents(hotel_id)` — ejecuta los 5 de una vez, devuelve conteo por agente
+
+**RPCs — Grupo B (coordinación evento):**
+- `run_event_planner_agent(hotel_id, event_id)` — genera sugerencias: workflow + reserva stock + coste estimado
+- `run_shopping_optimizer_agent(hotel_id)` — PRs sin PO agrupadas por proveedor (≥2 PRs)
+- `run_kds_coordinator_agent(hotel_id, event_id)` — verifica kitchen_orders existentes para el evento
+- `run_post_event_agent(hotel_id, event_id)` — coste real + snapshot KPI tras evento completado
+- `run_forecast_prep_agent(hotel_id)` — snapshot KPI diario si no existe
+
+**RPCs de gestión:**
+- `get_agent_suggestions(hotel_id, status, limit)` — auto-expira pendientes vencidas antes de devolver
+- `approve_suggestion(hotel_id, suggestion_id)` — ejecuta la acción (enqueue/sync/notify/none) + marca 'applied'
+- `reject_suggestion(hotel_id, suggestion_id, note)` — marca 'rejected' con nota opcional
+- `get_agent_configs(hotel_id)` — todos los agentes con defaults para tipos sin fila
+- `upsert_agent_config(hotel_id, agent_type, is_active, config)` — UPSERT con ON CONFLICT
+
+**Trigger extendido:**
+- `auto_notify_on_domain_event` reemplazado: añade `event.confirmed` → encola run_agent(event_planner), `event.completed` → encola run_agent(post_event)
+
+**automation-worker extendido:**
+- Caso `run_agent` con dispatcher por `agent_type` — llama RPC correspondiente
+
+**Frontend:**
+- `src/features/agents/types/index.ts` — tipos, labels, colores, config fields por agente
+- `src/features/agents/hooks/use-agents.ts` — useAgentSuggestions (polling 30s), useApproveSuggestion, useRejectSuggestion, useAgentConfigs, useUpsertAgentConfig, usePendingSuggestionsCount
+- `src/app/(dashboard)/agents/page.tsx` — panel sugerencias: tabs pending/applied/rejected/expired, KPI bar, SuggestionCard con aprobar/rechazar+nota
+- `src/app/(dashboard)/agents/config/page.tsx` — AgentRow con toggle+campos configurables+guardar
+- `src/components/shell/sidebar-config.ts` — grupo "Agentes" en oficina (Sugerencias + Config agentes)
+
+**Seeds:** 10 agent_configs con umbrales por defecto para hotel test (ec079cf6...)
+
+**Verificación:** `npm run typecheck` ✅ (0 errores) · Migración aplicada a cloud ✅
+
+---
+
 ## Roadmap de sesiones futuras
 
 Cada sesión = 1 etapa (aprox 1–2h). Orden según plan maestro:
@@ -526,7 +590,7 @@ Cada sesión = 1 etapa (aprox 1–2h). Orden según plan maestro:
 ### Sesiones 10–13 — Fase 3
 - 10: ~~Etapa 3.2 M12 Integraciones PMS/POS (Mews, OPERA, Lightspeed, Simphony)~~ ✅
 - 11: ~~Etapa 3.3 M13 RRHH y turnos~~ ✅ (00026 aplicada — personnel, shift_definitions, schedule_rules, schedule_assignments; /hr/personnel + /hr/schedule)
-- 12: Etapa 3.4 M15 Agentes autónomos (5 automejora + 5 coordinación evento)
+- 12: ~~Etapa 3.4 M15 Agentes autónomos (5 automejora + 5 coordinación evento)~~ ✅ (00027 aplicada)
 - 13: Etapa 3.1 M11 Analytics + ML/Forecast (requiere 180d datos — dejar para último)
 
 ### Sesión 14 — Etapa 4

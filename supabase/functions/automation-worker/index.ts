@@ -203,6 +203,13 @@ async function executeJob(
       return await executePosSync(supabase, job.hotel_id, integrationId, syncType, logId)
     }
 
+    // ── M15 Agentes Autónomos ──────────────────────────────────────────────
+    case 'run_agent': {
+      const agentType = job.payload.agent_type as string
+      if (!agentType) throw new Error('run_agent: agent_type requerido en payload')
+      return await executeAgent(supabase, job.hotel_id, agentType, job.payload)
+    }
+
     case 'send_notification':
       // M14 Notificaciones — implementado en Etapa 2.4
       console.warn(`[automation-worker] job_type 'send_notification' no implementado aún`)
@@ -215,6 +222,68 @@ async function executeJob(
 
     default:
       throw new Error(`Tipo de job no soportado: ${job.job_type}`)
+  }
+}
+
+// ============================================================================
+// M15 — ejecutar agente según tipo
+// ============================================================================
+
+async function executeAgent(
+  supabase: ReturnType<typeof createClient>,
+  hotelId:  string,
+  agentType: string,
+  payload:  Record<string, unknown>,
+): Promise<Record<string, unknown>> {
+  switch (agentType) {
+    // Grupo A — Automejora (sin event_id)
+    case 'price_watcher':
+    case 'waste_analyzer':
+    case 'stock_optimizer':
+    case 'recipe_cost_alert':
+    case 'compliance_reminder':
+    case 'forecast_prep': {
+      const rpcName = `run_${agentType.replace(/-/g, '_')}_agent` as const
+      const { data, error } = await supabase.rpc(rpcName as string, { p_hotel_id: hotelId })
+      if (error) throw new Error(`${rpcName}: ${error.message}`)
+      return { agent_type: agentType, suggestions_created: data as number }
+    }
+
+    // Grupo A especial: ejecutar todos los de automejora de una vez
+    case 'run_all_automejora': {
+      const { data, error } = await supabase.rpc('run_all_automejora_agents', {
+        p_hotel_id: hotelId,
+      })
+      if (error) throw new Error(`run_all_automejora_agents: ${error.message}`)
+      return { agent_type: 'run_all_automejora', result: data as Record<string, unknown> }
+    }
+
+    // Grupo B — Coordinación evento (requieren event_id)
+    case 'event_planner':
+    case 'kds_coordinator':
+    case 'post_event': {
+      const eventId = payload.event_id as string
+      if (!eventId) throw new Error(`${agentType}: event_id requerido en payload`)
+
+      const rpcName = `run_${agentType.replace(/-/g, '_')}_agent`
+      const { data, error } = await supabase.rpc(rpcName, {
+        p_hotel_id: hotelId,
+        p_event_id: eventId,
+      })
+      if (error) throw new Error(`${rpcName}: ${error.message}`)
+      return { agent_type: agentType, event_id: eventId, suggestions_created: data as number }
+    }
+
+    case 'shopping_optimizer': {
+      const { data, error } = await supabase.rpc('run_shopping_optimizer_agent', {
+        p_hotel_id: hotelId,
+      })
+      if (error) throw new Error(`run_shopping_optimizer_agent: ${error.message}`)
+      return { agent_type: agentType, suggestions_created: data as number }
+    }
+
+    default:
+      throw new Error(`Tipo de agente no soportado: ${agentType}`)
   }
 }
 

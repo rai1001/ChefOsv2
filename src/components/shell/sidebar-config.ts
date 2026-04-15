@@ -1,4 +1,5 @@
 import {
+  Bot,
   CalendarDays,
   Calculator,
   ChefHat,
@@ -147,6 +148,13 @@ export const NAV_BY_PROFILE: Record<UXProfile, NavGroup[]> = {
       items: [
         { label: 'Empleados',  href: '/hr/personnel', icon: UserCog },
         { label: 'Horarios',   href: '/hr/schedule',  icon: CalendarRange },
+      ],
+    },
+    {
+      title: 'Agentes',
+      items: [
+        { label: 'Sugerencias',     href: '/agents',                  icon: Bot },
+        { label: 'Config agentes',  href: '/agents/config',           icon: Zap },
       ],
     },
     {

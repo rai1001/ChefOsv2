@@ -71,6 +71,7 @@
 | 00024 | security_fixes | REVOKE/GRANT worker+notify RPCs a service_role; backoff cap 120min; XSS fix email |
 | 00025 | m12_integrations | pms_integrations, pos_integrations, integration_sync_logs; enums pms_type/pos_type/integration_status/sync_log_status; job_type+sync_pms/sync_pos; RPCs: create/update/disable pms+pos, trigger_pms/pos_sync, mark_sync_complete, get_pms/pos_integrations, get_sync_logs |
 | 00026 | m13_hr | personnel, shift_definitions, schedule_rules, schedule_assignments; enums personnel_role/contract_type/shift_type/schedule_origin/schedule_status; RPCs: create/update_personnel, create/update_shift_definition, create/update/delete_schedule_rule, generate_monthly_schedule, update/delete_assignment, get_personnel/shift_definitions/schedule_rules/schedule_assignments |
+| 00027 | m15_agents | agent_configs, agent_suggestions; enums agent_type/suggestion_status/suggestion_action; job_type+=run_agent; 10 RPCs agentes (price_watcher, waste_analyzer, stock_optimizer, recipe_cost_alert, compliance_reminder, event_planner, shopping_optimizer, kds_coordinator, post_event, forecast_prep) + get/approve/reject/upsert_config; trigger event.confirmed→event_planner, event.completed→post_event; seed 10 configs hotel test |
 
 ## Estado actual (2026-04-15 — Sesión 11 de plan completado PRD)
 - D0 Identidad: COMPLETO — auth flow, app shell, sidebar adaptativa (4 perfiles), audit triggers
@@ -102,7 +103,7 @@
 ## Fase actual: Plan completado PRD en curso
 MVP básico (D0+M1-M7) cerrado. Plan maestro aprobado (todo el PRD: MVP+F2+F3+F4).
 
-**Progreso:** Sesión 11/~14 completada — Etapas 1.1 + 1.2 + 1.3 + 1.4 + 1.5 + 2.3 + 2.1 + 2.4 + 2.2 + 3.2 + 3.3 completas
+**Progreso:** Sesión 12/~14 completada — Etapas 1.1 + 1.2 + 1.3 + 1.4 + 1.5 + 2.3 + 2.1 + 2.4 + 2.2 + 3.2 + 3.3 + 3.4 completas
 **Plan maestro:** `C:\Users\Israel\.claude\plans\misty-petting-haven.md`
 **Estado detallado + roadmap sesiones:** `docs/ESTADO_PLAN_COMPLETADO.md`
 
@@ -122,7 +123,7 @@ MVP básico (D0+M1-M7) cerrado. Plan maestro aprobado (todo el PRD: MVP+F2+F3+F4
 ### Fase 3:
 9. ~~M12 Integraciones PMS/POS (Mews, OPERA, Lightspeed, Simphony)~~ ✅ (00025)
 10. ~~M13 RRHH y turnos~~ ✅ (00026)
-11. M15 Agentes autónomos (5 automejora + 5 coordinación evento)
+11. ~~M15 Agentes autónomos (5 automejora + 5 coordinación evento)~~ ✅ (00027)
 12. M11 Analytics + ML/Forecast
 
 ### Fase 4:
