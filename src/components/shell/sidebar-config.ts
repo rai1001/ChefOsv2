@@ -11,6 +11,7 @@ import {
   ListChecks,
   Monitor,
   Package,
+  ScanLine,
   Settings,
   ShoppingCart,
   Tag,
@@ -74,6 +75,7 @@ export const NAV_BY_PROFILE: Record<UXProfile, NavGroup[]> = {
         { label: 'Kanban', href: '/production/kanban', icon: Columns },
         { label: 'Lista compras', href: '/production/shopping-list', icon: ShoppingCart },
         { label: 'Compras', href: '/procurement', icon: ShoppingCart },
+        { label: 'Revisar OCR', href: '/procurement/ocr-review', icon: ScanLine },
       ],
     },
     {
@@ -123,6 +125,7 @@ export const NAV_BY_PROFILE: Record<UXProfile, NavGroup[]> = {
         { label: 'Kanban', href: '/production/kanban', icon: Columns },
         { label: 'Lista compras', href: '/production/shopping-list', icon: ShoppingCart },
         { label: 'Compras', href: '/procurement', icon: ShoppingCart },
+        { label: 'Revisar OCR', href: '/procurement/ocr-review', icon: ScanLine },
         { label: 'Inventario', href: '/inventory', icon: Package },
         { label: 'Conteos', href: '/inventory/counts', icon: ClipboardCheck },
         { label: 'Forensics', href: '/inventory/forensics', icon: Activity },
@@ -181,6 +184,7 @@ export const NAV_BY_PROFILE: Record<UXProfile, NavGroup[]> = {
       items: [
         { label: 'Pedidos', href: '/dashboard', icon: ShoppingCart },
         { label: 'Recepciones', href: '/procurement/receipts', icon: Truck },
+        { label: 'Revisar OCR', href: '/procurement/ocr-review', icon: ScanLine },
       ],
     },
     {
