@@ -6,6 +6,7 @@ import { useActiveHotel } from '@/features/identity/hooks/use-active-hotel'
 
 interface OcrResult {
   ok: boolean
+  already_processed?: boolean
   receipt_id?: string
   receipt_number?: string
   lines_processed?: number
@@ -17,6 +18,18 @@ interface OcrResult {
   ocr_data?: unknown
 }
 
+/**
+ * Calcula SHA-256 (hex) del File via crypto.subtle.
+ * Usado como idempotency key para dedup de albaranes OCR.
+ */
+async function sha256HexOfFile(file: File): Promise<string> {
+  const buf = await file.arrayBuffer()
+  const hash = await crypto.subtle.digest('SHA-256', buf)
+  return Array.from(new Uint8Array(hash))
+    .map((b) => b.toString(16).padStart(2, '0'))
+    .join('')
+}
+
 export function useUploadDeliveryNote() {
   const { data: hotel } = useActiveHotel()
   const queryClient = useQueryClient()
@@ -26,29 +39,35 @@ export function useUploadDeliveryNote() {
       if (!hotel) throw new Error('No active hotel')
       const supabase = createClient()
 
-      // 1. Upload file to delivery-notes bucket
+      // 1. Hash SHA-256 del file para idempotencia (browser-side, rápido)
+      const imageHash = await sha256HexOfFile(input.file)
+
+      // 2. Upload file to delivery-notes bucket.
+      //    El path incluye el hash → si el mismo file se sube 2 veces, upsert:true
+      //    sobrescribe el mismo objeto en vez de duplicarlo. El dedup real del GR
+      //    lo hace process_ocr_receipt vía delivery_note_image_hash.
       const ext = input.file.name.split('.').pop()?.toLowerCase() ?? 'jpg'
-      const ts = Date.now()
-      const path = `${hotel.hotel_id}/${input.order_id}-${ts}.${ext}`
+      const path = `${hotel.hotel_id}/${input.order_id}-${imageHash.slice(0, 16)}.${ext}`
 
       const { error: upErr } = await supabase.storage
         .from('delivery-notes')
         .upload(path, input.file, {
           contentType: input.file.type || 'image/jpeg',
-          upsert: false,
+          upsert: true,
         })
       if (upErr) throw new Error(`Upload falló: ${upErr.message}`)
 
-      // 2. Get user JWT for edge function
+      // 3. Get user JWT for edge function
       const { data: { session } } = await supabase.auth.getSession()
       const userToken = session?.access_token
 
-      // 3. Invoke edge function
+      // 4. Invoke edge function con hash para dedup DB-side
       const { data, error } = await supabase.functions.invoke('ocr-receipt', {
         body: {
           hotel_id: hotel.hotel_id,
           order_id: input.order_id,
           image_path: path,
+          image_hash: imageHash,
         },
         headers: userToken ? { Authorization: `Bearer ${userToken}` } : undefined,
       })

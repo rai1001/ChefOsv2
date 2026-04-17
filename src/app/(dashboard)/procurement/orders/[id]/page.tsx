@@ -37,7 +37,7 @@ export default function PODetailPage({ params }: { params: Promise<{ id: string 
   const { data: ocrPending } = useOcrPendingLines()
   const fileRef = useRef<HTMLInputElement>(null)
   const [showReceive, setShowReceive] = useState(false)
-  const [ocrResult, setOcrResult] = useState<{ lines_processed?: number; lines_auto_matched?: number; lines_pending_review?: number; lines_product_unknown?: number; price_alerts?: number } | null>(null)
+  const [ocrResult, setOcrResult] = useState<{ already_processed?: boolean; lines_processed?: number; lines_auto_matched?: number; lines_pending_review?: number; lines_product_unknown?: number; price_alerts?: number } | null>(null)
 
   function handleTransition(newStatus: PoStatus) {
     if (newStatus === 'cancelled') {
@@ -77,6 +77,7 @@ export default function PODetailPage({ params }: { params: Promise<{ id: string 
       {
         onSuccess: (data) => {
           setOcrResult({
+            already_processed: data.already_processed,
             lines_processed: data.lines_processed,
             lines_auto_matched: data.lines_auto_matched,
             lines_pending_review: data.lines_pending_review,
@@ -295,6 +296,11 @@ export default function PODetailPage({ params }: { params: Promise<{ id: string 
           )}
           {ocrResult && (
             <div className="rounded-md border border-border/50 bg-bg-card/50 p-3 text-sm space-y-1">
+              {ocrResult.already_processed && (
+                <p className="text-info">
+                  Este albarán ya estaba procesado. Mostrando el resultado anterior (sin cargo OCR adicional).
+                </p>
+              )}
               <p className="text-text-primary">
                 <span className="font-medium">{ocrResult.lines_processed}</span> líneas extraídas:
                 <span className="text-success"> {ocrResult.lines_auto_matched ?? 0} auto-matched</span>
