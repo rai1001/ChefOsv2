@@ -79,10 +79,10 @@
   --border:       #2e2e2e;   /* bordes por defecto */
   --border-strong:#3a3a3a;   /* separadores thead, secciones importantes */
 
-  /* Texto */
-  --text-primary:   #d4d4d4; /* texto principal */
-  --text-secondary: #a0a0a0; /* metadata, subtítulos */
-  --text-muted:     #6a6a6a; /* labels, placeholders, hints */
+  /* Texto — todos pasan WCAG 2.1 AA 4.5:1 sobre bg-card (#242424) */
+  --text-primary:   #d4d4d4; /* 9.9:1 — texto principal */
+  --text-secondary: #a0a0a0; /* 5.8:1 — metadata, subtítulos */
+  --text-muted:     #949494; /* 4.8:1 — labels, placeholders, hints (subido de #6a6a6a en sesión 16 por WCAG) */
 
   /* Accent — EXCLUSIVO para CTA primario y estado activo. Nada más. */
   --accent:       #e8e4dc;   /* Tungsten White — warm off-white */
@@ -105,8 +105,17 @@
   --info-bg:      rgba(74, 96, 112, 0.12);
   --info-border:  rgba(74, 96, 112, 0.25);
 
+  /* Foregrounds de estado — sesión 16. Los tokens *-base de arriba son para
+     bg-/border- (tintes saturados); éstos son foregrounds claros que pasan
+     WCAG AA 4.5:1 sobre bg-card. `.text-success/warning/danger/info`
+     override las clases Tailwind auto-generadas para usar estos. */
+  --success-fg: #8baf8b; /* 5.5:1 */
+  --warning-fg: #d4a574; /* 5.7:1 */
+  --danger-fg:  #e88070; /* 5.2:1 */
+  --info-fg:    #8ba6b8; /* 5.3:1 */
+
   /* Focus ring */
-  --focus-ring:   #e8e4dc;   /* igual que accent */
+  --focus-ring:   #e8e4dc;   /* igual que accent — 12.9:1 contraste */
 }
 ```
 
@@ -129,6 +138,14 @@ Para gráficos de barras, líneas y donuts. Coexisten en dark sin que ninguno gr
 - El success está deliberadamente desaturado — no es una celebración, es una confirmación silenciosa.
 - Sin botones de color por defecto: las acciones primarias se leen por contraste, escala y posición, no por color de fondo llamativo.
 - Las sombras son casi inexistentes: la separación viene del tono y el borde, no del blur.
+- **Separación FG vs base de estado** (sesión 16, WCAG): los tokens base `--{success|warning|danger|info}` son SATURADOS y solo pasan contraste en fondos grandes — usarlos para `bg-*/10`, `border-*`. Para texto usar los `*-fg` (claros, WCAG AA). `.text-success`, `.text-warning`, `.text-danger`, `.text-info` ya apuntan a los FG globalmente.
+
+### alert-box vs status-rail
+
+Dos patrones distintos con criterio claro:
+- **`.alert-box`** — bg entera tintada del estado + border-left 3px saturado + `.alert-title` en FG claro. Para **mensajes que requieren atención**: alertas, sugerencias de agente, feed operativo, banners de acción. "De un vistazo sin leer".
+- **`.status-rail`** — solo border-left 3px, sin bg tintado. Para **estado de trabajo o contexto**: banda de mando del dashboard (Turno/Servicio/Siguiente acción), integraciones, KPI cards summary.
+- **Rows `<tr>` de tabla** — usan `status-rail` pero tintan automáticamente vía CSS global cuando variant=urgent/warning. Success/info NO tintan (menos ruido visual cuando el estado es neutro/positivo).
 
 ---
 

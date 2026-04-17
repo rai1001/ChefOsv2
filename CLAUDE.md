@@ -56,9 +56,11 @@ Resumen de decisiones clave (ver DESIGN.md para especificación completa):
 
 ## Supabase
 - Proyecto: dbtrgnyfmzqsrcoadcrs (cuenta raisada1001@gmail.com)
-- Hotel test: ec079cf6-13b1-4be5-9e6f-62c8f604cb1e
-- Migraciones: 00001-00014 (D0 + fixes + M1-M7 + bug fixes + escandallo live + catalog prices)
-- Ejecutar migraciones: `cat file.sql | npx supabase db query --linked`
+- Hotel test: `ec079cf6-13b1-4be5-9e6f-62c8f604cb1e` (seed-test, 7 roles)
+- Hotel demo Eurostars: `22222222-2222-2222-2222-222222222222` (seed-eurostars-demo, 30 productos Galicia, 6 recetas, 4 eventos)
+- Migraciones: 00001-00046 (D0 + M1-M15 + security audits + OCR + idempotency + rate limits)
+- Ejecutar migración individual: `cat file.sql | npx supabase db query --linked`
+- Deploy edge function: `npx supabase functions deploy <name> --project-ref dbtrgnyfmzqsrcoadcrs --no-verify-jwt`
 
 ## Mapa de migraciones
 | # | Archivo | Contenido |
@@ -96,8 +98,21 @@ Resumen de decisiones clave (ver DESIGN.md para especificación completa):
 | 00031 | fix_m9_rpcs | Fix check_membership calls en RPCs de M9 compliance (renombrado desde 00023_fix_rpcs — colisión resuelta) |
 | 00032 | fix_m12_sync_logs | Fix policies insert/update en integration_sync_logs: solo via SECURITY DEFINER RPCs (renombrado desde 00026_m12_security_fixes — colisión resuelta) |
 | 00033 | fix_notifications_rls | Codex audit round 4: añade is_member_of(hotel_id) a notif_read_own, notif_update_own, prefs_own — tenant isolation en notifications |
+| 00034 | security_audit_round4 | Codex adversarial round 4: IDOR create_hotel, current_user bypass, triggers state-machine guards, /reset-password, 11 fixes |
+| 00035 | fix_beo_missing_columns | get_event_beo referenciaba columns inexistentes: añade recipes.unit_cost, recipes.yield_pct, menu_sections.course_type, event_spaces.setup_style |
+| 00036 | head_chef_procurement | generate_purchase_order + transition_purchase_order añaden 'head_chef' a roles (hoteles pequeños donde el chef compra) |
+| 00037 | fix_workflow_ingredient_name | generate_event_workflow: `ri.name` → `ri.ingredient_name` |
+| 00038 | fix_inventory_catalog_columns | get_stock_levels + get_catalog_prices: `u.symbol` → `u.abbreviation`, remove filtro inexistente is_active |
+| 00039 | ocr_infrastructure | Extensiones pg_trgm + unaccent, enum ocr_review_status, columnas OCR en goods_receipt_lines, tabla price_change_log con delta_pct, job_type ocr_receipt, order_line_id nullable |
+| 00040 | ocr_rpcs | match_product_by_alias (ranking por similarity) + process_ocr_receipt (JSON Claude → GR lines + price_change_log) + _recalc_recipes_using_product + trigger cascada |
+| 00041 | fix_auto_stock_lot_for_ocr | Skip auto_create_stock_lot si quality_status<>accepted OR order_line_id null (OCR pending review no crean lotes hasta resolución) |
+| 00042 | rate_limit_infrastructure | rate_limit_buckets tabla + consume_rate_limit(key, max, window) RPC atomic con FOR UPDATE + get_rate_limit_status |
+| 00043 | idempotency_infrastructure | idempotency_keys tabla (hotel_id, key) → response_body + status + TTL 24h + check_idempotency / store_idempotency / cleanup_idempotency_keys |
+| 00044 | ocr_idempotency | goods_receipts.delivery_note_image_hash + unique index parcial (order_id, hash) + process_ocr_receipt acepta p_image_hash (dedup DB-side antes de insertar) |
+| 00045 | po_idempotency | generate_purchase_order con SELECT FOR UPDATE en PRs (serializa concurrentes) + error P0016 si ya consolidated (defense vs doble-click) |
+| 00046 | domain_events_dedup | emit_event con p_dedup_window_seconds (default 5s) + index idx_domain_events_dedup: triggers que disparen 2x no duplican eventos/notificaciones |
 
-## Estado actual (2026-04-15 — Sesión 14: Security audit fixes + Codex review fixes)
+## Estado actual (2026-04-17 — Sesión 16: OCR end-to-end + demo Eurostars + a11y WCAG AA + idempotencia + rate limits)
 - D0 Identidad: COMPLETO — auth flow, app shell, sidebar adaptativa (4 perfiles), audit triggers
 - M1 Comercial: COMPLETO — eventos, clientes, state machine, BEO, calendario
 - M2 Recetas: COMPLETO — recetas, ingredientes, pasos, costeo recursivo con cycle detection (E5), sub-recetas, menus, state machine (draft→review→approved→deprecated), ficha tecnica
@@ -123,6 +138,43 @@ Resumen de decisiones clave (ver DESIGN.md para especificación completa):
 - ISSUE-004: setState síncrono en useEffect de agents/config → render-phase state sync
 - ISSUE-005: BEO PDF rompía build Turbopack (dynamic sobre @react-pdf/renderer external) → wrapper BeoBtn en pdf-buttons.tsx
 - Resultado: `npm run build` compila 48 rutas, lint 0 errores (antes 25), typecheck limpio
+
+## Bugs cerrados (/qa 2026-04-17)
+- ISSUE-001 (HIGH): `/procurement/ocr-review` sin link en sidebar — añadido 'Revisar OCR' icon ScanLine en perfiles cocina/oficina/compras
+- ISSUE-002 (LOW): emoji ⚠️ en orders/[id]:310 viola DS — eliminado, `text-warning` ya transmite urgencia
+- Health score: 97 → 100 (sobre lo accionable)
+
+## Accesibilidad WCAG 2.1 AA (/design:accessibility-review 2026-04-17)
+9 de 10 issues del audit arreglados + 1 UX bonus (alert-box vs status-rail):
+- **1.4.3 contraste** — `text-muted #6a6a6a → #949494` (2.70:1 → 4.78:1). Nuevos tokens `*-fg` para estados: `#e88070` danger, `#8baf8b` success, `#d4a574` warning, `#8ba6b8` info (todos >5:1 sobre bg-card)
+- **1.4.4 resize text** — `html { font-size: 110% }` + `body { 1rem }` (escala con Ctrl+/- del navegador, antes hard-coded 17.6px)
+- **2.4.1 skip link** — "Saltar al contenido" en app-shell.tsx (`sr-only focus:not-sr-only`) → `<main id="main-content">`
+- **2.4.2 page titled** — hook `useDocumentTitle(page)` + root template `%s — ChefOS`. Aplicado en dashboard, escandallos, recetas, procurement, ocr-review, alerts, agents
+- **2.4.6 headings** — dashboard de 0 h2 → 12 h2 (CommandBand + KpiCard + OperationalFeed) manteniendo clase `.kpi-label`
+- **3.3.2 labels** — `/escandallos` simulador: 9 inputs envueltos en `<label>` (asociación implícita) + aria-label en buscador
+- **4.1.2 name/role/value** — botón "Cerrar sesión" con `aria-label` (antes solo `title`)
+- **UX bonus** — alertas unificadas a `.alert-box` (bg entera tintada) en `/alerts`, `/agents`, dashboard feed. Rows `<tr>` urgent/warning tintan desde CSS global. Reporte completo: `.gstack/qa-reports/a11y-audit-2026-04-17.md`
+- Deferred: ISSUE-5 (border contrast) — rompe estética del DS, revisable si se audita borders de inputs
+
+## OCR de albaranes (2026-04-16 + hardening 2026-04-17)
+Feature estrella: foto de albarán → Claude Sonnet 4.5 Vision → matching por alias → GR lines + cascada de escandallos.
+
+- **Edge function** `supabase/functions/ocr-receipt` — prompt ES específico, parse JSON, backoff exponencial (429+5xx, 3 retries, jitter), rate limit dual (30 req/h/hotel + 5 req/min/user vía `consume_rate_limit`), idempotencia DB-side vía SHA-256 hash pre-upload
+- **Frontend** `useUploadDeliveryNote` — `crypto.subtle.digest('SHA-256')` antes de upload, hash en path (upsert:true no duplica), banner "Este albarán ya estaba procesado" si dedup
+- **UI review** `/procurement/ocr-review` — agrega líneas pending_review + product_unknown del hotel, con confidence y sugerencias del matcher
+- **Cascada precios** — OCR detecta cambio >5% vs PO line → inserta `price_change_log` → trigger `trg_price_change_cascade` recalcula `recipe_ingredients.unit_cost` + `recipes.total_cost/cost_per_serving/food_cost_pct` para TODA receta que usa el producto
+- **Storage bucket** `delivery-notes` (privado, 10MB) — path convention `{hotel_id}/{order_id}-{hash16}.{ext}`
+- **Validado end-to-end** vía CURL 2026-04-16: Pulpo 18→22€ → Pulpo á feira €36.51/€4.56 → €43.51/€5.44
+
+## Idempotencia + Rate limits (Sesión 16, 2026-04-17)
+Críticos aplicados antes del primer cliente. Memoria: `pattern_idempotency_pending.md` + `pattern_rate_limits_pending.md` (actualizadas a ✅).
+
+- **00042** rate_limit_buckets — token bucket atómico (FOR UPDATE) con ventana configurable. `consume_rate_limit(key, max, window_s)` devuelve `(allowed, remaining, reset_at)`. Fail-open si la BD cae.
+- **00043** idempotency_keys — cache (hotel_id, key) → response_body JSONB + TTL 24h + cleanup_idempotency_keys() para cron
+- **00044** OCR idempotency — hash SHA-256 browser-side → `goods_receipts.delivery_note_image_hash` + unique (order_id, hash) + early check en process_ocr_receipt (sin cargo Anthropic si duplicado)
+- **00045** PO idempotency — SELECT FOR UPDATE en PRs de generate_purchase_order + validación 'no consolidated' errcode P0016 (defense vs doble-click)
+- **00046** domain_events dedup — `emit_event` ventana 5s por (hotel, agg_type, agg_id, event_type) + index dedicado → triggers disparados 2x no duplican eventos/notifs/jobs
+- **Edge function OCR** — Anthropic backoff respeta `Retry-After` si viene o exponencial 2^n*1000ms + jitter<500ms, cap 30s. Headers X-RateLimit-Limit/Remaining/Reset-Hotel + Retry-After en 429.
 
 ## Security hardening (Codex audit 2026-04-15)
 - CRITICAL resuelto: policies SELECT sobre pms_integrations/pos_integrations restringidas a admin+ (credentials ya no exfiltrables por PostgREST)
@@ -163,13 +215,23 @@ Plan completo en `docs/TESTING_ROADMAP.md`.
 - Frontend: tipos con const arrays + labels, hooks TanStack Query, paginas con skeleton/empty/table
 - Escandallo live: useEscandalloLive (refetchOnWindowFocus, 2min interval), useSyncEscandalloPrices
 - Precios: GR price (ultimo albarán aceptado) > offer price (proveedor preferido) > manual
+- **Tokens de estado** (sesión 16): tokens base `--color-{success|warning|danger|info}` son para bg-/border-tintados; tokens `*-fg` (#8baf8b, #d4a574, #e88070, #8ba6b8) son foregrounds claros que pasan WCAG AA 4.5:1 sobre bg-card. `.text-*` classes override Tailwind auto-generated con los FG.
+- **alert-box vs status-rail** (sesión 16): `.alert-box` (bg entera tintada + alert-title FG) para mensajes que requieren atención (alertas, sugerencias, feed operativo); `.status-rail` (solo border-left 3px) para estado de trabajo o rows de tabla con semáforo. Rows `<tr>` urgent/warning tintan automáticamente vía CSS global (`tbody tr.status-rail.urgent { background: var(--urgent-bg) }`).
+- **Metadata título en client components** (sesión 16): las pages `'use client'` no pueden exportar `metadata`. Usar hook `useDocumentTitle('Dashboard')` de `@/lib/use-document-title`. Root layout tiene `title: { template: '%s — ChefOS', default: '...' }` — server components lo componen automático.
+- **Skip link** (sesión 16): `<a href="#main-content" class="sr-only focus:not-sr-only...">` como primer focusable en app-shell.tsx. `<main id="main-content">` como destino. WCAG 2.4.1 Bypass Blocks.
+- **OCR idempotency** (sesión 16): cliente calcula `crypto.subtle.digest('SHA-256')` del File antes de upload → path incluye `hash.slice(0,16)` + `upsert:true`. Edge function hace early check vía `goods_receipts.delivery_note_image_hash` → devuelve `already_processed:true` sin llamar a Claude. Ahorra coste Anthropic + dedup a nivel DB.
+- **Rate limit wrapper**: cualquier edge function sensible llama `consume_rate_limit('feature:scope:id:window', max, window_s)` al inicio. Fail-open si la BD cae. Devuelve headers `X-RateLimit-*` + `Retry-After` en 429.
+- **Anthropic backoff**: `callAnthropicWithBackoff(url, init, retries=3)` respeta `Retry-After` si viene, si no exponencial `2^n * 1000ms + jitter<500ms` cap 30s. Solo reintenta 429 + 5xx; 4xx sale directo.
 
-## Fase actual: Plan completado PRD en curso
-MVP básico (D0+M1-M7) cerrado. Plan maestro aprobado (todo el PRD: MVP+F2+F3+F4).
+## Fase actual: MVP + OCR + a11y + hardening completado — pre-demo Eurostars
+MVP básico (D0+M1-M7) cerrado. Plan maestro ejecutado (PRD + OCR + hardening pre-cliente).
 
-**Progreso:** Sesión 12/~14 completada — Etapas 1.1 + 1.2 + 1.3 + 1.4 + 1.5 + 2.3 + 2.1 + 2.4 + 2.2 + 3.2 + 3.3 + 3.4 completas
+**Progreso:** Sesiones 1-16 completadas. Feature OCR end-to-end deployed. App accesible WCAG 2.1 AA (9/10 issues). Idempotencia + rate limits aplicados. Hotel demo Eurostars sembrado. Playbook demo Iago listo (`docs/DEMO_IAGO_PLAYBOOK.md`).
 **Plan maestro:** `C:\Users\Israel\.claude\plans\misty-petting-haven.md`
 **Estado detallado + roadmap sesiones:** `docs/ESTADO_PLAN_COMPLETADO.md`
+**Deploy producción:** https://chefos-v2.vercel.app
+
+**Próxima milestone:** Demo Iago (Eurostars Ourense) sábado 19 abril 2026.
 
 ### Próximas etapas pendientes (piezas del MVP según PRD que aún faltan):
 1. ~~**Etapa 1.1** — M3 extendido~~ ✅

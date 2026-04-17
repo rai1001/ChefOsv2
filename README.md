@@ -4,6 +4,8 @@
 
 Dashboard dark-first para jefes de cocina en turnos de 16 horas. Cubre eventos, recetas, compras, inventario, producción, compliance APPCC, RRHH y notificaciones. Multi-tenant sobre Supabase.
 
+**Feature estrella:** OCR de albaranes con Claude Vision. Foto del albarán → matching automático con tu catálogo → cascada de recálculo de escandallos en segundos. Sin teclear.
+
 ## Stack
 
 | Capa | Tecnología |
@@ -84,8 +86,11 @@ src/
   components/
     shell/           # sidebar, topbar, notification-bell
 supabase/
-  migrations/        # 00001-00033 SQL numeradas
-docs/                # PRD, módulos, testing, design migration
+  migrations/        # 00001-00046 SQL numeradas
+  functions/
+    ocr-receipt/     # Edge Function Claude Vision (rate limit + backoff + idem)
+    automation-worker/ notification-dispatcher/
+docs/                # PRD, módulos, testing, design migration, demo playbook
 ```
 
 Cada feature sigue el mismo patrón: `components/ hooks/ schemas/ services/ types/ utils/`.
@@ -110,4 +115,8 @@ Convención de commits tipo Conventional Commits: `feat(scope):`, `fix(scope):`,
 
 Ver [`docs/ESTADO_PLAN_COMPLETADO.md`](docs/ESTADO_PLAN_COMPLETADO.md) para el estado detallado del PRD y roadmap.
 
-**Sesión actual (15, 2026-04-15):** Design System completo (F0–F5). Todas las pantallas operativas usando los tokens + utility classes del DS.
+**Sesión actual (16, 2026-04-17):** OCR de albaranes end-to-end (Claude Sonnet 4.5 + backoff + rate limits + idempotency SHA-256). App accesible WCAG 2.1 AA (9/10 issues arreglados). Hotel demo Eurostars sembrado. Playbook demo listo en [`docs/DEMO_IAGO_PLAYBOOK.md`](docs/DEMO_IAGO_PLAYBOOK.md).
+
+**Deploy producción:** https://chefos-v2.vercel.app
+
+**Próxima milestone:** Demo Iago (Eurostars Ourense) sábado 19 abril 2026.
