@@ -168,8 +168,8 @@ export default function EscandallosPage() {
           {/* Dish config */}
           <div className="rounded-lg border border-border bg-bg-card p-4">
             <div className="grid grid-cols-3 gap-4">
-              <div>
-                <label className="text-xs text-text-muted uppercase tracking-wider">Nombre del plato</label>
+              <label className="block">
+                <span className="text-xs text-text-muted uppercase tracking-wider">Nombre del plato</span>
                 <input
                   type="text"
                   placeholder="p.ej. Merluza a la romana"
@@ -177,9 +177,9 @@ export default function EscandallosPage() {
                   onChange={(e) => setDishName(e.target.value)}
                   className="mt-1 w-full rounded-md border border-border bg-bg-input px-3 py-1.5 text-sm text-text-primary placeholder:text-text-muted focus:border-border-focus focus:outline-none"
                 />
-              </div>
-              <div>
-                <label className="text-xs text-text-muted uppercase tracking-wider">Raciones</label>
+              </label>
+              <label className="block">
+                <span className="text-xs text-text-muted uppercase tracking-wider">Raciones</span>
                 <input
                   type="number"
                   min="1"
@@ -187,9 +187,9 @@ export default function EscandallosPage() {
                   onChange={(e) => setServings(Math.max(1, parseInt(e.target.value) || 1))}
                   className="mt-1 w-full rounded-md border border-border bg-bg-input px-3 py-1.5 text-sm text-text-primary focus:border-border-focus focus:outline-none"
                 />
-              </div>
-              <div>
-                <label className="text-xs text-text-muted uppercase tracking-wider">PVP objetivo (EUR)</label>
+              </label>
+              <label className="block">
+                <span className="text-xs text-text-muted uppercase tracking-wider">PVP objetivo (EUR)</span>
                 <input
                   type="number"
                   step="0.01"
@@ -199,7 +199,7 @@ export default function EscandallosPage() {
                   onChange={(e) => setTargetPrice(e.target.value)}
                   className="mt-1 w-full rounded-md border border-border bg-bg-input px-3 py-1.5 text-sm text-text-primary placeholder:text-text-muted focus:border-border-focus focus:outline-none"
                 />
-              </div>
+              </label>
             </div>
           </div>
 
@@ -335,6 +335,7 @@ export default function EscandallosPage() {
               <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-text-muted" />
               <input
                 type="text"
+                aria-label="Buscar producto en el catálogo"
                 placeholder={loadingCatalog ? 'Cargando catálogo...' : 'Buscar producto...'}
                 value={search}
                 disabled={loadingCatalog}
@@ -382,8 +383,8 @@ export default function EscandallosPage() {
 
             {/* Manual line */}
             <form onSubmit={addManual} className="flex items-end gap-2 pt-1 border-t border-border">
-              <div className="flex-1">
-                <label className="text-xs text-text-muted">Nombre manual</label>
+              <label className="flex-1">
+                <span className="text-xs text-text-muted">Nombre manual</span>
                 <input
                   type="text"
                   placeholder="Ingrediente libre..."
@@ -391,9 +392,9 @@ export default function EscandallosPage() {
                   onChange={(e) => setManualName(e.target.value)}
                   className="mt-1 w-full rounded-md border border-border bg-bg-input px-2 py-1.5 text-sm text-text-primary placeholder:text-text-muted focus:border-border-focus focus:outline-none"
                 />
-              </div>
-              <div className="w-20">
-                <label className="text-xs text-text-muted">Cantidad</label>
+              </label>
+              <label className="w-20">
+                <span className="text-xs text-text-muted">Cantidad</span>
                 <input
                   type="number"
                   step="0.001"
@@ -402,9 +403,9 @@ export default function EscandallosPage() {
                   onChange={(e) => setManualQty(e.target.value)}
                   className="mt-1 w-full rounded-md border border-border bg-bg-input px-2 py-1.5 text-sm text-text-primary focus:border-border-focus focus:outline-none"
                 />
-              </div>
-              <div className="w-16">
-                <label className="text-xs text-text-muted">Unidad</label>
+              </label>
+              <label className="w-16">
+                <span className="text-xs text-text-muted">Unidad</span>
                 <input
                   type="text"
                   placeholder="kg"
@@ -412,9 +413,9 @@ export default function EscandallosPage() {
                   onChange={(e) => setManualUnit(e.target.value)}
                   className="mt-1 w-full rounded-md border border-border bg-bg-input px-2 py-1.5 text-sm text-text-primary focus:border-border-focus focus:outline-none"
                 />
-              </div>
-              <div className="w-16">
-                <label className="text-xs text-text-muted">Merma %</label>
+              </label>
+              <label className="w-16">
+                <span className="text-xs text-text-muted">Merma %</span>
                 <input
                   type="number"
                   step="0.1"
@@ -424,9 +425,9 @@ export default function EscandallosPage() {
                   onChange={(e) => setManualWaste(e.target.value)}
                   className="mt-1 w-full rounded-md border border-border bg-bg-input px-2 py-1.5 text-sm text-text-primary focus:border-border-focus focus:outline-none"
                 />
-              </div>
-              <div className="w-24">
-                <label className="text-xs text-text-muted">€/ud</label>
+              </label>
+              <label className="w-24">
+                <span className="text-xs text-text-muted">€/ud</span>
                 <input
                   type="number"
                   step="0.0001"
@@ -435,7 +436,7 @@ export default function EscandallosPage() {
                   onChange={(e) => setManualCost(e.target.value)}
                   className="mt-1 w-full rounded-md border border-border bg-bg-input px-2 py-1.5 text-sm text-text-primary focus:border-border-focus focus:outline-none"
                 />
-              </div>
+              </label>
               <button
                 type="submit"
                 disabled={!manualName || !manualQty}
