@@ -20,6 +20,7 @@ import {
   type SuggestionStatus,
 } from '@/features/agents/types'
 import { cn } from '@/lib/utils'
+import { useDocumentTitle } from '@/lib/use-document-title'
 
 const STATUS_TABS: { value: SuggestionStatus; label: string }[] = [
   { value: 'pending',  label: 'Pendientes' },
@@ -160,6 +161,7 @@ function SuggestionCard({
 }
 
 export default function AgentsPage() {
+  useDocumentTitle('Sugerencias del agente')
   const { data: hotel } = useActiveHotel()
   const hotelId = hotel?.hotel_id ?? ''
 

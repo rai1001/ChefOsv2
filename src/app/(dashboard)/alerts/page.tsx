@@ -9,6 +9,7 @@ import type { Alert, AlertSeverity } from '@/features/reporting/types'
 import { AlertTriangle, Bell, RefreshCw, X, Package, Clock, TrendingUp, Trash2 } from 'lucide-react'
 import Link from 'next/link'
 import { cn } from '@/lib/utils'
+import { useDocumentTitle } from '@/lib/use-document-title'
 
 const SEVERITY_VARIANT: Record<AlertSeverity, 'urgent' | 'warning' | 'info'> = {
   critical: 'urgent',
@@ -97,6 +98,7 @@ function AlertCard({ alert, onDismiss }: { alert: Alert; onDismiss: (id: string)
 }
 
 export default function AlertsPage() {
+  useDocumentTitle('Alertas')
   const { data: alerts = [], isLoading } = useActiveAlerts()
   const dismiss = useDismissAlert()
   const generateSnapshot = useGenerateDailySnapshot()
