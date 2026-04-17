@@ -9,8 +9,10 @@ import {
 } from '@/features/procurement/hooks/use-ocr-receipt'
 import { ArrowLeft, AlertCircle, Check, Search, Sparkles } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { useDocumentTitle } from '@/lib/use-document-title'
 
 export default function OcrReviewPage() {
+  useDocumentTitle('Revisar OCR')
   const { data: lines, isLoading } = useOcrPendingLines()
 
   return (

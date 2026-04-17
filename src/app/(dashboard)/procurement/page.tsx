@@ -14,10 +14,12 @@ import {
 } from '@/features/procurement/types'
 import { Plus, ClipboardList, ShoppingCart } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { useDocumentTitle } from '@/lib/use-document-title'
 
 type Tab = 'requests' | 'orders'
 
 export default function ProcurementPage() {
+  useDocumentTitle('Compras')
   const [tab, setTab] = useState<Tab>('requests')
   const { data: requests, isLoading: loadingPRs } = usePurchaseRequests()
   const { data: orders, isLoading: loadingPOs } = usePurchaseOrders()

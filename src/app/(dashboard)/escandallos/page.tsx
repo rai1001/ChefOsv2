@@ -16,6 +16,7 @@ import {
   AlertCircle,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { useDocumentTitle } from '@/lib/use-document-title'
 import { useRouter } from 'next/navigation'
 
 const TARGET_FC_PCT = 28
@@ -38,6 +39,7 @@ function calcNet(qty: number, waste: number) {
 }
 
 export default function EscandallosPage() {
+  useDocumentTitle('Escandallos')
   const uid = useId()
   const lineCounter = useRef(0)
   const router = useRouter()

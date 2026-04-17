@@ -3,7 +3,10 @@ import { Providers } from './providers'
 import './globals.css'
 
 export const metadata: Metadata = {
-  title: 'ChefOS',
+  title: {
+    template: '%s — ChefOS',
+    default: 'ChefOS — Control operativo de cocina',
+  },
   description: 'Control operativo de cocina multi-servicio',
 }
 

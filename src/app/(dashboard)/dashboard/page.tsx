@@ -2,6 +2,7 @@
 
 import Link from 'next/link'
 import { useActiveHotel } from '@/features/identity/hooks/use-active-hotel'
+import { useDocumentTitle } from '@/lib/use-document-title'
 import { useDashboard } from '@/features/reporting/hooks/use-dashboard'
 import { useActiveAlerts } from '@/features/reporting/hooks/use-alerts'
 import {
@@ -297,6 +298,7 @@ function KpiCard({
 }
 
 export default function DashboardPage() {
+  useDocumentTitle('Dashboard')
   const { data: hotel } = useActiveHotel()
   const { data: d, isLoading } = useDashboard()
   const { data: alerts = [] } = useActiveAlerts()

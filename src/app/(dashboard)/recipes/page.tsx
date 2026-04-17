@@ -15,8 +15,10 @@ import {
 } from '@/features/recipes/types'
 import { Plus, ChefHat, Search, Filter } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { useDocumentTitle } from '@/lib/use-document-title'
 
 export default function RecipesPage() {
+  useDocumentTitle('Recetas')
   const [search, setSearch] = useState('')
   const [categoryFilter, setCategoryFilter] = useState<RecipeCategory | ''>('')
   const [statusFilter, setStatusFilter] = useState<RecipeStatus | ''>('')
