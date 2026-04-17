@@ -307,7 +307,7 @@ export default function PODetailPage({ params }: { params: Promise<{ id: string 
               </p>
               {(ocrResult.price_alerts ?? 0) > 0 && (
                 <p className="text-warning">
-                  ⚠️ {ocrResult.price_alerts} cambio{ocrResult.price_alerts !== 1 ? 's' : ''} de precio detectado{ocrResult.price_alerts !== 1 ? 's' : ''} — escandallos recalculados.
+                  {ocrResult.price_alerts} cambio{ocrResult.price_alerts !== 1 ? 's' : ''} de precio detectado{ocrResult.price_alerts !== 1 ? 's' : ''} — escandallos recalculados.
                 </p>
               )}
             </div>
