@@ -70,7 +70,7 @@ function CommandBand({
   return (
     <div className="grid gap-4 md:grid-cols-3">
       <div className="status-rail info rounded-r-md bg-bg-card p-4">
-        <p className="kpi-label">Turno activo</p>
+        <h2 className="kpi-label">Turno activo</h2>
         <p className="mt-2" style={{ fontFamily: 'var(--font-display)', fontSize: '17px', fontWeight: 600, color: 'var(--color-text-primary)' }}>
           {shift} · {now.toLocaleDateString('es-ES', { weekday: 'short', day: 'numeric', month: 'short' })}
         </p>
@@ -78,7 +78,7 @@ function CommandBand({
       </div>
 
       <div className={cn('status-rail rounded-r-md bg-bg-card p-4', firstEventToday ? 'warning' : '')}>
-        <p className="kpi-label">Servicio activo</p>
+        <h2 className="kpi-label">Servicio activo</h2>
         {firstEventToday ? (
           <Link href={`/events/${firstEventToday.id}`} className="block">
             <p className="mt-2" style={{ fontFamily: 'var(--font-display)', fontSize: '17px', fontWeight: 600, color: 'var(--color-text-primary)' }}>
@@ -99,7 +99,7 @@ function CommandBand({
       </div>
 
       <div className={cn('status-rail rounded-r-md bg-bg-card p-4', action ? action.variant : 'success')}>
-        <p className="kpi-label">Siguiente acción</p>
+        <h2 className="kpi-label">Siguiente acción</h2>
         {action ? (
           <>
             <p className="mt-2" style={{ fontFamily: 'var(--font-display)', fontSize: '17px', fontWeight: 600, color: 'var(--color-text-primary)' }}>
@@ -229,7 +229,7 @@ function OperationalFeed({
   if (items.length === 0) {
     return (
       <div className="space-y-2">
-        <p className="kpi-label">Feed operativo</p>
+        <h2 className="kpi-label">Feed operativo</h2>
         <div className="status-rail success flex items-center justify-between rounded-r-md bg-bg-card px-4 py-3">
           <div>
             <p className="text-sm font-medium text-text-primary">Todo en orden</p>
@@ -285,7 +285,7 @@ function KpiCard({
       href && 'hover:border-accent/30 cursor-pointer'
     )}>
       <div className="flex items-center justify-between">
-        <p className="kpi-label">{label}</p>
+        <h2 className="kpi-label">{label}</h2>
         <Icon className={cn('h-4 w-4', color ?? 'text-text-muted')} />
       </div>
       <p className="kpi-value mt-2">{value}</p>
