@@ -40,7 +40,7 @@ function AlertCard({ alert, onDismiss }: { alert: Alert; onDismiss: (id: string)
   const variant = SEVERITY_VARIANT[alert.severity]
   return (
     <div className={cn(
-      'status-rail flex items-start gap-4 rounded-r-md bg-bg-card p-4',
+      'alert-box flex items-start gap-4 p-4',
       variant
     )}>
       <Icon className={cn('h-5 w-5 mt-0.5 shrink-0', ALERT_SEVERITY_COLORS[alert.severity])} />
@@ -48,7 +48,7 @@ function AlertCard({ alert, onDismiss }: { alert: Alert; onDismiss: (id: string)
       <div className="flex-1 min-w-0">
         <div className="flex items-start justify-between gap-2">
           <div>
-            <p className="text-sm font-medium text-text-primary">
+            <p className="alert-title text-sm font-medium">
               {alert.title}
             </p>
             <p className="text-xs text-text-muted mt-0.5">

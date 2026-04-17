@@ -231,9 +231,9 @@ function OperationalFeed({
     return (
       <div className="space-y-2">
         <h2 className="kpi-label">Feed operativo</h2>
-        <div className="status-rail success flex items-center justify-between rounded-r-md bg-bg-card px-4 py-3">
+        <div className="alert-box success flex items-center justify-between px-4 py-3">
           <div>
-            <p className="text-sm font-medium text-text-primary">Todo en orden</p>
+            <p className="alert-title text-sm font-medium">Todo en orden</p>
             <p className="mt-0.5 text-xs text-text-muted">0 alertas · 0 pedidos pendientes · 0 caducidades próximas</p>
           </div>
           <p className="font-data text-base text-success" style={{ fontVariantNumeric: 'tabular-nums' }}>OK</p>
@@ -244,7 +244,7 @@ function OperationalFeed({
 
   return (
     <div className="space-y-2">
-      <p className="kpi-label">Feed operativo</p>
+      <h2 className="kpi-label">Feed operativo</h2>
       {items.map((it) => (
         <Link
           key={it.key}

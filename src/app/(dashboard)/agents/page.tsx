@@ -64,13 +64,13 @@ function SuggestionCard({
   const variant = SUGGESTION_STATUS_VARIANT[s.status]
 
   return (
-    <div className={cn('status-rail bg-bg-card rounded-r-md p-4 flex flex-col gap-3', variant)}>
+    <div className={cn('alert-box p-4 flex flex-col gap-3', variant)}>
       {/* Header */}
       <div className="flex items-start justify-between gap-3">
         <div className="flex items-center gap-2 min-w-0">
           <Bot className="h-4 w-4 text-text-muted shrink-0" />
           <div className="min-w-0">
-            <p className="text-sm font-medium text-text-primary truncate">{s.title}</p>
+            <p className="alert-title text-sm font-medium truncate">{s.title}</p>
             <p className="text-xs text-text-muted">
               {AGENT_LABELS[s.agent_type]} · {relativeTime(s.created_at)}
             </p>
