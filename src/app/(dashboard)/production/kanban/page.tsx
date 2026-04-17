@@ -22,7 +22,7 @@ export default function KanbanPage() {
   const { data: workflows } = useWorkflows()
   const [selectedWorkflow, setSelectedWorkflow] = useState<string>('')
 
-  const activeWorkflows = workflows?.filter((w) => w.status === 'active') ?? []
+  const activeWorkflows = workflows?.filter((w) => w.status === 'active' || w.status === 'draft') ?? []
   const { data: tasks } = useWorkflowTasks(selectedWorkflow || undefined)
   const startTask = useStartWorkflowTask()
   const completeTask = useCompleteWorkflowTask()

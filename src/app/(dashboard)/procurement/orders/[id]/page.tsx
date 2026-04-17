@@ -1,15 +1,16 @@
 'use client'
 
-import { use, useState } from 'react'
+import { use, useState, useRef } from 'react'
 import Link from 'next/link'
 import { usePurchaseOrder, useTransitionPO } from '@/features/procurement/hooks/use-purchase-orders'
 import { useReceiveGoods } from '@/features/procurement/hooks/use-goods-receipts'
+import { useUploadDeliveryNote, useOcrPendingLines } from '@/features/procurement/hooks/use-ocr-receipt'
 import {
   PO_STATUS_LABELS,
   PO_STATUS_COLORS,
 } from '@/features/procurement/types'
 import type { PoStatus, QualityStatus } from '@/features/procurement/types'
-import { ArrowLeft, Package, Truck } from 'lucide-react'
+import { ArrowLeft, Package, Truck, Camera, Sparkles, AlertCircle } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 const NEXT_TRANSITIONS: Partial<Record<PoStatus, { label: string; status: PoStatus; variant: string }[]>> = {
@@ -32,7 +33,11 @@ export default function PODetailPage({ params }: { params: Promise<{ id: string 
   const { data: po, isLoading } = usePurchaseOrder(id)
   const transition = useTransitionPO()
   const receiveGoods = useReceiveGoods()
+  const uploadOcr = useUploadDeliveryNote()
+  const { data: ocrPending } = useOcrPendingLines()
+  const fileRef = useRef<HTMLInputElement>(null)
   const [showReceive, setShowReceive] = useState(false)
+  const [ocrResult, setOcrResult] = useState<{ lines_processed?: number; lines_auto_matched?: number; lines_pending_review?: number; lines_product_unknown?: number; price_alerts?: number } | null>(null)
 
   function handleTransition(newStatus: PoStatus) {
     if (newStatus === 'cancelled') {
@@ -61,6 +66,27 @@ export default function PODetailPage({ params }: { params: Promise<{ id: string 
         },
       }
     )
+  }
+
+  function handleOcrUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setOcrResult(null)
+    uploadOcr.mutate(
+      { order_id: id, file },
+      {
+        onSuccess: (data) => {
+          setOcrResult({
+            lines_processed: data.lines_processed,
+            lines_auto_matched: data.lines_auto_matched,
+            lines_pending_review: data.lines_pending_review,
+            lines_product_unknown: data.lines_product_unknown,
+            price_alerts: data.price_alerts,
+          })
+        },
+      }
+    )
+    if (fileRef.current) fileRef.current.value = ''
   }
 
   if (isLoading) {
@@ -222,6 +248,72 @@ export default function PODetailPage({ params }: { params: Promise<{ id: string 
           <p className="p-4 text-sm text-text-muted">Sin lineas</p>
         )}
       </div>
+
+      {/* OCR de albarán — barra entera tintada azul */}
+      {canReceive && (
+        <div className="alert-box info p-4 space-y-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Sparkles className="h-5 w-5 text-info" />
+              <h3 className="alert-title font-medium">Procesar albarán con IA</h3>
+            </div>
+            <span className="text-xs text-text-muted">Claude Vision · ~3s</span>
+          </div>
+          <p className="text-sm text-text-secondary">
+            Sube una foto del albarán. El sistema extraerá automáticamente productos, cantidades, lotes, caducidades y precios.
+            Detectará cambios de precio y recalculará escandallos en cascada.
+          </p>
+          <div className="flex items-center gap-3">
+            <input
+              ref={fileRef}
+              type="file"
+              accept="image/*,application/pdf"
+              capture="environment"
+              onChange={handleOcrUpload}
+              className="hidden"
+            />
+            <button
+              onClick={() => fileRef.current?.click()}
+              disabled={uploadOcr.isPending}
+              className="flex items-center gap-2 rounded-md bg-info px-4 py-2 text-sm font-medium text-white hover:bg-info/90 disabled:opacity-50"
+            >
+              <Camera className="h-4 w-4" />
+              {uploadOcr.isPending ? 'Procesando…' : 'Subir foto albarán'}
+            </button>
+            {ocrPending && ocrPending.length > 0 && (
+              <Link
+                href="/procurement/ocr-review"
+                className="flex items-center gap-2 rounded-md border border-warning/30 bg-warning/10 px-4 py-2 text-sm font-medium text-warning hover:bg-warning/20"
+              >
+                <AlertCircle className="h-4 w-4" />
+                {ocrPending.length} línea{ocrPending.length !== 1 ? 's' : ''} pendiente{ocrPending.length !== 1 ? 's' : ''} de revisar
+              </Link>
+            )}
+          </div>
+          {uploadOcr.error && (
+            <p className="text-sm text-danger">{(uploadOcr.error as Error).message}</p>
+          )}
+          {ocrResult && (
+            <div className="rounded-md border border-border/50 bg-bg-card/50 p-3 text-sm space-y-1">
+              <p className="text-text-primary">
+                <span className="font-medium">{ocrResult.lines_processed}</span> líneas extraídas:
+                <span className="text-success"> {ocrResult.lines_auto_matched ?? 0} auto-matched</span>
+                {(ocrResult.lines_pending_review ?? 0) > 0 && (
+                  <span className="text-warning"> · {ocrResult.lines_pending_review} pendientes</span>
+                )}
+                {(ocrResult.lines_product_unknown ?? 0) > 0 && (
+                  <span className="text-danger"> · {ocrResult.lines_product_unknown} sin producto</span>
+                )}
+              </p>
+              {(ocrResult.price_alerts ?? 0) > 0 && (
+                <p className="text-warning">
+                  ⚠️ {ocrResult.price_alerts} cambio{ocrResult.price_alerts !== 1 ? 's' : ''} de precio detectado{ocrResult.price_alerts !== 1 ? 's' : ''} — escandallos recalculados.
+                </p>
+              )}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Receive confirmation */}
       {showReceive && (

@@ -11,7 +11,9 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:e2e": "playwright test",
-    "db:seed": "tsx scripts/seed-test.ts"
+    "db:seed": "tsx scripts/seed-test.ts",
+    "db:seed:demo": "tsx scripts/seed-eurostars-demo.ts",
+    "db:setup-ocr": "tsx scripts/setup-ocr-storage.ts"
   },
   "dependencies": {
     "@react-pdf/renderer": "^4.4.1",

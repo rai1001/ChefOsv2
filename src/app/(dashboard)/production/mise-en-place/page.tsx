@@ -12,7 +12,7 @@ export default function MiseEnPlacePage() {
   const [selectedWorkflow, setSelectedWorkflow] = useState<string>('')
   const [expandedList, setExpandedList] = useState<string | null>(null)
 
-  const activeWorkflows = workflows?.filter((w) => w.status === 'active') ?? []
+  const activeWorkflows = workflows?.filter((w) => w.status === 'active' || w.status === 'draft') ?? []
   const { data: lists, isLoading: loadingLists } = useMiseEnPlaceLists(selectedWorkflow || undefined)
 
   return (

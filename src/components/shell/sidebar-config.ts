@@ -47,15 +47,23 @@ export const NAV_BY_PROFILE: Record<UXProfile, NavGroup[]> = {
     {
       items: [
         { label: 'Hoy', href: '/dashboard', icon: LayoutDashboard },
+        { label: 'Eventos', href: '/events', icon: CalendarDays },
         { label: 'Producción', href: '/production', icon: ClipboardList },
       ],
     },
     {
       title: 'Recetas',
       items: [
-        { label: 'Catálogo', href: '/recipes', icon: ChefHat },
+        { label: 'Recetas', href: '/recipes', icon: ChefHat },
         { label: 'Escandallos', href: '/escandallos', icon: Calculator },
         { label: 'Menús', href: '/menus', icon: UtensilsCrossed },
+      ],
+    },
+    {
+      title: 'Catálogo',
+      items: [
+        { label: 'Productos', href: '/catalog', icon: Package },
+        { label: 'Proveedores', href: '/catalog/suppliers', icon: Warehouse },
       ],
     },
     {
@@ -65,6 +73,7 @@ export const NAV_BY_PROFILE: Record<UXProfile, NavGroup[]> = {
         { label: 'KDS', href: '/production/kds/cocina_caliente', icon: Monitor },
         { label: 'Kanban', href: '/production/kanban', icon: Columns },
         { label: 'Lista compras', href: '/production/shopping-list', icon: ShoppingCart },
+        { label: 'Compras', href: '/procurement', icon: ShoppingCart },
       ],
     },
     {

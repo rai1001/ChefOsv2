@@ -1,8 +1,11 @@
 'use client'
 
-import { use } from 'react'
+import { use, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { usePurchaseRequest, useTransitionPR } from '@/features/procurement/hooks/use-purchase-requests'
+import { useGeneratePO } from '@/features/procurement/hooks/use-purchase-orders'
+import { useSuppliers } from '@/features/catalog/hooks/use-suppliers'
 import {
   PR_STATUS_LABELS,
   PR_STATUS_COLORS,
@@ -10,7 +13,7 @@ import {
   URGENCY_COLORS,
 } from '@/features/procurement/types'
 import type { PrStatus } from '@/features/procurement/types'
-import { ArrowLeft, Package, AlertTriangle } from 'lucide-react'
+import { ArrowLeft, Package, AlertTriangle, ShoppingCart } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 const NEXT_TRANSITIONS: Partial<Record<PrStatus, { label: string; status: PrStatus; variant: string }[]>> = {
@@ -24,8 +27,18 @@ const NEXT_TRANSITIONS: Partial<Record<PrStatus, { label: string; status: PrStat
 
 export default function PRDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params)
+  const router = useRouter()
   const { data: pr, isLoading } = usePurchaseRequest(id)
+  const { data: suppliers } = useSuppliers()
   const transition = useTransitionPR()
+  const generatePO = useGeneratePO()
+  const [showGenerate, setShowGenerate] = useState(false)
+  const [supplierId, setSupplierId] = useState<string>('')
+  const [deliveryDate, setDeliveryDate] = useState<string>(() => {
+    const d = new Date()
+    d.setDate(d.getDate() + 3)
+    return d.toISOString().slice(0, 10)
+  })
 
   function handleTransition(newStatus: PrStatus) {
     if (newStatus === 'cancelled') {
@@ -35,6 +48,22 @@ export default function PRDetailPage({ params }: { params: Promise<{ id: string 
     } else {
       transition.mutate({ requestId: id, newStatus })
     }
+  }
+
+  function handleGeneratePO() {
+    if (!supplierId) return
+    generatePO.mutate(
+      {
+        supplier_id: supplierId,
+        request_ids: [id],
+        expected_delivery: deliveryDate,
+      },
+      {
+        onSuccess: (newOrderId) => {
+          router.push(`/procurement/orders/${newOrderId}`)
+        },
+      }
+    )
   }
 
   if (isLoading) {
@@ -59,6 +88,7 @@ export default function PRDetailPage({ params }: { params: Promise<{ id: string 
 
   const actions = NEXT_TRANSITIONS[pr.status] ?? []
   const canCancel = !['consolidated', 'cancelled'].includes(pr.status)
+  const canGeneratePO = pr.status === 'approved'
 
   return (
     <div className="mx-auto max-w-3xl space-y-6">
@@ -176,8 +206,63 @@ export default function PRDetailPage({ params }: { params: Promise<{ id: string 
         )}
       </div>
 
+      {/* Generar PO panel (cuando PR está aprobada) */}
+      {showGenerate && canGeneratePO && (
+        <div className="rounded-lg border border-info/30 bg-info/5 p-4 space-y-4">
+          <div className="flex items-center gap-2">
+            <ShoppingCart className="h-5 w-5 text-info" />
+            <h3 className="font-medium text-text-primary">Generar pedido de compra</h3>
+          </div>
+          <div className="grid gap-3 md:grid-cols-2">
+            <div>
+              <label className="block text-xs text-text-muted uppercase tracking-wider mb-1">Proveedor</label>
+              <select
+                value={supplierId}
+                onChange={(e) => setSupplierId(e.target.value)}
+                className="w-full rounded-md border border-border bg-bg-input px-3 py-2 text-sm text-text-primary focus:border-border-focus focus:outline-none focus:ring-1 focus:ring-accent"
+              >
+                <option value="">— Selecciona proveedor —</option>
+                {(suppliers ?? []).filter((s) => s.is_active).map((s) => (
+                  <option key={s.id} value={s.id}>{s.name}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-xs text-text-muted uppercase tracking-wider mb-1">Entrega prevista</label>
+              <input
+                type="date"
+                value={deliveryDate}
+                onChange={(e) => setDeliveryDate(e.target.value)}
+                className="w-full rounded-md border border-border bg-bg-input px-3 py-2 text-sm text-text-primary focus:border-border-focus focus:outline-none focus:ring-1 focus:ring-accent"
+              />
+            </div>
+          </div>
+          <p className="text-xs text-text-muted">
+            Se creará un pedido con las {pr.lines?.length ?? 0} líneas de esta solicitud al precio del proveedor preferido. La solicitud quedará marcada como CONSOLIDADA.
+          </p>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={handleGeneratePO}
+              disabled={!supplierId || generatePO.isPending}
+              className="rounded-md bg-info px-4 py-2 text-sm font-medium text-white hover:bg-info/90 disabled:opacity-50"
+            >
+              {generatePO.isPending ? 'Generando…' : 'Generar pedido'}
+            </button>
+            <button
+              onClick={() => setShowGenerate(false)}
+              className="rounded-md px-4 py-2 text-sm text-text-secondary hover:text-text-primary"
+            >
+              Cancelar
+            </button>
+          </div>
+          {generatePO.error && (
+            <p className="text-sm text-danger">{(generatePO.error as Error).message}</p>
+          )}
+        </div>
+      )}
+
       {/* Actions */}
-      {(actions.length > 0 || canCancel) && (
+      {(actions.length > 0 || canCancel || canGeneratePO) && !showGenerate && (
         <div className="flex items-center gap-3 border-t border-border pt-4">
           {actions.map((action) => (
             <button
@@ -189,6 +274,15 @@ export default function PRDetailPage({ params }: { params: Promise<{ id: string 
               {action.label}
             </button>
           ))}
+          {canGeneratePO && (
+            <button
+              onClick={() => setShowGenerate(true)}
+              className="flex items-center gap-2 rounded-md bg-info px-4 py-2 text-sm font-medium text-white hover:bg-info/90"
+            >
+              <ShoppingCart className="h-4 w-4" />
+              Generar pedido (PO)
+            </button>
+          )}
           {canCancel && (
             <button
               onClick={() => handleTransition('cancelled')}

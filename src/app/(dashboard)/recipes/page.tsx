@@ -79,106 +79,128 @@ export default function RecipesPage() {
         </div>
       </div>
 
-      {/* Recipe list */}
-      <div className="rounded-lg border border-border bg-bg-card">
-        {isLoading ? (
-          <div className="space-y-0">
-            {[1, 2, 3, 4, 5].map((i) => (
-              <div key={i} className="flex items-center gap-4 border-b border-border p-4 last:border-0">
-                <div className="h-4 w-40 skeleton" />
-                <div className="h-4 w-24 skeleton" />
-                <div className="h-4 w-16 skeleton" />
-                <div className="h-4 w-20 skeleton" />
+      {/* Recipe grid */}
+      {isLoading ? (
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          {[1, 2, 3, 4, 5, 6].map((i) => (
+            <div key={i} className="rounded-lg border border-border bg-bg-card overflow-hidden">
+              <div className="h-40 skeleton" />
+              <div className="p-4 space-y-3">
+                <div className="h-5 w-3/4 skeleton" />
+                <div className="h-3 w-1/2 skeleton" />
+                <div className="h-7 w-1/3 skeleton" />
               </div>
-            ))}
-          </div>
-        ) : !recipes || recipes.length === 0 ? (
-          <div className="p-12 text-center">
-            <ChefHat className="mx-auto h-12 w-12 text-text-muted" />
-            <p className="mt-3 text-text-secondary">No hay recetas todavía</p>
-            <Link
-              href="/recipes/new"
-              className="mt-4 inline-flex items-center gap-2 rounded-md bg-accent px-4 py-2 text-sm font-medium text-white hover:bg-accent-hover"
-            >
-              <Plus className="h-4 w-4" />
-              Crear primera receta
-            </Link>
-          </div>
-        ) : (
-          <table className="w-full">
-            <thead>
-              <tr className="border-b text-left text-text-muted" style={{ borderColor: 'var(--border-strong)', fontFamily: 'var(--font-code)', fontSize: '10px', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
-                <th className="px-4 py-3 font-medium">Receta</th>
-                <th className="px-4 py-3 font-medium">Categoría</th>
-                <th className="px-4 py-3 font-medium">Dificultad</th>
-                <th className="px-4 py-3 text-right font-medium">Raciones</th>
-                <th className="px-4 py-3 text-right font-medium">Coste/ración</th>
-                <th className="px-4 py-3 text-right font-medium">% Food Cost</th>
-                <th className="px-4 py-3 font-medium">Estado</th>
-              </tr>
-            </thead>
-            <tbody>
-              {recipes.map((recipe) => {
-                const variant = RECIPE_STATUS_VARIANT[recipe.status]
-                return (
-                  <tr
-                    key={recipe.id}
-                    className={cn('status-rail border-b border-border last:border-0 hover:bg-bg-hover', variant)}
+            </div>
+          ))}
+        </div>
+      ) : !recipes || recipes.length === 0 ? (
+        <div className="rounded-lg border border-border bg-bg-card p-12 text-center">
+          <ChefHat className="mx-auto h-12 w-12 text-text-muted" />
+          <p className="mt-3 text-text-secondary">No hay recetas todavía</p>
+          <Link
+            href="/recipes/new"
+            className="mt-4 inline-flex items-center gap-2 rounded-md bg-accent px-4 py-2 text-sm font-medium text-white hover:bg-accent-hover"
+          >
+            <Plus className="h-4 w-4" />
+            Crear primera receta
+          </Link>
+        </div>
+      ) : (
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          {recipes.map((recipe) => {
+            const variant = RECIPE_STATUS_VARIANT[recipe.status]
+            const fcColor =
+              recipe.food_cost_pct > 35 ? 'text-danger'
+              : recipe.food_cost_pct > 30 ? 'text-warning'
+              : recipe.food_cost_pct > 0 ? 'text-success'
+              : 'text-text-muted'
+            // Glow tinte según estado para el placeholder
+            const glow =
+              variant === 'success' ? 'rgba(90,122,90,0.18)'
+              : variant === 'warning' ? 'rgba(184,115,51,0.18)'
+              : variant === 'urgent' ? 'rgba(192,57,43,0.18)'
+              : 'rgba(74,96,112,0.15)'
+            const totalTime = (recipe.prep_time_min ?? 0) + (recipe.cook_time_min ?? 0)
+            return (
+              <Link
+                key={recipe.id}
+                href={`/recipes/${recipe.id}`}
+                className="group rounded-lg border border-border bg-bg-card overflow-hidden transition-colors hover:border-accent/40"
+              >
+                {/* Foto / placeholder */}
+                {recipe.image_url ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={recipe.image_url}
+                    alt={recipe.name}
+                    className="h-40 w-full object-cover"
+                  />
+                ) : (
+                  <div
+                    className="h-40 flex items-center justify-center"
+                    style={{
+                      background: `radial-gradient(ellipse at center, ${glow} 0%, transparent 70%)`,
+                      borderBottom: '1px solid var(--color-border)',
+                    }}
                   >
-                    <td className="px-4 py-3">
-                      <Link
-                        href={`/recipes/${recipe.id}`}
-                        className="font-medium text-text-primary hover:text-accent"
-                      >
-                        {recipe.name}
-                      </Link>
-                      {recipe.allergens.length > 0 && (
-                        <p className="mt-0.5 text-xs text-warning">
-                          {recipe.allergens.map((a) => ALLERGEN_LABELS[a]).join(', ')}
-                        </p>
-                      )}
-                    </td>
-                    <td className="px-4 py-3 text-sm text-text-secondary">
-                      {RECIPE_CATEGORY_LABELS[recipe.category]}
-                    </td>
-                    <td className="px-4 py-3 text-sm text-text-secondary">
-                      {RECIPE_DIFFICULTY_LABELS[recipe.difficulty]}
-                    </td>
-                    <td className="px-4 py-3 text-sm text-text-secondary font-data text-right">
-                      {recipe.servings}
-                    </td>
-                    <td className="px-4 py-3 text-sm text-text-primary font-data text-right">
-                      {recipe.cost_per_serving > 0
-                        ? `${recipe.cost_per_serving.toFixed(2)} EUR`
-                        : '—'}
-                    </td>
-                    <td className="px-4 py-3 text-sm font-data text-right">
-                      <span
-                        className={cn(
-                          recipe.food_cost_pct > 35
-                            ? 'text-danger'
-                            : recipe.food_cost_pct > 30
-                              ? 'text-warning'
-                              : 'text-text-secondary'
-                        )}
-                      >
-                        {recipe.food_cost_pct > 0
-                          ? `${recipe.food_cost_pct.toFixed(1)}%`
-                          : '—'}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3">
-                      <span className={cn('badge-status', variant)}>
+                    <span
+                      className="text-text-muted"
+                      style={{ fontFamily: 'var(--font-code)', fontSize: '13px', letterSpacing: '0.04em' }}
+                    >
+                      [ foto del plato ]
+                    </span>
+                  </div>
+                )}
+
+                {/* Body */}
+                <div className="p-4 space-y-3">
+                  <div>
+                    <h3 className="text-sm font-medium text-text-primary group-hover:text-accent transition-colors" style={{ fontFamily: 'var(--font-sans)', letterSpacing: 0 }}>
+                      {recipe.name}
+                    </h3>
+                    <p className="mt-1 text-xs text-text-muted">
+                      {recipe.servings} raciones · {totalTime > 0 ? `${totalTime} min` : '—'} · {RECIPE_DIFFICULTY_LABELS[recipe.difficulty]} ·{' '}
+                      <span className={cn(
+                        variant === 'success' ? 'text-success'
+                        : variant === 'warning' ? 'text-warning'
+                        : variant === 'urgent' ? 'text-danger'
+                        : 'text-text-muted'
+                      )}>
                         {RECIPE_STATUS_LABELS[recipe.status]}
                       </span>
-                    </td>
-                  </tr>
-                )
-              })}
-            </tbody>
-          </table>
-        )}
-      </div>
+                    </p>
+                    {recipe.allergens.length > 0 && (
+                      <p className="mt-1 text-xs text-warning">
+                        {recipe.allergens.map((a) => ALLERGEN_LABELS[a]).join(', ')}
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Coste + food cost */}
+                  <div className="flex items-end justify-between border-t border-border pt-3">
+                    <div>
+                      <p className="font-data text-lg text-text-primary" style={{ fontVariantNumeric: 'tabular-nums' }}>
+                        {recipe.cost_per_serving > 0
+                          ? `€ ${recipe.cost_per_serving.toFixed(2)}`
+                          : '—'}
+                      </p>
+                      <p className="kpi-label mt-0.5">Coste / ración</p>
+                    </div>
+                    <p className={cn('font-data text-base', fcColor)} style={{ fontVariantNumeric: 'tabular-nums' }}>
+                      {recipe.food_cost_pct > 0 ? `${recipe.food_cost_pct.toFixed(1)}%` : '—'}
+                    </p>
+                  </div>
+
+                  {/* Categoría chip */}
+                  <p className="text-xs text-text-muted" style={{ fontFamily: 'var(--font-code)' }}>
+                    {RECIPE_CATEGORY_LABELS[recipe.category]}
+                  </p>
+                </div>
+              </Link>
+            )
+          })}
+        </div>
+      )}
     </div>
   )
 }

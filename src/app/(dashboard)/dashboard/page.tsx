@@ -248,10 +248,10 @@ function OperationalFeed({
         <Link
           key={it.key}
           href={it.href}
-          className={cn('status-rail flex items-center justify-between rounded-r-md bg-bg-card px-4 py-3 hover:bg-bg-hover transition-colors', it.variant)}
+          className={cn('alert-box flex items-center justify-between px-4 py-3 transition-colors', it.variant)}
         >
           <div className="min-w-0 flex-1 pr-4">
-            <p className="text-sm font-medium text-text-primary truncate">{it.title}</p>
+            <p className="alert-title text-sm font-medium truncate">{it.title}</p>
             <p className="mt-0.5 text-xs text-text-muted truncate">{it.sub}</p>
           </div>
           <div className="text-right shrink-0">
@@ -328,14 +328,17 @@ export default function DashboardPage() {
           {/* Banda de mando — DESIGN.md §Layout */}
           <CommandBand hotel={hotel} d={d} />
 
-          {/* Alertas activas (si hay) */}
+          {/* Alertas activas (si hay) — alert-box: barra entera tintada para vistazo */}
           {(criticalAlerts.length > 0 || warningAlerts.length > 0) && (
             <Link
               href="/alerts"
-              className="flex items-center justify-between rounded-lg border border-danger/40 bg-danger/5 px-4 py-3 hover:border-danger/60"
+              className={cn(
+                'alert-box flex items-center justify-between px-4 py-3 transition-colors',
+                criticalAlerts.length > 0 ? 'urgent' : 'warning',
+              )}
             >
               <div className="flex items-center gap-3">
-                <Bell className="h-5 w-5 text-danger shrink-0" />
+                <Bell className={cn('h-5 w-5 shrink-0', criticalAlerts.length > 0 ? 'text-danger' : 'text-warning')} />
                 <div>
                   {criticalAlerts.length > 0 && (
                     <p className="text-sm font-medium text-danger">

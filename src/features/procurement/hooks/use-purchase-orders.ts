@@ -83,6 +83,7 @@ export function useGeneratePO() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['purchase-orders'] })
       queryClient.invalidateQueries({ queryKey: ['purchase-requests'] })
+      queryClient.invalidateQueries({ queryKey: ['purchase-request'] })
     },
   })
 }

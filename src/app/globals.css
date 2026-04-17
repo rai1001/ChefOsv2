@@ -108,6 +108,54 @@ code, kbd, samp {
 .status-rail.success { border-left-color: var(--color-success); }
 .status-rail.info    { border-left-color: var(--color-info); }
 
+/* Alert-box — barra entera tintada para alertas de un vistazo (v2)
+   DESIGN.md §Alerts: distinto a status-rail; se usa en banners y feed crítico */
+.alert-box {
+  border-top-width: 1px;
+  border-right-width: 1px;
+  border-bottom-width: 1px;
+  border-left-width: 3px;
+  border-style: solid;
+  border-top-color: var(--color-border);
+  border-right-color: var(--color-border);
+  border-bottom-color: var(--color-border);
+  border-left-color: var(--color-border);
+  border-radius: var(--radius-md);
+  background-color: var(--color-bg-card);
+}
+.alert-box.urgent {
+  background-color: var(--urgent-bg);
+  border-top-color: var(--urgent-border);
+  border-right-color: var(--urgent-border);
+  border-bottom-color: var(--urgent-border);
+  border-left-color: var(--color-danger);
+}
+.alert-box.warning {
+  background-color: var(--warning-bg);
+  border-top-color: var(--warning-border);
+  border-right-color: var(--warning-border);
+  border-bottom-color: var(--warning-border);
+  border-left-color: var(--color-warning);
+}
+.alert-box.success {
+  background-color: var(--success-bg);
+  border-top-color: var(--success-border);
+  border-right-color: var(--success-border);
+  border-bottom-color: var(--success-border);
+  border-left-color: var(--color-success);
+}
+.alert-box.info {
+  background-color: var(--info-bg);
+  border-top-color: var(--info-border);
+  border-right-color: var(--info-border);
+  border-bottom-color: var(--info-border);
+  border-left-color: var(--color-info);
+}
+.alert-box.urgent  .alert-title { color: #e88070; }
+.alert-box.warning .alert-title { color: #d4a070; }
+.alert-box.success .alert-title { color: #8ab88a; }
+.alert-box.info    .alert-title { color: #7a9ab0; }
+
 /* Badges de estado (DESIGN.md §Component Patterns — Badges) */
 .badge-status {
   font-family: var(--font-code);
