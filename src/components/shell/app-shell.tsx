@@ -54,10 +54,16 @@ export function AppShell({ children }: { children: ReactNode }) {
 
   return (
     <div className="flex h-screen bg-bg-primary">
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:fixed focus:left-2 focus:top-2 focus:z-50 focus:rounded-md focus:bg-accent focus:px-3 focus:py-2 focus:text-sm focus:font-medium focus:text-[color:var(--accent-fg)]"
+      >
+        Saltar al contenido
+      </a>
       <Sidebar profile={profile} />
       <div className="flex flex-1 flex-col overflow-hidden">
         <Topbar hotel={hotel} />
-        <main className="flex-1 overflow-y-auto p-6">
+        <main id="main-content" className="flex-1 overflow-y-auto p-6">
           {children}
         </main>
       </div>
