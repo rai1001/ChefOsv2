@@ -28,10 +28,11 @@ export function Topbar({ hotel }: TopbarProps) {
         <button
           onClick={signOut}
           className="flex items-center gap-2 rounded-md px-2 py-1.5 text-sm text-text-secondary hover:bg-bg-hover hover:text-text-primary"
+          aria-label="Cerrar sesión"
           title="Cerrar sesión"
         >
-          <User className="h-5 w-5" />
-          <LogOut className="h-4 w-4" />
+          <User className="h-5 w-5" aria-hidden="true" />
+          <LogOut className="h-4 w-4" aria-hidden="true" />
         </button>
       </div>
     </header>
