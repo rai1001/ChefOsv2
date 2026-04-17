@@ -131,6 +131,14 @@ code, kbd, samp {
 .status-rail.success { border-left-color: var(--color-success); }
 .status-rail.info    { border-left-color: var(--color-info); }
 
+/* Rows de tabla (<tr>) con status-rail urgente: tinte de bg para que se vea
+   de un vistazo, manteniendo consistencia con .alert-box. Solo urgent y warning
+   tintan; success e info quedan como border-only (menos ruido visual). */
+tbody tr.status-rail.urgent  { background-color: var(--urgent-bg); }
+tbody tr.status-rail.warning { background-color: var(--warning-bg); }
+tbody tr.status-rail.urgent:hover  { background-color: color-mix(in srgb, var(--urgent-bg) 70%, var(--color-bg-hover)); }
+tbody tr.status-rail.warning:hover { background-color: color-mix(in srgb, var(--warning-bg) 70%, var(--color-bg-hover)); }
+
 /* Alert-box — barra entera tintada para alertas de un vistazo (v2)
    DESIGN.md §Alerts: distinto a status-rail; se usa en banners y feed crítico */
 .alert-box {

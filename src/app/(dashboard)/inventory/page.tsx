@@ -86,21 +86,37 @@ export default function InventoryPage() {
             <p className="kpi-value mt-2">{stats.ok}</p>
           </div>
           <div className={cn(
-            'status-rail rounded-r-md bg-bg-card p-4',
-            stats.critical > 0 ? 'urgent' : stats.warning > 0 ? 'warning' : ''
+            'p-4',
+            stats.critical > 0
+              ? 'alert-box urgent'
+              : stats.warning > 0
+                ? 'alert-box warning'
+                : 'rounded-md border border-border bg-bg-card'
           )}>
             <p className="kpi-label">Alertas</p>
-            <p className="kpi-value mt-2">{stats.warning + stats.critical}</p>
+            <p className={cn(
+              'kpi-value mt-2',
+              stats.critical > 0 ? 'text-danger' : stats.warning > 0 ? 'text-warning' : ''
+            )}>{stats.warning + stats.critical}</p>
           </div>
         </div>
       )}
 
       {/* Alerts banner */}
       {alerts && alerts.length > 0 && (
-        <div className="rounded-lg border border-warning/30 bg-warning/5 p-4">
+        <div className={cn(
+          'alert-box p-4',
+          alerts.some((a) => a.severity === 'critical') ? 'urgent' : 'warning'
+        )}>
           <div className="flex items-center gap-2 mb-2">
-            <AlertTriangle className="h-4 w-4 text-warning" />
-            <h3 className="text-sm font-medium text-warning">{alerts.length} alertas activas</h3>
+            <AlertTriangle className={cn(
+              'h-4 w-4',
+              alerts.some((a) => a.severity === 'critical') ? 'text-danger' : 'text-warning'
+            )} />
+            <h3 className={cn(
+              'alert-title text-sm font-medium',
+              alerts.some((a) => a.severity === 'critical') ? 'text-danger' : 'text-warning'
+            )}>{alerts.length} alertas activas</h3>
           </div>
           <div className="space-y-1">
             {alerts.slice(0, 5).map((alert, i) => (
