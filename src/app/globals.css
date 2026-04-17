@@ -65,11 +65,17 @@
   --info-border: rgba(74, 96, 112, 0.25);
 }
 
+/* Root usa 110% de la preferencia del usuario (por defecto 16px → 17.6px),
+   para que Ctrl+/- en el navegador escale todo el tamaño de la UI (WCAG 1.4.4). */
+html {
+  font-size: 110%;
+}
+
 body {
   background-color: var(--color-bg-primary);
   color: var(--color-text-primary);
   font-family: var(--font-sans);
-  font-size: 17.6px; /* 110% de 16px — Israel */
+  font-size: 1rem; /* hereda html root — escalable con la preferencia del usuario */
   line-height: 1.5;
 }
 
