@@ -19,11 +19,19 @@
   --color-accent: #e8e4dc;       /* Tungsten White */
   --color-accent-hover: #d8d4cc;
 
-  /* Estado funcional */
+  /* Estado funcional — bases para bg-* y border-* (tintes y acentos) */
   --color-success: #5a7a5a;
   --color-warning: #b87333;      /* cobre, no amber */
   --color-danger: #c0392b;       /* urgent */
   --color-info: #4a6070;
+
+  /* Foregrounds de estado — usados por text-*, garantizan WCAG AA 4.5:1
+     sobre bg-card (#242424) y bg-primary (#1a1a1a). Los tokens base de
+     arriba siguen siendo correctos para fondos tintados (rgba 12%) y bordes. */
+  --color-success-fg: #8baf8b;
+  --color-warning-fg: #d4a574;
+  --color-danger-fg:  #e88070;
+  --color-info-fg:    #8ba6b8;
 
   /* Bordes */
   --color-border: #2e2e2e;
@@ -92,6 +100,15 @@ code, kbd, samp {
 .hover\:bg-accent:hover {
   color: var(--accent-fg);
 }
+
+/* Foreground overrides para estados — los tokens base (#5a7a5a, #b87333, #c0392b, #4a6070)
+   no pasan 4.5:1 a 12px sobre bg-card/bg-primary. Estas clases forzan los _-fg
+   para cumplir WCAG 2.1 AA 1.4.3. Mantienen compatibilidad con las clases Tailwind
+   auto-generadas (text-success, text-warning, text-danger, text-info). */
+.text-success { color: var(--color-success-fg); }
+.text-warning { color: var(--color-warning-fg); }
+.text-danger  { color: var(--color-danger-fg); }
+.text-info    { color: var(--color-info-fg); }
 
 *:focus-visible {
   outline: 2px solid var(--color-border-focus);
