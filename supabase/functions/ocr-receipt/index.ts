@@ -191,6 +191,13 @@ Deno.serve(async (req: Request) => {
     })
   }
 
+  // Enforce storage path convention: {hotel_id}/{filename}.
+  // Prevents cross-tenant traversal — service-role createSignedUrl would otherwise
+  // access any path regardless of ownership.
+  if (!body.image_path.startsWith(`${body.hotel_id}/`)) {
+    return jsonResponse(403, { ok: false, error: 'Forbidden: image_path does not belong to hotel' })
+  }
+
   if (!ANTHROPIC_API_KEY) {
     return jsonResponse(500, {
       ok: false,
@@ -200,9 +207,17 @@ Deno.serve(async (req: Request) => {
 
   const authHeader = req.headers.get('Authorization') ?? ''
   const userToken = authHeader.replace('Bearer ', '').trim()
-  const isServiceRole = !userToken || userToken === SERVICE_ROLE
 
-  // Cliente Supabase con el JWT del usuario (o service_role)
+  // Reject requests with no Authorization header — prevents implicit service_role
+  // fallback that would let unauthenticated callers hit the early idempotency path.
+  if (!userToken) {
+    return jsonResponse(401, { ok: false, error: 'Authorization required' })
+  }
+
+  const isServiceRole = userToken === SERVICE_ROLE
+
+  // Business-logic client: user JWT (o service_role para workers autónomos).
+  // Hereda permisos RLS del usuario para RPCs de negocio (process_ocr_receipt).
   const supabase = createClient(
     SUPABASE_URL!,
     isServiceRole ? SERVICE_ROLE! : userToken,
@@ -214,12 +229,16 @@ Deno.serve(async (req: Request) => {
     },
   )
 
-  // Cliente service_role solo para Storage
-  const storage = createClient(SUPABASE_URL!, SERVICE_ROLE!).storage
+  // Infrastructure client: service_role para rate limits, idempotency y storage.
+  // Estos RPCs se revocan de authenticated (solo service_role puede llamarlos).
+  const adminClient = createClient(SUPABASE_URL!, SERVICE_ROLE!, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  })
+  const storage = adminClient.storage
 
   // ─── 1. Rate limit por hotel (30 req/h) ──────────────────────────────────
   const hotelKey = `ocr:hotel:${body.hotel_id}:hour`
-  const hotelRl = await checkRateLimit(supabase, hotelKey, RL_HOTEL_PER_HOUR, 3600)
+  const hotelRl = await checkRateLimit(adminClient, hotelKey, RL_HOTEL_PER_HOUR, 3600)
 
   const rlHeaders: Record<string, string> = {
     'X-RateLimit-Limit-Hotel':     String(RL_HOTEL_PER_HOUR),
@@ -251,7 +270,7 @@ Deno.serve(async (req: Request) => {
   }
   if (userId) {
     const userKey = `ocr:user:${userId}:minute`
-    const userRl = await checkRateLimit(supabase, userKey, RL_USER_PER_MINUTE, 60)
+    const userRl = await checkRateLimit(adminClient, userKey, RL_USER_PER_MINUTE, 60)
     if (!userRl.allowed) {
       const retryAfter = userRl.reset_at
         ? Math.max(1, Math.ceil((new Date(userRl.reset_at).getTime() - Date.now()) / 1000))
@@ -267,11 +286,20 @@ Deno.serve(async (req: Request) => {
     }
   }
 
+  // ─── 2b. Membership gate (user callers only) ────────────────────────────
+  // Must run before service-role storage access to prevent cross-tenant reads.
+  if (!isServiceRole) {
+    const { data: isMember } = await supabase.rpc('is_member_of', { p_hotel_id: body.hotel_id })
+    if (!isMember) {
+      return jsonResponse(403, { ok: false, error: 'Forbidden' }, rlHeaders)
+    }
+  }
+
   // ─── 3. Early idempotency check (short-circuit antes de Claude) ──────────
   // Si el cliente pasó image_hash, buscamos GR existente con ese hash+order.
   // Si existe, devolvemos ya — sin coste Anthropic.
   if (body.image_hash) {
-    const { data: existingGr } = await supabase
+    const { data: existingGr } = await adminClient
       .from('goods_receipts')
       .select('id, receipt_number')
       .eq('order_id', body.order_id)
@@ -279,7 +307,7 @@ Deno.serve(async (req: Request) => {
       .maybeSingle()
 
     if (existingGr) {
-      const { data: linesCount } = await supabase
+      const { data: linesCount } = await adminClient
         .from('goods_receipt_lines')
         .select('ocr_review_status', { count: 'exact', head: false })
         .eq('receipt_id', existingGr.id)
@@ -412,7 +440,6 @@ Deno.serve(async (req: Request) => {
       {
         ok: false,
         error: `process_ocr_receipt failed: ${rpcErr.message}`,
-        ocr_data: ocrData,
       },
       rlHeaders,
     )
