@@ -58,7 +58,7 @@ Resumen de decisiones clave (ver DESIGN.md para especificación completa):
 - Proyecto: dbtrgnyfmzqsrcoadcrs (cuenta raisada1001@gmail.com)
 - Hotel test: `ec079cf6-13b1-4be5-9e6f-62c8f604cb1e` (seed-test, 7 roles)
 - Hotel demo Eurostars: `22222222-2222-2222-2222-222222222222` (seed-eurostars-demo, 30 productos Galicia, 6 recetas, 4 eventos)
-- Migraciones: 00001-00046 (D0 + M1-M15 + security audits + OCR + idempotency + rate limits)
+- Migraciones: 00001-00051 (D0 + M1-M15 + security audits + OCR + idempotency + rate limits)
 - Ejecutar migración individual: `cat file.sql | npx supabase db query --linked`
 - Deploy edge function: `npx supabase functions deploy <name> --project-ref dbtrgnyfmzqsrcoadcrs --no-verify-jwt`
 
@@ -111,6 +111,11 @@ Resumen de decisiones clave (ver DESIGN.md para especificación completa):
 | 00044 | ocr_idempotency | goods_receipts.delivery_note_image_hash + unique index parcial (order_id, hash) + process_ocr_receipt acepta p_image_hash (dedup DB-side antes de insertar) |
 | 00045 | po_idempotency | generate_purchase_order con SELECT FOR UPDATE en PRs (serializa concurrentes) + error P0016 si ya consolidated (defense vs doble-click) |
 | 00046 | domain_events_dedup | emit_event con p_dedup_window_seconds (default 5s) + index idx_domain_events_dedup: triggers que disparen 2x no duplican eventos/notificaciones |
+| 00047 | fix_emit_event_grant | Codex sesión 18: 00046 recreó emit_event (6 params) y regrantó authenticated (revertía 00034 FIX 2). REVOKE public/anon/authenticated + GRANT service_role |
+| 00048 | fix_add_kitchen_order_item | Codex sesión 18: UPDATE kitchen_orders por p_order_id sin hotel_id scope → cross-tenant. AND hotel_id = p_hotel_id + search_path |
+| 00049 | fix_internal_rpcs_grants | Codex sesión 18: consume_rate_limit/get_rate_limit_status/check_idempotency/store_idempotency eran authenticated. REVOKE → solo service_role (edge functions) |
+| 00050 | fix_event_client_hotel_scope | Codex sesión 18: create_event/update_event aceptaban client_id arbitrario; get_events_calendar leak cross-tenant client name. Validación client.hotel_id = event.hotel_id |
+| 00051 | security_rpc_tenant_scope | Codex sesión 18: seed_default_categories exige check_membership admin+; get_production_summary scope events.hotel_id en join; receive_goods valida order_line_id.order_id = p_order_id (pre-loop + UPDATE) |
 
 ## Estado actual (2026-04-17 — Sesión 16: OCR end-to-end + demo Eurostars + a11y WCAG AA + idempotencia + rate limits)
 - D0 Identidad: COMPLETO — auth flow, app shell, sidebar adaptativa (4 perfiles), audit triggers
