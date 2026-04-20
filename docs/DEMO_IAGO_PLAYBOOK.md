@@ -18,17 +18,21 @@
 
 ### Credenciales (3 perfiles — elegir según audiencia)
 
-| Perfil | Email | Password | Cuándo usar |
-|---|---|---|---|
-| **Admin** | demo-admin@eurostars-demo.es | `Demo1234!` | Recomendado: ve TODO (catálogo, compras, inventario, APPCC, automation, integraciones) |
-| Head Chef | demo-head-chef@eurostars-demo.es | `Demo1234!` | Si Iago quiere ver la vista operativa del chef (mise en place, kanban, compras limitadas) |
-| Comercial | demo-commercial@eurostars-demo.es | `Demo1234!` | Si lo acompaña alguien de banquetes/ventas |
+Las credenciales NO se commitean. Están en `docs/DEMO_IAGO_CREDENTIALS.local.md`
+(gitignored). Si no existe, crear desde la plantilla y rotar passwords en
+Supabase antes de cada demo.
+
+| Perfil | Email | Cuándo usar |
+|---|---|---|
+| **Admin** | `demo-admin@eurostars-demo.es` | Recomendado: ve TODO (catálogo, compras, inventario, APPCC, automation, integraciones) |
+| Head Chef | `demo-head-chef@eurostars-demo.es` | Si Iago quiere ver la vista operativa del chef (mise en place, kanban, compras limitadas) |
+| Comercial | `demo-commercial@eurostars-demo.es` | Si lo acompaña alguien de banquetes/ventas |
 
 ### Checklist pre-demo (15 min antes)
 
 ```
 [ ] Abrir https://chefos-v2.vercel.app en Chrome (ventana limpia, sin extensiones ruidosas)
-[ ] Login con demo-admin@eurostars-demo.es / Demo1234!
+[ ] Login con demo-admin (password en DEMO_IAGO_CREDENTIALS.local.md)
 [ ] Verificar dashboard carga con datos (banda de mando + KPIs con números reales)
 [ ] Abrir en otra pestaña /events/<id-bodas> y dejarla lista
 [ ] Abrir en 3ª pestaña /procurement con una PO en estado 'sent' lista para OCR

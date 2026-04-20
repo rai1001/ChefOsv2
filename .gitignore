@@ -51,3 +51,7 @@ supabase/.branches/
 
 # gstack
 .gstack/
+
+# local-only docs (credenciales, notas que no deben commitear)
+*.local.md
+docs/*.local.md

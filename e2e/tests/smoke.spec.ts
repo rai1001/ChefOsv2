@@ -1,8 +1,8 @@
 import { test, expect } from '@playwright/test'
+import { requireEnv } from './_helpers/env'
 
-// Credenciales del usuario de prueba (memoria: admin@chefos.test / Test1234!)
-const TEST_EMAIL = process.env.E2E_EMAIL ?? 'admin@chefos.test'
-const TEST_PASSWORD = process.env.E2E_PASSWORD ?? 'Test1234!'
+const TEST_EMAIL = requireEnv('E2E_EMAIL')
+const TEST_PASSWORD = requireEnv('E2E_PASSWORD')
 
 /**
  * Smoke test — verifica que la app arranca, login funciona, dashboard carga,

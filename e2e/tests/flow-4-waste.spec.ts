@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test'
+import { requireEnv } from './_helpers/env'
 
 /**
  * Flujo 4 — Registrar merma → stock decrementa
@@ -10,7 +11,7 @@ import { test, expect } from '@playwright/test'
  */
 
 const EMAIL = 'test-admin@chefos.test'
-const PASSWORD = 'Test1234!'
+const PASSWORD = requireEnv('E2E_PASSWORD')
 
 test.describe('Flujo 4 — registrar merma', () => {
   test('login + crear merma y verificar que aparece en la lista', async ({ page }) => {

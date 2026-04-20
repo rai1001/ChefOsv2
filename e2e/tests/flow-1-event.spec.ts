@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test'
+import { requireEnv } from './_helpers/env'
 
 /**
  * Flujo 1 — Crear evento → enviar a confirmación → confirmar
@@ -11,7 +12,7 @@ import { test, expect } from '@playwright/test'
  */
 
 const EMAIL = 'test-admin@chefos.test'
-const PASSWORD = 'Test1234!'
+const PASSWORD = requireEnv('E2E_PASSWORD')
 
 test.describe.configure({ mode: 'serial' })
 

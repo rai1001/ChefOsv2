@@ -28,9 +28,19 @@ npm run test:e2e     # Playwright — requiere dev server en http://localhost:30
 
 ### Variables de entorno E2E
 
-- `E2E_EMAIL` (default `admin@chefos.test`)
-- `E2E_PASSWORD` (default `Test1234!`)
+Obligatorias (los tests lanzan error si faltan — sin defaults hardcoded):
+
+- `E2E_EMAIL` — email del usuario principal para `smoke.spec.ts`
+- `E2E_PASSWORD` — password compartido del seed y del usuario principal
+
+Opcionales:
+
 - `E2E_BASE_URL` (default `http://localhost:3003`)
+
+Ponlas en `.env.test.local` (ya en `.gitignore`) o en el shell antes de
+`npm run test:e2e`. Los emails por rol (`test-admin@chefos.test`,
+`test-cook@chefos.test`, …) están hardcoded porque los crea el script de
+seed — no son secretos; el único secreto es la password.
 
 ## Filosofía (database-first)
 

@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test'
+import { requireEnv } from './_helpers/env'
 
 /**
  * Flujo 3 — Crear solicitud de compra (PR)
@@ -13,7 +14,7 @@ import { test, expect } from '@playwright/test'
  */
 
 const EMAIL = 'test-admin@chefos.test'
-const PASSWORD = 'Test1234!'
+const PASSWORD = requireEnv('E2E_PASSWORD')
 
 test.describe('Flujo 3 — crear solicitud de compra', () => {
   test('login + crear PR con 1 línea y verificar redirección', async ({ page }) => {

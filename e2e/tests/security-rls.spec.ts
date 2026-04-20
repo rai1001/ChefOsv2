@@ -2,6 +2,7 @@ import { test, expect } from '@playwright/test'
 import { createClient, type SupabaseClient } from '@supabase/supabase-js'
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
+import { requireEnv } from './_helpers/env'
 
 // Cargar .env.local manualmente (Playwright no lo hace por defecto)
 try {
@@ -28,6 +29,7 @@ try {
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL ?? ''
 const ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? ''
+const SEED_PASSWORD = requireEnv('E2E_PASSWORD')
 const HOTEL_ID = '11111111-1111-1111-1111-111111111111'
 const PMS_ID = 'a0000000-0000-0000-0000-000000000001'
 const POS_PUSH_DISABLED = 'a0000000-0000-0000-0000-000000000002'
@@ -41,7 +43,7 @@ async function signedClient(email: string): Promise<SupabaseClient> {
   const client = createClient(SUPABASE_URL, ANON_KEY, {
     auth: { persistSession: false, autoRefreshToken: false },
   })
-  const { error } = await client.auth.signInWithPassword({ email, password: 'Test1234!' })
+  const { error } = await client.auth.signInWithPassword({ email, password: SEED_PASSWORD })
   if (error) throw new Error(`Login ${email}: ${error.message}`)
   return client
 }

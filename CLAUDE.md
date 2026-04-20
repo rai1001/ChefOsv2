@@ -116,6 +116,7 @@ Resumen de decisiones clave (ver DESIGN.md para especificación completa):
 | 00049 | fix_internal_rpcs_grants | Codex sesión 18: consume_rate_limit/get_rate_limit_status/check_idempotency/store_idempotency eran authenticated. REVOKE → solo service_role (edge functions) |
 | 00050 | fix_event_client_hotel_scope | Codex sesión 18: create_event/update_event aceptaban client_id arbitrario; get_events_calendar leak cross-tenant client name. Validación client.hotel_id = event.hotel_id |
 | 00051 | security_rpc_tenant_scope | Codex sesión 18: seed_default_categories exige check_membership admin+; get_production_summary scope events.hotel_id en join; receive_goods valida order_line_id.order_id = p_order_id (pre-loop + UPDATE) |
+| 00052 | fix_calculate_event_cost_scope | Codex 407407b (Medium): calculate_event_cost_estimate era SECURITY DEFINER con `check_membership(..., null)` → cualquier miembro activo podía mutar events.theoretical_cost bypass la policy events_update. Restringido a superadmin/direction/admin/commercial (match con events_update policy) |
 
 ## Estado actual (2026-04-17 — Sesión 16: OCR end-to-end + demo Eurostars + a11y WCAG AA + idempotencia + rate limits)
 - D0 Identidad: COMPLETO — auth flow, app shell, sidebar adaptativa (4 perfiles), audit triggers

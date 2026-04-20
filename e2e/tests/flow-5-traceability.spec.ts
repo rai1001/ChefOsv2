@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test'
+import { requireEnv } from './_helpers/env'
 
 /**
  * Flujo 5 — Crear etiqueta → aparece en lista
@@ -15,7 +16,7 @@ import { test, expect } from '@playwright/test'
  */
 
 const EMAIL = 'test-admin@chefos.test'
-const PASSWORD = 'Test1234!'
+const PASSWORD = requireEnv('E2E_PASSWORD')
 
 test.describe('Flujo 5 — crear etiqueta', () => {
   test('login + crear label manual y verificar que aparece en la lista', async ({ page }) => {
